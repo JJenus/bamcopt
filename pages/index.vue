@@ -13,15 +13,15 @@
 			<!--begin::Card body-->
 			<div class="card-body p-0">
 				<div
-					class="row row-cols-1 row-cols-lg-2 justify-content-between align-items-center"
+					class="row row-cols-1 row-cols-lg-2 justify-content-between align-items-center mb-5"
 				>
 					<div class="col">
 						<div class="mw-450px ms-md-4i ms-xl-1">
-							<h1 class="display-5">
+							<h1 class="display-4">
 								Banking made simple, secure, and seamless.
-								That's the {{ CONFIG.APP }} promise.
+								That's the <span class="text-danger">{{ CONFIG.APP }}</span> promise.
 							</h1>
-							<h6 class="text-muted">
+							<h6 class="text-muted mb-10">
 								Secure, Seamless, and Smart Banking Solutions
 								Await You!
 							</h6>
