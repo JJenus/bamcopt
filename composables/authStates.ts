@@ -25,12 +25,14 @@ export const useAuth = () => {
 		authenticated.value = true;
 
 		// redirect to appropriate account
-		if (auth.user.userType === "admin") {
-			// navigateTo("/admin");
-			window.location.href = "/admin"
-		} else {
-			window.location.href = "/app"
-		}
+		try {
+			if (auth.user.userType === "admin") {
+				// navigateTo("/admin");
+				window.location.href = "/admin";
+			} else {
+				window.location.href = "/app";
+			}
+		} catch (error) {}
 	};
 
 	const logout = () => {
@@ -39,7 +41,9 @@ export const useAuth = () => {
 		// storage().remove();
 		useCookie("auth").value = null;
 		// navigateTo("/sign-in");
-		window.location.href = "/"
+		try {
+			window.location.href = "/";
+		} catch (error) {}
 	};
 
 	const isAuthenticated = () => {
