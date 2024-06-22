@@ -59,7 +59,7 @@ export default defineNuxtConfig({
 				},
 				{
 					name: "twitter:image",
-					content: "/assets/media/logos/logo-ban.png",
+					content: "https://www.bancopt.com/assets/media/logos/logo-ban.png",
 				},
 				{
 					property: "og:title",
@@ -72,11 +72,11 @@ export default defineNuxtConfig({
 				},
 				{
 					property: "og:image",
-					content: "/assets/media/logos/logo-ban.png",
+					content: "https://www.bancopt.com/assets/media/logos/logo-ban.png",
 				},
 				{
 					property: "og:url",
-					content: "",
+					content: "https://www.bancopt.com",
 				},
 			],
 			script: [
