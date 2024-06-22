@@ -1,0 +1,67 @@
+{
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "jsx": "preserve",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
+    "paths": {
+      "#imports": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/.nuxt/types/nitro-imports"
+      ],
+      "#paths": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/nuxt/dist/core/runtime/nitro/paths"
+      ],
+      "~": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt"
+      ],
+      "~/*": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+      ],
+      "@": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt"
+      ],
+      "@/*": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+      ],
+      "~~": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt"
+      ],
+      "~~/*": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+      ],
+      "@@": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt"
+      ],
+      "@@/*": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+      ],
+      "assets": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/assets"
+      ],
+      "public": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/public"
+      ],
+      "public/*": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/public/*"
+      ],
+      "#image": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/@nuxt/image/dist/runtime"
+      ],
+      "#image/*": [
+        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/@nuxt/image/dist/runtime/*"
+      ]
+    }
+  },
+  "include": [
+    "/home/jjenus/workbench/apps/bancopt/bancopt/.nuxt/types/nitro-nuxt.d.ts",
+    "./types/nitro.d.ts",
+    "../**/*",
+    "../server/**/*"
+  ]
+}

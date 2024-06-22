@@ -1,0 +1,1 @@
+import{m as u}from"./entry.b0da6ac6.js";import{b as r,a as e}from"./userData.2f85955e.js";import"./swiper-vue.487844c5.js";import"./axios.82afda87.js";const n=u((a,i)=>{var o;const t=r("auth");if(t.value==null||t.value==null)return e().logout();if(!e().isAuthenticated()||((o=e().userData.value)==null?void 0:o.user.userType)!=="user")return e().logout()});export{n as default};

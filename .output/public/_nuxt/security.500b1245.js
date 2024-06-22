@@ -1,0 +1,1 @@
+import{_ as o,a as _}from"./deactivate.4f425f97.js";import{_ as c}from"./_plugin-vue_export-helper.c27b6911.js";import{y as s,z as t,x as r}from"./swiper-vue.487844c5.js";const a={};function p(i,m){const e=o,n=_;return r(),s("div",null,[t(e),t(n)])}const x=c(a,[["render",p]]);export{x as default};
