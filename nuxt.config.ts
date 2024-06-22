@@ -8,7 +8,6 @@ export default defineNuxtConfig({
 	},
 	image: {
 		format: ["webp", "avif", "jpeg", "jpg", "png", "gif"],
-		// The screen sizes predefined by `@nuxt/image`:
 		screens: {
 			xs: 320,
 			sm: 576,
