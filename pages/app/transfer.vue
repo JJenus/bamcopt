@@ -16,26 +16,7 @@
 	const next = ref(false);
 	const active = ref(true);
 
-	const initTrans = ref<Transaction>({
-		senderId: userData().data.value.id,
-		receiverId: undefined,
-		amount: 0,
-		type: TransactionTypes.DEBIT,
-		notes: undefined,
-		beneficiary: {
-			id: undefined,
-			userId: "",
-			name: "",
-			destinationAccount: "",
-			bank: "",
-		},
-		id: undefined,
-	});
-
-	const transaction = useState<Transaction>(
-		"transaction-form",
-		() => initTrans.value
-	);
+	const transaction = useState<Transaction>("transaction-form");
 
 	const form = ref({
 		amount: "",
@@ -179,7 +160,7 @@
 		if (active.value) {
 			transaction.value.type = TransactionTypes.SEND;
 			transaction.value.receiverId = recipient.value.id;
-			transaction.value.beneficiary.bank = "Elisa Finance";
+			transaction.value.beneficiary.bank = appConfig.public.APP;
 			transaction.value.beneficiary.destinationAccount =
 				recipient.value.email;
 			transaction.value.beneficiary.name = recipient.value.name;
@@ -252,21 +233,21 @@
 				</div>
 
 				<div v-if="next" class="mb-8 min-h-250px">
-					<div class="d-flex flex-center flex-row mb-5">
+					<div class="d-flex flex-center flex-row mb-5 gap-2">
 						<button
 							@click="active = true"
 							:class="active ? 'active' : ''"
 							type="button"
-							class="btn w-100 btn-light-primary btn-active-light-info fw-semibold me-2"
+							class="btn px-0 w-100 btn-light-primary btn-active-light-info fw-semibold"
 						>
 							<i class="ki-solid ki-dollar fs-3"></i>
-							To Elisa
+							To {{ $config.public.APP }}
 						</button>
 						<button
 							@click="active = false"
 							:class="!active ? 'active' : ''"
 							type="button"
-							class="btn w-100 btn-light-primary btn-active-light-info fw-semibold me-2"
+							class="btn w-75 btn-light-primary h-100 btn-active-light-info fw-semibold"
 						>
 							<i class="ki-solid ki-bank fs-3"></i>
 							Banks
@@ -282,7 +263,9 @@
 				</div>
 
 				<div v-else>
-					<div class="d-flex flex-row mb-8 justify-content-end w-100">
+					<div
+						class="d-flex flex-row mb-8 justify-content-end w-100 d-none"
+					>
 						<button
 							type="button"
 							class="btn btn-sm btn-light-primary fw-semibold me-2"

@@ -89,8 +89,6 @@
 		const now = moment();
 		const inputTime = moment(props.transaction.createdAt);
 
-		console.log("Time diff: ", now.diff(inputTime, "hours"));
-
 		if (now.diff(inputTime, "hours") <= 1) {
 			return inputTime.fromNow();
 		} else if (now.isSame(inputTime, "day")) {

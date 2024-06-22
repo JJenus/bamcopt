@@ -2,13 +2,8 @@
 	const notifications = userData().notifications;
 
 	onMounted(() => {
-		userData().getNotifications();
-		const nInterval = setInterval(() => {
-			if (useAuth().isAuthenticated()) userData().getNotifications();
-			else {
-				clearInterval(nInterval);
-			}
-		}, 20000);
+		// userData().getNotifications();
+		
 	});
 </script>
 

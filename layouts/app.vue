@@ -33,8 +33,10 @@
 		data-kt-app-aside-push-toolbar="true"
 		data-kt-app-aside-push-footer="true"
 		data-bs-theme-mode="dark"
-		class="app-default"
+		class="app-default position-relative"
 	>
+		<Toast class="mt-15 mt-lg-5" />
+
 		<div
 			class="d-flex flex-column flex-root app-root position-relative"
 			id="kt_app_root"

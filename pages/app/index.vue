@@ -5,7 +5,7 @@
 	const greet = () => {
 		let userName = user.value.name.split(" ")[0];
 		userName = userName.charAt(0).toUpperCase() + userName.slice(1);
-		
+
 		const now = moment();
 		const hour = now.hour();
 
@@ -71,7 +71,7 @@
 		<!--begin::Header-->
 		<div class="card-header pt-5">
 			<!--begin::Title-->
-			<h3 class="card-title align-items-start flex-column">
+			<h3 class="card-title align-items-start flex-column d-none">
 				<span class="card-label fw-bold text-dark"
 					>Payment Requests</span
 				>
@@ -82,38 +82,13 @@
 			<!--end::Title-->
 
 			<!--begin::Toolbar-->
-			<div class="card-toolbar">
-				<!--begin::Daterangepicker(defined in src/js/layout/app.js)-->
-				<div
-					data-kt-daterangepicker="true"
-					data-kt-daterangepicker-opens="left"
-					data-kt-daterangepicker-range="today"
-					class="btn btn-sm btn-light d-flex align-items-center px-4"
-				>
-					<!--begin::Display range-->
-					<div class="text-gray-600 fw-bold">
-						Loading date range...
-					</div>
-					<!--end::Display range-->
-
-					<i class="ki-outline ki-calendar-8 fs-1 ms-2 me-0"></i>
-				</div>
-				<!--end::Daterangepicker-->
-			</div>
+			<div class="card-toolbar"></div>
 			<!--end::Toolbar-->
 		</div>
 		<!--end::Header-->
 
 		<!--begin::Card body-->
-		<div class="card-body d-flex align-items-end p-0">
-			<!--begin::Chart-->
-			<div
-				id="kt_charts_widget_36"
-				class="min-h-auto w-100 ps-4 pe-6"
-				style="height: 300px"
-			></div>
-			<!--end::Chart-->
-		</div>
+		<div class="card-body d-flex align-items-end p-0"></div>
 		<!--end::Card body-->
 	</div>
 	<!--end::Chart widget 36-->

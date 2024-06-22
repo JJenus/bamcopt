@@ -45,7 +45,14 @@ export const userData = () => {
 
 	const transactions = useState<any[]>("user-transactions", () => []);
 	const notifications = useState<INotification[]>("notifications", () => []);
-	const newNotification = useState<boolean>("new-notifications", () => false);
+	const newNotifications = useState<INotification[]>(
+		"new-notifications",
+		() => []
+	);
+	const isNewNotification = useState<boolean>(
+		"new-notification",
+		() => false
+	);
 	const data = useState<IUser>("userData", () => initUser);
 	const account = useState<Account>("userAccount", () => initAcc);
 	const users = useState<IUser[]>("users", () => []);
@@ -124,6 +131,28 @@ export const userData = () => {
 			});
 	};
 
+	const showNotifications = () => {
+		if (!isNewNotification.value) {
+			return;
+		}
+		const axiosConfig = {
+			method: "put",
+			data: notifications.value,
+			url: `${useRuntimeConfig().public.BE_API}/notifications/all`,
+			timeout: 25000,
+			headers: {
+				Authorization: "Bearer " + useAuth().userData.value?.token,
+			},
+		};
+
+		axios
+			.request(axiosConfig)
+			.then((response: AxiosResponse<INotification[], any>) => {})
+			.catch((error) => {
+				console.log(error);
+			});
+	};
+
 	const getNotifications = () => {
 		const axiosConfig = {
 			method: "get",
@@ -145,50 +174,23 @@ export const userData = () => {
 						new Date(a.createdAt).getTime()
 				);
 
-				notifications.value.forEach((notice) => {
+				const xx = notifications.value.filter((notice) => {
 					if (notice.status === NotificationStatus.UNREAD) {
-						newNotification.value = true;
+						isNewNotification.value = true;
+						return true;
 					}
+					return false;
 				});
-				// console.log(data);
+
+				if (
+					isNewNotification.value &&
+					notifications.value.length == 0
+				) {
+					newNotifications.value = xx;
+				}
 			})
 			.catch((error) => {
 				// console.log(error);
-			});
-	};
-
-	const showNotifications = () => {
-		if (!newNotification.value) {
-			return;
-		}
-		const axiosConfig = {
-			method: "put",
-			data: notifications.value,
-			url: `${useRuntimeConfig().public.BE_API}/notifications/all`,
-			timeout: 25000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<INotification[], any>) => {
-				notifications.value = response.data.sort(
-					(a, b) =>
-						new Date(b.createdAt).getTime() -
-						new Date(a.createdAt).getTime()
-				);
-
-				notifications.value.forEach((notice) => {
-					if (notice.status === NotificationStatus.UNREAD) {
-						newNotification.value = true;
-					}
-				});
-				// console.log(data);
-			})
-			.catch((error) => {
-				console.log(error);
 			});
 	};
 
@@ -199,7 +201,8 @@ export const userData = () => {
 		admins,
 		active,
 		notifications,
-		newNotification,
+		newNotifications,
+		isNewNotification,
 		transactions,
 		getUsers,
 		fetchBalance,

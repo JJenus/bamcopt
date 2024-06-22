@@ -2,7 +2,7 @@
 	import axios from "axios";
 
 	const appConfig = useRuntimeConfig();
-	const newNotification = userData().newNotification;
+	const newNotification = userData().isNewNotification;
 
 	const transactions = ref([]);
 	const userId = useAuth().userData.value?.userId;
