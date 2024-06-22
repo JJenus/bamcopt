@@ -19,21 +19,6 @@ export const navs = ref([
 		icon: "ki-solid ki-send",
 		paths: [],
 	},
-	// {
-	// 	name: "Scan",
-	// 	dir: "/app/scan",
-	// 	icon: "ki-duotone ki-scan-barcode",
-	// 	paths: [
-	// 		"path1",
-	// 		"path2",
-	// 		"path3",
-	// 		"path4",
-	// 		"path5",
-	// 		"path6",
-	// 		"path7",
-	// 		"path8",
-	// 	],
-	// },
 	{
 		name: "Transactions",
 		dir: "/app/transactions",
