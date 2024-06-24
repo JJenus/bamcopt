@@ -33,10 +33,17 @@
 					<!--end::Copyright-->
 					<div class="col-md-5">
 						<h2 class="fs-2qx text-danger mb-2">Stay informed</h2>
-						<p>
-							Reach us on
-							<br />
-							{{ $config.public.MOBILE }}
+						<p class="d-flex flex-column">
+							<span>Reach us on</span>
+							<span class="text-lowercase"
+								>support@{{ $config.public.APP }}</span
+							>
+							<span>
+								{{ $config.public.MOBILE }}
+								<span class="badge bg-success ms-2 badge-sm"
+									>WhatsApp</span
+								>
+							</span>
 						</p>
 						<p class="mb-5">
 							Don’t miss, to subscribe to our new feeds, kindly

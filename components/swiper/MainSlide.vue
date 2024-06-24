@@ -45,7 +45,7 @@
 				<img
 					:src="nft.image"
 					alt=""
-					class="h-250px h-md-300px h-lg-450px w-500px w-lg-900px rounded-3"
+					class="h-250px h-md-100 w-md-900 h-lg-450px w-500px w-lg-900px rounded-3"
 				/>
 			</SwiperSlide>
 		</Swiper>

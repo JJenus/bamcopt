@@ -5,19 +5,14 @@
 		ID: "Zc7Mk9Zyk8EBqxpYZ",
 	};
 
-	
-	if (process.client) {
-		Chatra("init", config);
-	}
-	// useHead({
-	// 	script: [
-	// 		{
-	// 			innerHTML: 'alert("xss")',
-	// 			src: "https://call.chatra.io/chatra.js",
-	// 			async: true,
-	// 		},
-	// 	],
-	// });
+	useHead({
+		script: [
+			{
+				src: "//code.jivosite.com/widget/PDfF9tRuON",
+				async: true,
+			},
+		],
+	});
 </script>
 
 <template>

@@ -49,7 +49,11 @@
 						data-kt-menu-expand="false"
 					>
 						<!--begin:Menu item-->
-						<a v-if="useAuth().isAuthenticated()"  href="/app" class="menu-item menu-accordion">
+						<a
+							v-if="useAuth().isAuthenticated()"
+							href="/app"
+							class="menu-item menu-accordion"
+						>
 							<!--begin:Menu link--><span class="menu-link"
 								><span class="menu-icon">
 									<i class="ki-solid fs-2 ki-user"> </i>
@@ -163,7 +167,9 @@
 												class="bullet bullet-dot"
 											></span>
 										</span>
-										<span class="menu-title">French</span>
+										<span class="menu-title"
+											>Portuguese</span
+										>
 									</span>
 								</div>
 							</div>
