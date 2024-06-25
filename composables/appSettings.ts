@@ -1,14 +1,16 @@
 import axios from "axios";
 import { AccountLevel } from "utils/interfaces/AccountLevel";
 import { AppSettings } from "utils/interfaces/AppSettings";
+import currency from "currency.js";
 
 export const useAppSettings = () => {
 	const init: AppSettings = {
 		id: 0,
 		defaultLanguage: "",
 		defaultBaseCurrency: "",
+		currencySymbol: "",
 		createdAt: "",
-		updatedAt: ""
+		updatedAt: "",
 	};
 
 	const settings = useState<AppSettings>("app-settings", () => init);
@@ -21,7 +23,7 @@ export const useAppSettings = () => {
 			url: `${useRuntimeConfig().public.BE_API}/${url}`,
 			timeout: 20000,
 			headers: {
-			    Authorization: "Bearer " + useAuth().userData.value?.token,
+				Authorization: "Bearer " + useAuth().userData.value?.token,
 			},
 		};
 
@@ -36,6 +38,29 @@ export const useAppSettings = () => {
 			});
 	};
 
+	const formatMoney = (amount: string | number, addSymbol: boolean) => {
+		let decimalSep = ".";
+		let thousandSep = ",";
+		let pattern = `!#`;
+
+		const actual = currency(amount).value;
+
+		if (settings.value.defaultBaseCurrency !== "USD") {
+			decimalSep = ",";
+			thousandSep = ".";
+			pattern = `#!`;
+		}
+
+		const cash = currency(actual, {
+			symbol: addSymbol ? settings.value.currencySymbol : "",
+			decimal: decimalSep,
+			separator: thousandSep,
+			pattern: pattern,
+		}).format();
+
+		return cash;
+	};
+
 	load(settings, "app-settings");
 	load(accountLevels, "account-levels");
 
@@ -44,5 +69,6 @@ export const useAppSettings = () => {
 		isPageLoading,
 		accountLevels,
 		load,
+		formatMoney,
 	};
 };

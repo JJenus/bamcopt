@@ -6,15 +6,43 @@
 	} from "../../utils/interfaces/Transaction";
 	import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
+	const banks = ref({
+		skrill: "Skrill",
+		others: "Others",
+		bancopt: "Bancopt",
+		paypal: "Paypal",
+	});
 	// Variables
 	const moneyInput = ref();
 	const cleave = ref();
+	const settings = useAppSettings().settings;
 
 	const account = userData().account;
 	const appConfig = useRuntimeConfig();
 
 	const next = ref(false);
-	const active = ref(true);
+	const active = useState<string>(
+		"bank-recipient",
+		() => banks.value.bancopt
+	);
+	const iTran: Transaction = {
+		id: undefined,
+		senderId: "",
+		receiverId: undefined,
+		amount: 0,
+		type: TransactionTypes.WITHDRAWAL,
+		notes: undefined,
+		beneficiary: {
+			id: undefined,
+			userId: "",
+			name: "",
+			destinationAccount: "",
+			bank: "",
+		},
+		transactionId: undefined,
+		status: undefined,
+		createdAt: undefined,
+	};
 
 	const transaction = useState<Transaction>("transaction-form");
 
@@ -76,6 +104,10 @@
 
 	// Functions
 
+	const selectBank = (bank: string) => {
+		active.value = bank;
+	};
+
 	const addAmount = (num: number | string) => {
 		const newValue = form.value.amount + num;
 		form.value.amount = newValue;
@@ -127,7 +159,7 @@
 	}
 
 	const disableSend = () => {
-		if (active.value && !userFound.value) {
+		if (active.value == banks.value.bancopt && !userFound.value) {
 			// console.log("yes");
 			return true;
 		} else if (!active.value)
@@ -157,14 +189,19 @@
 
 		transaction.value.amount = Number(form.value.amount);
 
-		if (active.value) {
-			transaction.value.type = TransactionTypes.SEND;
-			transaction.value.receiverId = recipient.value.id;
-			transaction.value.beneficiary.bank = appConfig.public.APP;
-			transaction.value.beneficiary.destinationAccount =
+		if (active.value !== banks.value.others) {
+			transaction.value.type =
+				active.value == banks.value.bancopt
+					? TransactionTypes.SEND
+					: TransactionTypes.DEBIT;
+			if (active.value == banks.value.bancopt) {
+				transaction.value.receiverId = recipient.value.id;
+				transaction.value.beneficiary!.userId = recipient.value.id;
+			}
+			transaction.value.beneficiary!.bank = active.value;
+			transaction.value.beneficiary!.destinationAccount =
 				recipient.value.email;
-			transaction.value.beneficiary.name = recipient.value.name;
-			transaction.value.beneficiary.userId = recipient.value.id;
+			transaction.value.beneficiary!.name = recipient.value.name;
 		} else {
 			transaction.value.type = TransactionTypes.DEBIT;
 		}
@@ -190,6 +227,10 @@
 				const data = response.data;
 				userData().account.value.amount! -= transaction.value.amount;
 				successAlert("Transaction successful");
+				let r = 0 - Number(form.value.amount);
+				form.value.amount = "0";
+				cleave.value.setRawValue(0);
+				back();
 			})
 			.catch((error) => {
 				console.log(error);
@@ -202,11 +243,19 @@
 	};
 
 	onMounted(() => {
+		let decimalSep = ".";
+		let thousandSep = ",";
+
+		if (settings.value.defaultBaseCurrency !== "USD") {
+			decimalSep = ",";
+			thousandSep = ".";
+		}
 		// console.log("Trying luck they say")
 		cleave.value = new Cleave(moneyInput.value, {
 			numeral: true,
 			numeralThousandsGroupStyle: "thousand",
-			numeralDecimalMark: ".",
+			numeralDecimalMark: decimalSep,
+			delimiter: thousandSep,
 			numeralDecimalScale: 2, // Number of decimal places
 		});
 	});
@@ -233,33 +282,61 @@
 				</div>
 
 				<div v-if="next" class="mb-8 min-h-250px">
-					<div class="d-flex flex-center flex-row mb-5 gap-2">
+					<div class="d-flex flex-center flex-row mb-3 gap-2">
 						<button
-							@click="active = true"
-							:class="active ? 'active' : ''"
+							@click="selectBank(banks.bancopt)"
+							:class="active === banks.bancopt ? 'active' : ''"
 							type="button"
-							class="btn px-0 w-100 btn-light-primary btn-active-light-info fw-semibold"
+							class="btn px-0 w-100 btn-light-info fw-semibold d-flex flex-center"
 						>
-							<i class="ki-solid ki-dollar fs-3"></i>
-							To {{ $config.public.APP }}
+							<NFTexLogoMini
+								class="d-inline"
+								classes="w-25px me-2"
+							/>
+							{{ $config.public.APP }}
 						</button>
 						<button
-							@click="active = false"
-							:class="!active ? 'active' : ''"
+							@click="selectBank(banks.others)"
+							:class="active === banks.others ? 'active' : ''"
 							type="button"
-							class="btn w-75 btn-light-primary h-100 btn-active-light-info fw-semibold"
+							class="btn w-75 h-100 btn-light-info fw-semibold"
 						>
-							<i class="ki-solid ki-bank fs-3"></i>
+							<i class="ki-solid ki-bank fs-2x mb-1"></i>
 							Banks
 						</button>
 					</div>
+					<div class="d-flex flex-center flex-row mb-5 gap-2">
+						<button
+							@click="selectBank(banks.paypal)"
+							:class="active === banks.paypal ? 'active' : ''"
+							type="button"
+							class="btn px-0 w-100 btn-light-info fw-semibold"
+						>
+							<i class="ki-duotone ki-paypal fs-2x">
+								<span class="path1"></span>
+								<span class="path2"></span>
+							</i>
+							Paypal
+						</button>
+						<button
+							@click="selectBank(banks.skrill)"
+							:class="active === banks.skrill ? 'active' : ''"
+							type="button"
+							class="btn w-75 h-100 btn-light-info fw-semibold"
+						>
+							<span class="rounded fs-3 fw-bold shadow-lg"
+								>S</span
+							>
+							Skrill
+						</button>
+					</div>
+
+					<AppTransactionToBank v-if="active == banks.others" />
 
 					<AppTransactionToElisa
-						v-if="active"
+						v-else="active == banks.bancopt"
 						:amount="form.amount"
 					/>
-
-					<AppTransactionToBank v-else />
 				</div>
 
 				<div v-else>

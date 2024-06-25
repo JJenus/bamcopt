@@ -3,18 +3,14 @@
 	import { IUser } from "utils/interfaces/IUser";
 
 	const active = userData().active;
+	const money = useAppSettings().formatMoney;
 
 	const props = defineProps<{ user: IUser }>();
 
 	const balance = () => {
-		let cAmount = props.user.account.amount;
-		if (!cAmount) {
-			cAmount = 0;
-		}
-		const amount = currency(cAmount, {
-			symbol: "",
-		}).format();
-		return amount;
+		let cAmount = props.user.account.amount || 0;
+
+		return money(cAmount, false);
 	};
 </script>
 
@@ -68,7 +64,7 @@
 						class="fs-6 fw-bold text-gray-700"
 						bis_skin_checked="1"
 					>
-						${{ balance() }}
+						{{ balance() }}
 					</div>
 					<div class="fw-semibold text-gray-400" bis_skin_checked="1">
 						Balance

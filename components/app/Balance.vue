@@ -1,15 +1,13 @@
-<script setup>
-	import currency from "currency.js";
+<script setup lang="ts">
+	const money = useAppSettings().formatMoney;
+	const settings = useAppSettings().settings;
 
 	const balance = userData().account;
 	const tiers = useAppSettings().accountLevels;
 
 	const getBalance = () => {
 		let cAmount = balance.value.amount || 0;
-		const amount = currency(cAmount, {
-			symbol: "",
-		}).format();
-		return amount;
+		return money(cAmount, false);
 	};
 
 	onBeforeMount(() => {
@@ -42,8 +40,9 @@
 		<!--begin::Info-->
 		<div class="d-flex align-items-center mb-8">
 			<!--begin::Currency-->
-			<span class="fs-3 fw-semibold text-gray-400 me-1 align-self-start"
-				>$</span
+			<span
+				class="fs-3 fw-semibold text-gray-400 me-1 align-self-start"
+				>{{ settings.currencySymbol }}</span
 			>
 			<!--end::Currency-->
 

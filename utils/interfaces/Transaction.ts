@@ -7,7 +7,7 @@ export interface Transaction {
 	amount: number;
 	type: TransactionTypes;
 	notes: string | undefined;
-	beneficiary: Beneficiary;
+	beneficiary: Beneficiary | null | undefined;
 	transactionId: string | null | undefined;
 	status: string | null | undefined;
 	createdAt: string | null | undefined;

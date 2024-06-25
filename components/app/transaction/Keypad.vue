@@ -1,6 +1,8 @@
 <script setup lang="ts">
 	import Cleave from "cleave.js";
 
+	const settings = useAppSettings().settings;
+
 	// Variables
 	const moneyInput = ref();
 	const cleave = ref();
@@ -57,7 +59,6 @@
 	const delNum = async () => {
 		if (startDelete.value) {
 			await new Promise((resolve) => setTimeout(resolve, 160));
-			console.log("Del");
 			form.value.amount = form.value.amount.slice(0, -1);
 			cleave.value.setRawValue(form.value.amount);
 
@@ -66,28 +67,27 @@
 	};
 
 	const stopDel = () => {
-		console.log("Stopped");
 		startDelete.value = false;
 	};
 	const startDel = () => {
 		startDelete.value = true;
 		delNum(); // Start the function initially
 	};
-	const enterAmount = (event: any) => {
-		const num: string = moneyInput.value.value.replace(/[a-zA-Z]/g, "");
-		if (num.includes(".")) {
-			const part: string[] = num.split(".");
-			form.value.amount = part[0] + "." + part[1].slice(0, 2);
-			console.log(form.value.amount);
-		}
-	};
 
 	onMounted(() => {
+		let decimalSep = ".";
+		let thousandSep = ",";
+
+		if (settings.value.defaultBaseCurrency !== "USD") {
+			decimalSep = ",";
+			thousandSep = ".";
+		}
 		// console.log("Trying luck they say")
 		cleave.value = new Cleave(moneyInput.value, {
 			numeral: true,
 			numeralThousandsGroupStyle: "thousand",
-			numeralDecimalMark: ".",
+			numeralDecimalMark: decimalSep,
+			delimiter: thousandSep,
 			numeralDecimalScale: 2, // Number of decimal places
 		});
 	});

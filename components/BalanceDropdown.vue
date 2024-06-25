@@ -1,6 +1,9 @@
 <script setup lang="ts">
+	import currency from "currency.js";
 	const auth = useAuth();
 	const user = userData().data;
+	const money = useAppSettings().formatMoney;
+
 	const logout = () => {
 		auth.logout();
 	};
@@ -22,7 +25,7 @@
 					<div class="d-flex flex-column mb-4">
 						<span class="fw-bold"> Balance </span>
 						<div class="fs-2 fw-bold">
-							{{ user.account.amount }}
+							{{ money( user.account.amount!, true) }}
 						</div>
 					</div>
 				</div>

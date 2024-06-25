@@ -2,16 +2,20 @@
 	import axios from "axios";
 
 	const settings = useAppSettings().settings;
+	const form = ref({ ...settings.value });
 	const loading = ref(false);
 
 	const save = () => {
 		loading.value = true;
 
+		const method = !!settings.value.id ? "PUT" : "POST";
+		const path = !!settings.value.id ? `/${settings.value.id}` : "";
+
 		const axiosConfig: any = {
-			method: "POST",
-			url: `${useRuntimeConfig().public.BE_API}/app-settings`,
+			method: method,
+			url: `${useRuntimeConfig().public.BE_API}/app-settings${path}`,
 			timeout: 20000,
-			data: settings,
+			data: form.value,
 			headers: {
 				Authorization: "Bearer " + useAuth().userData.value?.token,
 			},
@@ -45,16 +49,26 @@
 				<div class="mb-5">
 					<label class="form-label">Default Currency</label>
 					<input
-						v-model="settings.defaultBaseCurrency"
+						v-model="form.defaultBaseCurrency"
 						type="text"
 						class="form-control"
 						required
 					/>
 				</div>
 				<div class="mb-5">
+					<label class="form-label">Symbol</label>
+					<input
+						v-model="form.currencySymbol"
+						type="text"
+						class="form-control"
+						placeholder="$"
+						required
+					/>
+				</div>
+				<div class="mb-5">
 					<label class="form-label">Default Language</label>
 					<input
-						v-model="settings.defaultLanguage"
+						v-model="form.defaultLanguage"
 						type="text"
 						class="form-control"
 						required

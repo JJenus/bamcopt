@@ -2,6 +2,7 @@
 	import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 	import moment from "moment";
 	import { IUser } from "utils/interfaces/IUser";
+	const money = useAppSettings().formatMoney;
 
 	const props = defineProps({
 		showDetails: {
@@ -14,7 +15,7 @@
 			required: true,
 		},
 	});
-	
+
 	const user = ref<any>({
 		name: "",
 	});
@@ -134,7 +135,7 @@
 			<div class="d-flex flex-column text-end">
 				<!--begin::Info-->
 				<span class="text-gray-800 fw-bold fs-6"
-					>${{ transaction.amount }}</span
+					>{{ money(transaction.amount, true) }}</span
 				>
 				<!--end::Info-->
 				<div class="text-gray-400 text-truncate w-80px">
@@ -192,7 +193,9 @@
 					</tr>
 					<tr>
 						<td class="fw-semibold">transactionId</td>
-						<td class="text-end">{{ transaction.transactionId }}</td>
+						<td class="text-end">
+							{{ transaction.transactionId }}
+						</td>
 					</tr>
 					<tr>
 						<td class="fw-semibold">Time</td>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 	import axios from "axios";
-	import currency from "currency.js";
 
+	const AppName = ref(useRuntimeConfig().public.APP);
+	const money = useAppSettings().formatMoney;
 	const props = defineProps({
 		amount: {
 			type: String,
@@ -10,6 +11,7 @@
 	});
 
 	const recipient = useState<any>("transfer-recipient");
+	const bank = useState<string>("bank-recipient");
 
 	const userFound = useState<string | boolean>(
 		"transfer-recipient-found",
@@ -19,10 +21,7 @@
 
 	const getBAmount = () => {
 		let cAmount = props.amount || 0;
-		const amount = currency(cAmount, {
-			symbol: "",
-		}).format();
-		return amount;
+		return money(cAmount, false);
 	};
 
 	const requestUser = () => {
@@ -58,7 +57,7 @@
 	};
 
 	const searchUser = () => {
-		if (searching.value) {
+		if (searching.value || bank.value != AppName.value) {
 			return;
 		}
 		const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -70,13 +69,17 @@
 
 <template>
 	<div>
+		<div class="mb-3 mt-10 d-flex align-items-center flex-center gap-2">
+			<i class="ki-solid ki-send fs-2x mb-1"></i>
+			<span class="fw-bold fs-2x">{{ bank }}</span>
+		</div>
 		<div class="mb-5">
 			<input
 				@input="searchUser()"
 				v-model="recipient.email"
 				name="email"
 				type="text"
-				placeholder="Enter email: jon@gmail.com"
+				:placeholder="`Enter ${bank} email: jon@gmail.com`"
 				class="form-control disabled money-input fs-5 form-control fw-bold form-control-solid"
 			/>
 			<div

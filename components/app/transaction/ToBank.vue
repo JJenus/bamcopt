@@ -8,7 +8,7 @@
 	<div class="row row-cols-1 row-cols-lg-2 g-4">
 		<div class="col">
 			<input
-				v-model="form.beneficiary.bank"
+				v-model="form.beneficiary!.bank"
 				name="bank_name"
 				type="text"
 				placeholder="Bank Name"
@@ -18,7 +18,7 @@
 		<div class="col">
 			<input
 				required
-				v-model="form.beneficiary.name"
+				v-model="form.beneficiary!.name"
 				name="account_holder_name"
 				type="text"
 				placeholder="Account Holder Name"
@@ -28,7 +28,7 @@
 		<div class="col">
 			<input
 				required
-				v-model="form.beneficiary.destinationAccount"
+				v-model="form.beneficiary!.destinationAccount"
 				name="account_number"
 				type="text"
 				placeholder="Account Number"
