@@ -2,7 +2,11 @@
 	definePageMeta({
 		middleware: ["auth"],
 	});
-</script> 
+
+	if (process.client) {
+		useLiveChat().closeChat();
+	}
+</script>
 
 <template>
 	<!--begin::App-->

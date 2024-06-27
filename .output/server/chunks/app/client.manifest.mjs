@@ -9,66 +9,67 @@ const client_manifest = {
     "file": "Notifications.89579652.css",
     "src": "Notifications.css"
   },
-  "_17-dark.a291fdd8.js": {
+  "_17-dark.dfb2563b.js": {
     "resourceType": "script",
     "module": true,
-    "file": "17-dark.a291fdd8.js",
+    "file": "17-dark.dfb2563b.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js"
     ]
   },
-  "_4.d3643101.js": {
+  "_4.f67d22f2.js": {
     "resourceType": "script",
     "module": true,
-    "file": "4.d3643101.js",
+    "file": "4.f67d22f2.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js"
     ]
   },
-  "_Balance.1b7206b9.js": {
+  "_Balance.a3c285b6.js": {
     "resourceType": "script",
     "module": true,
-    "file": "Balance.1b7206b9.js",
+    "file": "Balance.a3c285b6.js",
     "imports": [
-      "_nuxt-link.51c38150.js",
-      "_userData.2f85955e.js",
-      "_appSettings.daec8193.js",
-      "_currency.es.57f74176.js",
+      "_appSettings.6d141727.js",
+      "_authStates.b7595821.js",
       "_swiper-vue.487844c5.js"
     ]
   },
-  "_Balance.953b559e.js": {
+  "_Balance.vue.fa6dff80.js": {
     "resourceType": "script",
     "module": true,
-    "file": "Balance.953b559e.js",
+    "file": "Balance.vue.fa6dff80.js",
     "imports": [
-      "_userData.2f85955e.js",
-      "_currency.es.57f74176.js",
+      "_nuxt-link.35eca158.js",
+      "_appSettings.6d141727.js",
+      "_authStates.b7595821.js",
       "_swiper-vue.487844c5.js"
     ]
   },
-  "_Entry.vue.d2e0c223.js": {
+  "_Entry.vue.9969113c.js": {
     "resourceType": "script",
     "module": true,
-    "file": "Entry.vue.d2e0c223.js",
+    "file": "Entry.vue.9969113c.js",
     "imports": [
+      "_appSettings.6d141727.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
-      "_showAlert.1825e18a.js",
+      "_authStates.b7595821.js",
+      "_showAlert.7563e936.js",
       "_axios.82afda87.js",
       "_moment.fbc5633a.js",
       "_swiper-vue.487844c5.js"
     ]
   },
-  "_NFTexLogo.acdb316d.js": {
+  "_NFTexLogo.5082b827.js": {
     "resourceType": "script",
     "module": true,
     "css": [
       "NFTexLogo.8c81c6a7.css"
     ],
-    "file": "NFTexLogo.acdb316d.js",
+    "file": "NFTexLogo.5082b827.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
+      "_logo-ban.a4d86bc8.js",
       "_swiper-vue.487844c5.js",
       "__plugin-vue_export-helper.c27b6911.js"
     ]
@@ -77,28 +78,28 @@ const client_manifest = {
     "file": "NFTexLogo.8c81c6a7.css",
     "resourceType": "style"
   },
-  "_NFTexLogoMini.vue.02d42dbc.js": {
+  "_NFTexLogoMini.vue.80883a49.js": {
     "resourceType": "script",
     "module": true,
-    "file": "NFTexLogoMini.vue.02d42dbc.js",
+    "file": "NFTexLogoMini.vue.80883a49.js",
     "imports": [
-      "_nuxt-link.51c38150.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_NFTexLogo.acdb316d.js",
+      "_logo-ban.a4d86bc8.js",
       "_swiper-vue.487844c5.js"
     ]
   },
-  "_Notifications.ba28594f.js": {
+  "_Notifications.01eadc6f.js": {
     "resourceType": "script",
     "module": true,
     "css": [
       "Notifications.89579652.css"
     ],
-    "file": "Notifications.ba28594f.js",
+    "file": "Notifications.01eadc6f.js",
     "imports": [
       "_swiper-vue.487844c5.js",
       "_moment.fbc5633a.js",
-      "_userData.2f85955e.js",
+      "_authStates.b7595821.js",
       "__plugin-vue_export-helper.c27b6911.js"
     ]
   },
@@ -106,18 +107,34 @@ const client_manifest = {
     "file": "Notifications.89579652.css",
     "resourceType": "style"
   },
+  "__commonjsHelpers.725317a4.js": {
+    "resourceType": "script",
+    "module": true,
+    "file": "_commonjsHelpers.725317a4.js"
+  },
   "__plugin-vue_export-helper.c27b6911.js": {
     "resourceType": "script",
     "module": true,
     "file": "_plugin-vue_export-helper.c27b6911.js"
   },
-  "_appSettings.daec8193.js": {
+  "_appSettings.6d141727.js": {
     "resourceType": "script",
     "module": true,
-    "file": "appSettings.daec8193.js",
+    "file": "appSettings.6d141727.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
+      "_authStates.b7595821.js",
+      "_axios.82afda87.js",
+      "_currency.es.57f74176.js"
+    ]
+  },
+  "_authStates.b7595821.js": {
+    "resourceType": "script",
+    "module": true,
+    "file": "authStates.b7595821.js",
+    "imports": [
+      "node_modules/nuxt/dist/app/entry.js",
+      "_cookie.6bef029a.js",
       "_axios.82afda87.js"
     ]
   },
@@ -126,10 +143,19 @@ const client_manifest = {
     "module": true,
     "file": "axios.82afda87.js"
   },
-  "_credit-card.4fb02539.js": {
+  "_cookie.6bef029a.js": {
     "resourceType": "script",
     "module": true,
-    "file": "credit-card.4fb02539.js",
+    "file": "cookie.6bef029a.js",
+    "imports": [
+      "node_modules/nuxt/dist/app/entry.js",
+      "_swiper-vue.487844c5.js"
+    ]
+  },
+  "_credit-card.a29a368e.js": {
+    "resourceType": "script",
+    "module": true,
+    "file": "credit-card.a29a368e.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js"
     ]
@@ -148,29 +174,37 @@ const client_manifest = {
       "_swiper-vue.487844c5.js"
     ]
   },
-  "_france.f1f7446d.js": {
+  "_france.c33f2a85.js": {
     "resourceType": "script",
     "module": true,
-    "file": "france.f1f7446d.js",
+    "file": "france.c33f2a85.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js"
     ]
   },
-  "_index.4d0f0352.js": {
+  "_index.0c627fb3.js": {
     "resourceType": "script",
     "module": true,
-    "file": "index.4d0f0352.js",
+    "file": "index.0c627fb3.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
       "_swiper-vue.487844c5.js"
     ]
   },
-  "_liveChat.7639ab60.js": {
+  "_liveChat.6e2974a7.js": {
     "resourceType": "script",
     "module": true,
-    "file": "liveChat.7639ab60.js",
+    "file": "liveChat.6e2974a7.js",
     "imports": [
-      "_userData.2f85955e.js"
+      "_authStates.b7595821.js"
+    ]
+  },
+  "_logo-ban.a4d86bc8.js": {
+    "resourceType": "script",
+    "module": true,
+    "file": "logo-ban.a4d86bc8.js",
+    "imports": [
+      "node_modules/nuxt/dist/app/entry.js"
     ]
   },
   "_moment.fbc5633a.js": {
@@ -178,21 +212,21 @@ const client_manifest = {
     "module": true,
     "file": "moment.fbc5633a.js"
   },
-  "_nuxt-link.51c38150.js": {
+  "_nuxt-link.35eca158.js": {
     "resourceType": "script",
     "module": true,
-    "file": "nuxt-link.51c38150.js",
+    "file": "nuxt-link.35eca158.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
       "_swiper-vue.487844c5.js"
     ]
   },
-  "_showAlert.1825e18a.js": {
+  "_showAlert.7563e936.js": {
     "resourceType": "script",
     "module": true,
-    "file": "showAlert.1825e18a.js",
+    "file": "showAlert.7563e936.js",
     "imports": [
-      "node_modules/nuxt/dist/app/entry.js"
+      "__commonjsHelpers.725317a4.js"
     ]
   },
   "_swiper-vue.487844c5.js": {
@@ -207,22 +241,12 @@ const client_manifest = {
     "file": "swiper-vue.25ac1039.css",
     "resourceType": "style"
   },
-  "_twitter.97b9e580.js": {
+  "_twitter.698ef7d3.js": {
     "resourceType": "script",
     "module": true,
-    "file": "twitter.97b9e580.js",
+    "file": "twitter.698ef7d3.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js"
-    ]
-  },
-  "_userData.2f85955e.js": {
-    "resourceType": "script",
-    "module": true,
-    "file": "userData.2f85955e.js",
-    "imports": [
-      "node_modules/nuxt/dist/app/entry.js",
-      "_axios.82afda87.js",
-      "_swiper-vue.487844c5.js"
     ]
   },
   "animate.css": {
@@ -233,22 +257,26 @@ const client_manifest = {
   "layouts/adminlayout.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "adminlayout.12f6a0d7.js",
+    "file": "adminlayout.b85dccc0.js",
     "imports": [
-      "_NFTexLogoMini.vue.02d42dbc.js",
-      "_userData.2f85955e.js",
+      "_NFTexLogoMini.vue.80883a49.js",
+      "_authStates.b7595821.js",
       "_swiper-vue.487844c5.js",
-      "_NFTexLogo.acdb316d.js",
-      "_nuxt-link.51c38150.js",
-      "_Notifications.ba28594f.js",
+      "_NFTexLogo.5082b827.js",
+      "_nuxt-link.35eca158.js",
+      "_Notifications.01eadc6f.js",
       "__plugin-vue_export-helper.c27b6911.js",
-      "_france.f1f7446d.js",
-      "_Balance.953b559e.js",
+      "_france.c33f2a85.js",
+      "_Balance.a3c285b6.js",
       "_moment.fbc5633a.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_showAlert.1825e18a.js",
+      "_showAlert.7563e936.js",
       "_axios.82afda87.js",
-      "_currency.es.57f74176.js"
+      "_logo-ban.a4d86bc8.js",
+      "_cookie.6bef029a.js",
+      "_appSettings.6d141727.js",
+      "_currency.es.57f74176.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "layouts/adminlayout.vue"
@@ -256,24 +284,27 @@ const client_manifest = {
   "layouts/app.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "app.10d9169a.js",
+    "file": "app.635f30ec.js",
     "imports": [
-      "_userData.2f85955e.js",
+      "_authStates.b7595821.js",
       "_moment.fbc5633a.js",
       "_swiper-vue.487844c5.js",
-      "_NFTexLogo.acdb316d.js",
-      "_nuxt-link.51c38150.js",
-      "_liveChat.7639ab60.js",
-      "_Notifications.ba28594f.js",
-      "_appSettings.daec8193.js",
-      "_france.f1f7446d.js",
-      "_Balance.1b7206b9.js",
-      "_Entry.vue.d2e0c223.js",
+      "_NFTexLogo.5082b827.js",
+      "_nuxt-link.35eca158.js",
+      "_liveChat.6e2974a7.js",
+      "_Notifications.01eadc6f.js",
+      "_appSettings.6d141727.js",
+      "_france.c33f2a85.js",
+      "_Balance.vue.fa6dff80.js",
+      "_Entry.vue.9969113c.js",
       "node_modules/nuxt/dist/app/entry.js",
       "_axios.82afda87.js",
+      "_cookie.6bef029a.js",
+      "_logo-ban.a4d86bc8.js",
       "__plugin-vue_export-helper.c27b6911.js",
       "_currency.es.57f74176.js",
-      "_showAlert.1825e18a.js"
+      "_showAlert.7563e936.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "layouts/app.vue"
@@ -281,11 +312,12 @@ const client_manifest = {
   "layouts/auth.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "auth.c53ad6ff.js",
+    "file": "auth.13129301.js",
     "imports": [
-      "_liveChat.7639ab60.js",
-      "_userData.2f85955e.js",
+      "_liveChat.6e2974a7.js",
+      "_cookie.6bef029a.js",
       "_swiper-vue.487844c5.js",
+      "_authStates.b7595821.js",
       "node_modules/nuxt/dist/app/entry.js",
       "_axios.82afda87.js"
     ],
@@ -301,19 +333,22 @@ const client_manifest = {
     "resourceType": "script",
     "module": true,
     "css": [],
-    "file": "default.5e38121e.js",
+    "file": "default.ffa0be8c.js",
     "imports": [
-      "_NFTexLogo.acdb316d.js",
-      "_nuxt-link.51c38150.js",
-      "_userData.2f85955e.js",
-      "_france.f1f7446d.js",
+      "_NFTexLogo.5082b827.js",
+      "_nuxt-link.35eca158.js",
+      "_authStates.b7595821.js",
+      "_france.c33f2a85.js",
       "_swiper-vue.487844c5.js",
       "node_modules/nuxt/dist/app/entry.js",
       "_currency.es.57f74176.js",
-      "_NFTexLogoMini.vue.02d42dbc.js",
+      "_NFTexLogoMini.vue.80883a49.js",
       "_axios.82afda87.js",
-      "_showAlert.1825e18a.js",
-      "__plugin-vue_export-helper.c27b6911.js"
+      "_showAlert.7563e936.js",
+      "__plugin-vue_export-helper.c27b6911.js",
+      "_cookie.6bef029a.js",
+      "_logo-ban.a4d86bc8.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "layouts/default.vue"
@@ -325,10 +360,11 @@ const client_manifest = {
   "middleware/adminAuth.ts": {
     "resourceType": "script",
     "module": true,
-    "file": "adminAuth.ff48d76b.js",
+    "file": "adminAuth.381649a6.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
+      "_cookie.6bef029a.js",
+      "_authStates.b7595821.js",
       "_swiper-vue.487844c5.js",
       "_axios.82afda87.js"
     ],
@@ -338,12 +374,11 @@ const client_manifest = {
   "middleware/auth.ts": {
     "resourceType": "script",
     "module": true,
-    "file": "auth.4c06820c.js",
+    "file": "auth.fd4b8f86.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
-      "_swiper-vue.487844c5.js",
-      "_axios.82afda87.js"
+      "_cookie.6bef029a.js",
+      "_swiper-vue.487844c5.js"
     ],
     "isDynamicEntry": true,
     "src": "middleware/auth.ts"
@@ -367,7 +402,7 @@ const client_manifest = {
       "layouts/auth.vue",
       "layouts/default.vue"
     ],
-    "file": "entry.b0da6ac6.js",
+    "file": "entry.9fe119d6.js",
     "imports": [
       "_swiper-vue.487844c5.js"
     ],
@@ -382,13 +417,13 @@ const client_manifest = {
   "pages/about-us.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "about-us.6148711a.js",
+    "file": "about-us.10b69d8f.js",
     "imports": [
-      "_nuxt-link.51c38150.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
-      "_4.d3643101.js",
-      "_twitter.97b9e580.js",
+      "_index.0c627fb3.js",
+      "_4.f67d22f2.js",
+      "_twitter.698ef7d3.js",
       "_swiper-vue.487844c5.js"
     ],
     "isDynamicEntry": true,
@@ -397,14 +432,16 @@ const client_manifest = {
   "pages/admin.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "admin.d7a3961a.js",
+    "file": "admin.6b048c27.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
-      "_userData.2f85955e.js",
-      "_showAlert.1825e18a.js",
+      "_index.0c627fb3.js",
+      "_cookie.6bef029a.js",
+      "_authStates.b7595821.js",
+      "_showAlert.7563e936.js",
       "_axios.82afda87.js",
-      "_swiper-vue.487844c5.js"
+      "_swiper-vue.487844c5.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/admin.vue"
@@ -412,16 +449,18 @@ const client_manifest = {
   "pages/admin/index.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "index.9665d29c.js",
+    "file": "index.dc809244.js",
     "imports": [
-      "_Balance.953b559e.js",
-      "_userData.2f85955e.js",
-      "_credit-card.4fb02539.js",
+      "_Balance.a3c285b6.js",
+      "_authStates.b7595821.js",
+      "_credit-card.a29a368e.js",
       "_moment.fbc5633a.js",
       "_swiper-vue.487844c5.js",
-      "_currency.es.57f74176.js",
+      "_appSettings.6d141727.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_axios.82afda87.js"
+      "_axios.82afda87.js",
+      "_currency.es.57f74176.js",
+      "_cookie.6bef029a.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/admin/index.vue"
@@ -429,12 +468,13 @@ const client_manifest = {
   "pages/admin/profile.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "profile.c2de67c3.js",
+    "file": "profile.fa8284dc.js",
     "imports": [
-      "_nuxt-link.51c38150.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
+      "_authStates.b7595821.js",
       "_swiper-vue.487844c5.js",
+      "_cookie.6bef029a.js",
       "_axios.82afda87.js"
     ],
     "isDynamicEntry": true,
@@ -443,13 +483,15 @@ const client_manifest = {
   "pages/admin/profile/edit.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "edit.7e3954e6.js",
+    "file": "edit.4f45f835.js",
     "imports": [
-      "_userData.2f85955e.js",
-      "_showAlert.1825e18a.js",
+      "_authStates.b7595821.js",
+      "_showAlert.7563e936.js",
       "_swiper-vue.487844c5.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_axios.82afda87.js"
+      "_cookie.6bef029a.js",
+      "_axios.82afda87.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/admin/profile/edit.vue"
@@ -457,11 +499,12 @@ const client_manifest = {
   "pages/admin/profile/index.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "index.8b32f177.js",
+    "file": "index.8c1a5a32.js",
     "imports": [
-      "_userData.2f85955e.js",
+      "_authStates.b7595821.js",
       "_swiper-vue.487844c5.js",
       "node_modules/nuxt/dist/app/entry.js",
+      "_cookie.6bef029a.js",
       "_axios.82afda87.js"
     ],
     "isDynamicEntry": true,
@@ -470,9 +513,9 @@ const client_manifest = {
   "pages/admin/settings.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "settings.f6cfd0d6.js",
+    "file": "settings.ef983a12.js",
     "imports": [
-      "_nuxt-link.51c38150.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
       "_swiper-vue.487844c5.js"
     ],
@@ -482,14 +525,17 @@ const client_manifest = {
   "pages/admin/settings/index.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "index.2d9c6376.js",
+    "file": "index.06d0f5f0.js",
     "imports": [
-      "_appSettings.daec8193.js",
+      "_appSettings.6d141727.js",
       "_swiper-vue.487844c5.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
-      "_showAlert.1825e18a.js",
-      "_axios.82afda87.js"
+      "_authStates.b7595821.js",
+      "_showAlert.7563e936.js",
+      "_axios.82afda87.js",
+      "_currency.es.57f74176.js",
+      "_cookie.6bef029a.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/admin/settings/index.vue"
@@ -509,15 +555,17 @@ const client_manifest = {
   "pages/admin/settings/tiers.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "tiers.f9fbf0c3.js",
+    "file": "tiers.ef4b0100.js",
     "imports": [
-      "_appSettings.daec8193.js",
+      "_appSettings.6d141727.js",
       "_swiper-vue.487844c5.js",
-      "_showAlert.1825e18a.js",
+      "_showAlert.7563e936.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
+      "_authStates.b7595821.js",
       "_axios.82afda87.js",
-      "_currency.es.57f74176.js"
+      "_currency.es.57f74176.js",
+      "__commonjsHelpers.725317a4.js",
+      "_cookie.6bef029a.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/admin/settings/tiers.vue"
@@ -528,16 +576,18 @@ const client_manifest = {
     "css": [
       "animate.22f323af.css"
     ],
-    "file": "users.b27efc52.js",
+    "file": "users.e07c2c51.js",
     "imports": [
-      "_userData.2f85955e.js",
-      "_currency.es.57f74176.js",
+      "_authStates.b7595821.js",
+      "_appSettings.6d141727.js",
       "_swiper-vue.487844c5.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_showAlert.1825e18a.js",
+      "_showAlert.7563e936.js",
       "_axios.82afda87.js",
+      "_currency.es.57f74176.js",
       "_moment.fbc5633a.js",
-      "_appSettings.daec8193.js"
+      "_cookie.6bef029a.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/admin/users.vue"
@@ -549,14 +599,16 @@ const client_manifest = {
   "pages/app.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "app.13d531bc.js",
+    "file": "app.a5966c13.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
-      "_userData.2f85955e.js",
-      "_showAlert.1825e18a.js",
+      "_index.0c627fb3.js",
+      "_cookie.6bef029a.js",
+      "_authStates.b7595821.js",
+      "_showAlert.7563e936.js",
       "_axios.82afda87.js",
-      "_swiper-vue.487844c5.js"
+      "_swiper-vue.487844c5.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/app.vue"
@@ -570,17 +622,19 @@ const client_manifest = {
     "resourceType": "script",
     "module": true,
     "css": [],
-    "file": "account-info.248c162b.js",
+    "file": "account-info.fe604fd2.js",
     "imports": [
-      "_userData.2f85955e.js",
-      "_appSettings.daec8193.js",
+      "_authStates.b7595821.js",
+      "_appSettings.6d141727.js",
       "_swiper-vue.487844c5.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
-      "_showAlert.1825e18a.js",
+      "_index.0c627fb3.js",
+      "_showAlert.7563e936.js",
       "_axios.82afda87.js",
       "__plugin-vue_export-helper.c27b6911.js",
-      "_currency.es.57f74176.js"
+      "_currency.es.57f74176.js",
+      "_cookie.6bef029a.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/app/account-info.vue"
@@ -592,18 +646,19 @@ const client_manifest = {
   "pages/app/index.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "index.4b3d1995.js",
+    "file": "index.2e3e9fa3.js",
     "imports": [
-      "_Balance.1b7206b9.js",
-      "_userData.2f85955e.js",
-      "_credit-card.4fb02539.js",
+      "_Balance.vue.fa6dff80.js",
+      "_authStates.b7595821.js",
+      "_credit-card.a29a368e.js",
       "_moment.fbc5633a.js",
       "_swiper-vue.487844c5.js",
-      "_nuxt-link.51c38150.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_appSettings.daec8193.js",
+      "_appSettings.6d141727.js",
       "_axios.82afda87.js",
-      "_currency.es.57f74176.js"
+      "_currency.es.57f74176.js",
+      "_cookie.6bef029a.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/app/index.vue"
@@ -611,12 +666,13 @@ const client_manifest = {
   "pages/app/profile.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "profile.44fef2b9.js",
+    "file": "profile.94669b26.js",
     "imports": [
-      "_nuxt-link.51c38150.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
+      "_authStates.b7595821.js",
       "_swiper-vue.487844c5.js",
+      "_cookie.6bef029a.js",
       "_axios.82afda87.js"
     ],
     "isDynamicEntry": true,
@@ -625,13 +681,15 @@ const client_manifest = {
   "pages/app/profile/edit.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "edit.18c0c1a5.js",
+    "file": "edit.21d4001b.js",
     "imports": [
-      "_userData.2f85955e.js",
-      "_showAlert.1825e18a.js",
+      "_authStates.b7595821.js",
+      "_showAlert.7563e936.js",
       "_swiper-vue.487844c5.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_axios.82afda87.js"
+      "_cookie.6bef029a.js",
+      "_axios.82afda87.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/app/profile/edit.vue"
@@ -639,11 +697,12 @@ const client_manifest = {
   "pages/app/profile/index.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "index.702f113f.js",
+    "file": "index.902d23e9.js",
     "imports": [
-      "_userData.2f85955e.js",
+      "_authStates.b7595821.js",
       "_swiper-vue.487844c5.js",
       "node_modules/nuxt/dist/app/entry.js",
+      "_cookie.6bef029a.js",
       "_axios.82afda87.js"
     ],
     "isDynamicEntry": true,
@@ -668,9 +727,9 @@ const client_manifest = {
     "resourceType": "script",
     "module": true,
     "css": [],
-    "file": "scan.15fa147a.js",
+    "file": "scan.cfe6613f.js",
     "imports": [
-      "node_modules/nuxt/dist/app/entry.js",
+      "__commonjsHelpers.725317a4.js",
       "_swiper-vue.487844c5.js",
       "__plugin-vue_export-helper.c27b6911.js"
     ],
@@ -684,9 +743,9 @@ const client_manifest = {
   "pages/app/settings.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "settings.5942adb4.js",
+    "file": "settings.317c8b40.js",
     "imports": [
-      "_nuxt-link.51c38150.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
       "_swiper-vue.487844c5.js"
     ],
@@ -696,12 +755,12 @@ const client_manifest = {
   "pages/app/settings/index.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "index.10f268f0.js",
+    "file": "index.885c68e0.js",
     "imports": [
-      "_showAlert.1825e18a.js",
+      "_showAlert.7563e936.js",
       "_swiper-vue.487844c5.js",
       "__plugin-vue_export-helper.c27b6911.js",
-      "node_modules/nuxt/dist/app/entry.js"
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/app/settings/index.vue"
@@ -721,16 +780,19 @@ const client_manifest = {
   "pages/app/transactions.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "transactions.b1fa4d47.js",
+    "file": "transactions.575c47b5.js",
     "imports": [
-      "_Entry.vue.d2e0c223.js",
+      "_Entry.vue.9969113c.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
+      "_authStates.b7595821.js",
       "_axios.82afda87.js",
       "_currency.es.57f74176.js",
       "_swiper-vue.487844c5.js",
-      "_showAlert.1825e18a.js",
-      "_moment.fbc5633a.js"
+      "_appSettings.6d141727.js",
+      "_showAlert.7563e936.js",
+      "__commonjsHelpers.725317a4.js",
+      "_moment.fbc5633a.js",
+      "_cookie.6bef029a.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/app/transactions.vue"
@@ -738,15 +800,20 @@ const client_manifest = {
   "pages/app/transfer.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "transfer.68f9649b.js",
+    "file": "transfer.46be4255.js",
     "imports": [
-      "node_modules/nuxt/dist/app/entry.js",
+      "_NFTexLogoMini.vue.80883a49.js",
       "_swiper-vue.487844c5.js",
-      "_userData.2f85955e.js",
+      "node_modules/nuxt/dist/app/entry.js",
+      "_appSettings.6d141727.js",
+      "_authStates.b7595821.js",
       "_axios.82afda87.js",
+      "_nuxt-link.35eca158.js",
+      "_showAlert.7563e936.js",
+      "_logo-ban.a4d86bc8.js",
       "_currency.es.57f74176.js",
-      "_nuxt-link.51c38150.js",
-      "_showAlert.1825e18a.js"
+      "_cookie.6bef029a.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/app/transfer.vue"
@@ -754,10 +821,10 @@ const client_manifest = {
   "pages/banking.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "banking.f3176581.js",
+    "file": "banking.f0291d72.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
+      "_index.0c627fb3.js",
       "_swiper-vue.487844c5.js"
     ],
     "isDynamicEntry": true,
@@ -766,11 +833,11 @@ const client_manifest = {
   "pages/contact-us.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "contact-us.f1e5da03.js",
+    "file": "contact-us.9b781b15.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
-      "_twitter.97b9e580.js",
+      "_index.0c627fb3.js",
+      "_twitter.698ef7d3.js",
       "_swiper-vue.487844c5.js"
     ],
     "isDynamicEntry": true,
@@ -779,15 +846,17 @@ const client_manifest = {
   "pages/index.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "index.09cb867c.js",
+    "file": "index.ccffca2e.js",
     "imports": [
       "_swiper-vue.487844c5.js",
-      "_NFTexLogo.acdb316d.js",
+      "_NFTexLogo.5082b827.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
-      "_userData.2f85955e.js",
-      "_17-dark.a291fdd8.js",
+      "_index.0c627fb3.js",
+      "_authStates.b7595821.js",
+      "_17-dark.dfb2563b.js",
+      "_logo-ban.a4d86bc8.js",
       "__plugin-vue_export-helper.c27b6911.js",
+      "_cookie.6bef029a.js",
       "_axios.82afda87.js"
     ],
     "isDynamicEntry": true,
@@ -796,11 +865,11 @@ const client_manifest = {
   "pages/investment.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "investment.f50e4bf8.js",
+    "file": "investment.9a768797.js",
     "imports": [
-      "_nuxt-link.51c38150.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
+      "_index.0c627fb3.js",
       "_swiper-vue.487844c5.js"
     ],
     "isDynamicEntry": true,
@@ -809,13 +878,14 @@ const client_manifest = {
   "pages/new-password.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "new-password.626a6c69.js",
+    "file": "new-password.108c23e7.js",
     "imports": [
-      "_nuxt-link.51c38150.js",
+      "_nuxt-link.35eca158.js",
       "_swiper-vue.487844c5.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_showAlert.1825e18a.js",
-      "_axios.82afda87.js"
+      "_showAlert.7563e936.js",
+      "_axios.82afda87.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/new-password.vue"
@@ -823,10 +893,10 @@ const client_manifest = {
   "pages/news.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "news.7c0fe7f3.js",
+    "file": "news.2a3014bd.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
+      "_index.0c627fb3.js",
       "_swiper-vue.487844c5.js"
     ],
     "isDynamicEntry": true,
@@ -835,17 +905,19 @@ const client_manifest = {
   "pages/resources/about-us.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "about-us.23a83ba9.js",
+    "file": "about-us.a0ad2181.js",
     "imports": [
-      "_NFTexLogo.acdb316d.js",
-      "_nuxt-link.51c38150.js",
+      "_NFTexLogo.5082b827.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
-      "_userData.2f85955e.js",
-      "_4.d3643101.js",
-      "_twitter.97b9e580.js",
+      "_index.0c627fb3.js",
+      "_authStates.b7595821.js",
+      "_4.f67d22f2.js",
+      "_twitter.698ef7d3.js",
       "_swiper-vue.487844c5.js",
+      "_logo-ban.a4d86bc8.js",
       "__plugin-vue_export-helper.c27b6911.js",
+      "_cookie.6bef029a.js",
       "_axios.82afda87.js"
     ],
     "isDynamicEntry": true,
@@ -854,11 +926,11 @@ const client_manifest = {
   "pages/resources/contact-us.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "contact-us.da0636a7.js",
+    "file": "contact-us.79ea18e7.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
-      "_twitter.97b9e580.js",
+      "_index.0c627fb3.js",
+      "_twitter.698ef7d3.js",
       "_swiper-vue.487844c5.js"
     ],
     "isDynamicEntry": true,
@@ -867,18 +939,21 @@ const client_manifest = {
   "pages/sign-in.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "sign-in.750b1b80.js",
+    "file": "sign-in.8c8e3f86.js",
     "imports": [
-      "_NFTexLogo.acdb316d.js",
-      "_nuxt-link.51c38150.js",
+      "_NFTexLogo.5082b827.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
       "_swiper-vue.487844c5.js",
-      "_showAlert.1825e18a.js",
+      "_showAlert.7563e936.js",
       "_axios.82afda87.js",
-      "_index.4d0f0352.js",
-      "_userData.2f85955e.js",
-      "_credit-card.4fb02539.js",
-      "__plugin-vue_export-helper.c27b6911.js"
+      "_index.0c627fb3.js",
+      "_authStates.b7595821.js",
+      "_credit-card.a29a368e.js",
+      "_logo-ban.a4d86bc8.js",
+      "__plugin-vue_export-helper.c27b6911.js",
+      "__commonjsHelpers.725317a4.js",
+      "_cookie.6bef029a.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/sign-in.vue"
@@ -886,17 +961,20 @@ const client_manifest = {
   "pages/sign-up.vue": {
     "resourceType": "script",
     "module": true,
-    "file": "sign-up.45579863.js",
+    "file": "sign-up.c7a3ff63.js",
     "imports": [
-      "_NFTexLogo.acdb316d.js",
-      "_nuxt-link.51c38150.js",
+      "_NFTexLogo.5082b827.js",
+      "_nuxt-link.35eca158.js",
       "_swiper-vue.487844c5.js",
-      "_index.4d0f0352.js",
+      "_index.0c627fb3.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
-      "_showAlert.1825e18a.js",
+      "_cookie.6bef029a.js",
+      "_authStates.b7595821.js",
+      "_showAlert.7563e936.js",
       "_axios.82afda87.js",
-      "__plugin-vue_export-helper.c27b6911.js"
+      "_logo-ban.a4d86bc8.js",
+      "__plugin-vue_export-helper.c27b6911.js",
+      "__commonjsHelpers.725317a4.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/sign-up.vue"
@@ -907,16 +985,18 @@ const client_manifest = {
     "css": [
       "animate.22f323af.css"
     ],
-    "file": "transaction.e4157b3b.js",
+    "file": "transaction.6a68fa88.js",
     "imports": [
       "node_modules/nuxt/dist/app/entry.js",
-      "_index.4d0f0352.js",
+      "_index.0c627fb3.js",
       "_swiper-vue.487844c5.js",
-      "_showAlert.1825e18a.js",
-      "_userData.2f85955e.js",
+      "_showAlert.7563e936.js",
+      "_authStates.b7595821.js",
       "_axios.82afda87.js",
       "_currency.es.57f74176.js",
-      "_moment.fbc5633a.js"
+      "_moment.fbc5633a.js",
+      "__commonjsHelpers.725317a4.js",
+      "_cookie.6bef029a.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/track/transaction.vue"
@@ -930,16 +1010,18 @@ const client_manifest = {
     "resourceType": "script",
     "module": true,
     "css": [],
-    "file": "verify-email.26a97174.js",
+    "file": "verify-email.96b10d5d.js",
     "imports": [
-      "_NFTexLogo.acdb316d.js",
-      "_nuxt-link.51c38150.js",
+      "_NFTexLogo.5082b827.js",
+      "_nuxt-link.35eca158.js",
       "node_modules/nuxt/dist/app/entry.js",
-      "_userData.2f85955e.js",
-      "_17-dark.a291fdd8.js",
+      "_authStates.b7595821.js",
+      "_17-dark.dfb2563b.js",
       "_axios.82afda87.js",
       "_swiper-vue.487844c5.js",
-      "__plugin-vue_export-helper.c27b6911.js"
+      "__plugin-vue_export-helper.c27b6911.js",
+      "_logo-ban.a4d86bc8.js",
+      "_cookie.6bef029a.js"
     ],
     "isDynamicEntry": true,
     "src": "pages/verify-email.vue"

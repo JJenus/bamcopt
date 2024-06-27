@@ -96,7 +96,7 @@
 			</div>
 		</div>
 
-		<div v-if="userFound" style="margin-bottom: 15px" bis_skin_checked="1">
+		<div v-if="userFound && bank == AppName" style="margin-bottom: 15px" bis_skin_checked="1">
 			<!--begin:Title-->
 			<h3 class="mb-3" style="color: #181c32">Transfer</h3>
 			<!--end:Title-->

@@ -32,6 +32,7 @@ declare global {
   const clearNuxtState: typeof import('../../node_modules/nuxt/dist/app')['clearNuxtState']
   const closeDrawer: typeof import('../../utils/navs')['closeDrawer']
   const computed: typeof import('vue')['computed']
+  const copyNonEmptyProperties: typeof import('../../utils/util')['copyNonEmptyProperties']
   const createError: typeof import('../../node_modules/nuxt/dist/app')['createError']
   const customRef: typeof import('vue')['customRef']
   const defineAppConfig: typeof import('../../node_modules/nuxt/dist/app')['defineAppConfig']
@@ -207,6 +208,7 @@ declare module 'vue' {
     readonly clearNuxtState: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['clearNuxtState']>
     readonly closeDrawer: UnwrapRef<typeof import('../../utils/navs')['closeDrawer']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
+    readonly copyNonEmptyProperties: UnwrapRef<typeof import('../../utils/util')['copyNonEmptyProperties']>
     readonly createError: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['createError']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly defineAppConfig: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['defineAppConfig']>
@@ -375,6 +377,7 @@ declare module '@vue/runtime-core' {
     readonly clearNuxtState: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['clearNuxtState']>
     readonly closeDrawer: UnwrapRef<typeof import('../../utils/navs')['closeDrawer']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
+    readonly copyNonEmptyProperties: UnwrapRef<typeof import('../../utils/util')['copyNonEmptyProperties']>
     readonly createError: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['createError']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly defineAppConfig: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['defineAppConfig']>

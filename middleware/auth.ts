@@ -9,13 +9,13 @@ export default defineNuxtRouteMiddleware((to, from) => {
 	// might get an infinite redirect loop
 	const cookie = useCookie<AuthToken | null | undefined>("auth");
 	if (cookie.value == null || cookie.value == undefined) {
-		return useAuth().logout();
+		return navigateTo("sign-in");
 	}
 
-	if (
-		!useAuth().isAuthenticated() ||
-		useAuth().userData.value?.user.userType !== "user"
-	) {
-		return useAuth().logout();
-	}
+	// if (
+	// 	!useAuth().isAuthenticated() ||
+	// 	useAuth().userData.value?.user.userType !== "user"
+	// ) {
+	// 	return useAuth().logout();
+	// }
 });

@@ -134,9 +134,9 @@
 
 			<div class="d-flex flex-column text-end">
 				<!--begin::Info-->
-				<span class="text-gray-800 fw-bold fs-6"
-					>{{ money(transaction.amount, true) }}</span
-				>
+				<span class="text-gray-800 fw-bold fs-6">{{
+					money(transaction.amount, true)
+				}}</span>
 				<!--end::Info-->
 				<div class="text-gray-400 text-truncate w-80px">
 					{{ transaction.beneficiary.bank }}
@@ -164,7 +164,7 @@
 					<tr>
 						<td class="fw-semibold">Bank</td>
 						<td class="text-end">
-							{{ user.name }}
+							{{ transaction.beneficiary.bank }}
 						</td>
 					</tr>
 					<tr>

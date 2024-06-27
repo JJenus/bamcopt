@@ -3,9 +3,9 @@
 	const active = userData().active;
 	const foundUsers = ref(userData().users.value.length);
 
-	if (userData().users.value.length === 0) {
-		userData().getUsers();
-	}
+	// if (userData().users.value.length === 0) {
+	// 	userData().getUsers();
+	// }
 
 	const search = (area: string, input: string) => {
 		const rjx = new RegExp(input, "i");
@@ -65,7 +65,9 @@
 	// 	filterUsers(searchText.value);
 	// 	// search(".user", searchText.value);
 	// };
-	onMounted(() => {});
+	onMounted(() => {
+		userData().getUsers();
+	});
 </script>
 
 <template>

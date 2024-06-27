@@ -72,6 +72,8 @@ export const userData = () => {
 			},
 		};
 
+		console.log("TOKEN ", useAuth().userData.value?.token);
+
 		axios
 			.request(axiosConfig)
 			.then((response: AxiosResponse<IUser[], any>) => {

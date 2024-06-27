@@ -1,1 +1,0 @@
-import{d as u,r as c,k as f}from"./entry.b0da6ac6.js";import{a as m,w as p}from"./swiper-vue.487844c5.js";function i(t,a){const e=m({});return p(()=>{const s=c(t),{title:o,titleTemplate:r,...n}=s;e.value={title:o,titleTemplate:r,meta:f(n)}}),u(e,a)}export{i as u};

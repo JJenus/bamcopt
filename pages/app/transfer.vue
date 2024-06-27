@@ -44,7 +44,7 @@
 		createdAt: undefined,
 	};
 
-	const transaction = useState<Transaction>("transaction-form");
+	const transaction = useState<Transaction>("transaction-form", () => iTran);
 
 	const form = ref({
 		amount: "",
@@ -195,9 +195,15 @@
 					? TransactionTypes.SEND
 					: TransactionTypes.DEBIT;
 			if (active.value == banks.value.bancopt) {
+				console.log("Bancopt");
 				transaction.value.receiverId = recipient.value.id;
 				transaction.value.beneficiary!.userId = recipient.value.id;
 			}
+			transaction.value.beneficiary!.userId =
+				active.value == banks.value.bancopt
+					? recipient.value.id
+					: userData().data.value.id;
+
 			transaction.value.beneficiary!.bank = active.value;
 			transaction.value.beneficiary!.destinationAccount =
 				recipient.value.email;
@@ -209,11 +215,15 @@
 		transaction.value.senderId = userData().data.value.id;
 
 		submitButton.value.setAttribute("data-kt-indicator", "on");
-		console.log(transaction.value);
+		console.log("Transaction", transaction.value);
+
+		const validData = copyNonEmptyProperties(transaction.value);
+
+		console.log("Valid data", validData);
 
 		const axiosConfig: AxiosRequestConfig = {
 			method: "post",
-			data: transaction.value,
+			data: validData,
 			url: `${appConfig.public.BE_API}/transactions`,
 			timeout: 15000,
 			headers: {
@@ -230,6 +240,8 @@
 				let r = 0 - Number(form.value.amount);
 				form.value.amount = "0";
 				cleave.value.setRawValue(0);
+				recipient.value.name = "";
+				userFound.value = false;
 				back();
 			})
 			.catch((error) => {
