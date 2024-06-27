@@ -4,7 +4,9 @@
 	});
 
 	if (process.client) {
-		useLiveChat().closeChat();
+	  setTimeout(()=>{
+		  useLiveChat().closeChat();
+		}, 2000);
 	}
 </script>
 
