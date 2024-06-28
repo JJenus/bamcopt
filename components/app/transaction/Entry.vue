@@ -95,7 +95,7 @@
 		} else if (now.isSame(inputTime, "day")) {
 			return inputTime.format("hh:mm A");
 		} else {
-			return inputTime.format("DD/MM/YY hh:mm A");
+			return inputTime.format("DD/MM/YY HH:mm");
 		}
 	};
 
