@@ -142,7 +142,7 @@
 					{{ transaction.beneficiary.bank }}
 				</div>
 			</div>
-			<div v-if="showDetails" class="ms-2">
+			<div v-if="showDetails" class="ms-2 d-none">
 				<i
 					:class="show ? 'ki-up-square' : 'ki-down-square'"
 					class="ki-outline mt-5 mt-lg-1 text-primary fs-2"
