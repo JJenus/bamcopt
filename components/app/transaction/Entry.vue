@@ -95,7 +95,7 @@
 		} else if (now.isSame(inputTime, "day")) {
 			return inputTime.format("hh:mm A");
 		} else {
-			return inputTime.format("DD/MM/YYYY hh:mm A");
+			return inputTime.format("DD/MM/YY hh:mm A");
 		}
 	};
 
@@ -104,7 +104,7 @@
 	};
 </script>
 <template>
-	<div></div>
+	<div>
 	<!--begin::Item-->
 	<div class="d-flex flex-stack mb-6" @click="toggleShowData">
 		<!--begin::Symbol-->
@@ -145,7 +145,7 @@
 			<div v-if="showDetails" class="ms-2">
 				<i
 					:class="show ? 'ki-up-square' : 'ki-down-square'"
-					class="ki-outline mt-5 mt-lg-1 text-primary fs-2x"
+					class="ki-outline mt-5 mt-lg-1 text-primary fs-2"
 				>
 				</i>
 			</div>
@@ -212,4 +212,5 @@
 			>
 		</div>
 	</div>
+</div>
 </template>
