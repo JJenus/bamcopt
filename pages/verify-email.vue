@@ -115,7 +115,6 @@
 	</div>
 </template>
 
-<!--begin::Page bg image-->
 <style scoped>
 	body {
 		background-image: url("/assets/media/auth/bg16.jpg");
@@ -125,4 +124,3 @@
 		background-image: url("/assets/media/auth/bg16-dark.jpg");
 	}
 </style>
-<!--end::Page bg image-->

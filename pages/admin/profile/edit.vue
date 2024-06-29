@@ -1,12 +1,11 @@
 <script setup lang="ts">
 	const user = userData().data;
-	const save = () =>{
+	const save = () => {
 		successAlert("Saved");
-	}
+	};
 </script>
 
 <template>
-	<!--begin::Content-->
 	<div id="kt_account_settings_profile_details" class="collapse show">
 		<!--begin::Form-->
 		<form
@@ -355,5 +354,4 @@
 		</form>
 		<!--end::Form-->
 	</div>
-	<!--end::Content-->
 </template>

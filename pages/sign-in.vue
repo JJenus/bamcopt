@@ -85,7 +85,6 @@
 	});
 </script>
 <template>
-	<!--begin::Root-->
 	<div class="d-flex card flex-column flex-root border">
 		<!--begin::Authentication - Sign-in -->
 		<div class="d-flex card-body flex-column flex-lg-row flex-column-fluid">
@@ -265,5 +264,4 @@
 		</div>
 		<!--end::Authentication - Sign-in-->
 	</div>
-	<!--end::Root-->
 </template>

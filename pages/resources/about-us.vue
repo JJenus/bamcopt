@@ -7,7 +7,6 @@
 </script>
 
 <template>
-	<!--begin::About main-->
 	<div class="d-flex flex-column flex-xl-row">
 		<!--begin::Content-->
 		<div class="card border-0 bg-transparent mb-8 mb-xl-0 pb-lg-18">
@@ -778,5 +777,4 @@
 		</div>
 		<!--end::Sidebar-->
 	</div>
-	<!--end::About main-->
 </template>

@@ -30,43 +30,45 @@
 </script>
 
 <template>
-	<!--begin::Engage widget 12-->
-	<div
-		class="card card-custom bg-light-success border-0 h-md-100 mb-5 mb-lg-10"
-	>
-		<!--begin::Body-->
+	<div>
+		<!--begin::Engage widget 12-->
 		<div
-			class="card-body d-flex justify-content-center flex-wrap ps-xl-15 pe-0"
+			class="card card-custom bg-light-success border-0 h-md-100 mb-5 mb-lg-10"
 		>
-			<!--begin::Wrapper-->
-			<div class="flex-grow-1 mt-2 me-9 me-md-0">
-				<!--begin::Title-->
-				<div
-					class="position-relative text-gray-800 fs-1 z-index-2 fw-bold mb-5"
-				>
-					{{ greet() }}
+			<!--begin::Body-->
+			<div
+				class="card-body d-flex justify-content-center flex-wrap ps-xl-15 pe-0"
+			>
+				<!--begin::Wrapper-->
+				<div class="flex-grow-1 mt-2 me-9 me-md-0">
+					<!--begin::Title-->
+					<div
+						class="position-relative text-gray-800 fs-1 z-index-2 fw-bold mb-5"
+					>
+						{{ greet() }}
+					</div>
+					<!--end::Title-->
+
+					<AdminBalance class="d-lg-none mb-8" />
+
+					<!--begin::Action-->
 				</div>
-				<!--end::Title-->
+				<!--begin::Wrapper-->
 
-				<AdminBalance class="d-lg-none mb-8" />
-
-				<!--begin::Action-->
+				<!--begin::Illustration-->
+				<img
+					src="/assets/media/illustrations/misc/credit-card.png"
+					class="h-175px me-15"
+					alt=""
+				/>
+				<!--end::Illustration-->
 			</div>
-			<!--begin::Wrapper-->
-
-			<!--begin::Illustration-->
-			<img
-				src="/assets/media/illustrations/misc/credit-card.png"
-				class="h-175px me-15"
-				alt=""
-			/>
-			<!--end::Illustration-->
+			<!--end::Body-->
 		</div>
-		<!--end::Body-->
-	</div>
-	<!--end::Engage widget 12-->
+		<!--end::Engage widget 12-->
 
-	<!--begin::Chart widget 36-->
-	<div class="card card-flush overflow-hidden"></div>
-	<!--end::Chart widget 36-->
+		<!--begin::Chart widget 36-->
+		<div class="card card-flush overflow-hidden"></div>
+		<!--end::Chart widget 36-->
+	</div>
 </template>

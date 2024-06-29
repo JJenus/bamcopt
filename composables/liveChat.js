@@ -1,11 +1,16 @@
 export const useLiveChat = () => {
 	const openChat = () => {
-		window.jivo_init();
-		window.jivo_api.open();
+		try {
+		} catch (error) {
+			window.jivo_init();
+			window.jivo_api.open();
+		}
 	};
 
 	const closeChat = () => {
-		window.jivo_destroy();
+		try {
+			window.jivo_destroy();
+		} catch (error) {}
 	};
 
 	const load = () => {

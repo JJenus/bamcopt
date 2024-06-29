@@ -65,7 +65,6 @@
 </script>
 
 <template>
-	<!--begin::Engage widget 12-->
 	<div class="card card-custom border-0 min-h-500px h-md-100 mb-5 mb-lg-10">
 		<!--begin::Body-->
 		<div class="card-body ps-xl-15">
@@ -150,5 +149,4 @@
 		</div>
 		<!--end::Body-->
 	</div>
-	<!--end::Engage widget 12-->
 </template>

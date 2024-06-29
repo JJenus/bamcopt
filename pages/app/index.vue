@@ -30,66 +30,66 @@
 </script>
 
 <template>
-	<!--begin::Engage widget 12-->
-	<div
-		class="card card-custom bg-light-success border-0 h-md-100 mb-5 mb-lg-10"
-	>
-		<!--begin::Body-->
+	<div>
 		<div
-			class="card-body d-flex justify-content-center flex-wrap ps-xl-15 pe-0"
+			class="card card-custom bg-light-success border-0 h-md-100 mb-5 mb-lg-10"
 		>
-			<!--begin::Wrapper-->
-			<div class="flex-grow-1 mt-2 me-9 me-md-0">
-				<!--begin::Title-->
-				<div
-					class="position-relative text-gray-800 fs-1 z-index-2 fw-bold mb-5"
-				>
-					{{ greet() }}
+			<!--begin::Body-->
+			<div
+				class="card-body d-flex justify-content-center flex-wrap ps-xl-15 pe-0"
+			>
+				<!--begin::Wrapper-->
+				<div class="flex-grow-1 mt-2 me-9 me-md-0">
+					<!--begin::Title-->
+					<div
+						class="position-relative text-gray-800 fs-1 z-index-2 fw-bold mb-5"
+					>
+						{{ greet() }}
+					</div>
+					<!--end::Title-->
+
+					<AppBalance class="d-lg-none mb-8" />
+
+					<!--begin::Action-->
 				</div>
+				<!--begin::Wrapper-->
+
+				<!--begin::Illustration-->
+				<img
+					src="/assets/media/illustrations/misc/credit-card.png"
+					class="h-175px me-15"
+					alt=""
+				/>
+				<!--end::Illustration-->
+			</div>
+			<!--end::Body-->
+		</div>
+		<!--end::Engage widget 12-->
+
+		<!--begin::Chart widget 36-->
+		<div class="card card-flush overflow-hidden">
+			<!--begin::Header-->
+			<div class="card-header pt-5">
+				<!--begin::Title-->
+				<h3 class="card-title align-items-start flex-column d-none">
+					<span class="card-label fw-bold text-dark"
+						>Payment Requests</span
+					>
+					<span class="text-gray-400 mt-1 fw-semibold fs-6">
+						0 requests today
+					</span>
+				</h3>
 				<!--end::Title-->
 
-				<AppBalance class="d-lg-none mb-8" />
-
-				<!--begin::Action-->
+				<!--begin::Toolbar-->
+				<div class="card-toolbar"></div>
+				<!--end::Toolbar-->
 			</div>
-			<!--begin::Wrapper-->
+			<!--end::Header-->
 
-			<!--begin::Illustration-->
-			<img
-				src="/assets/media/illustrations/misc/credit-card.png"
-				class="h-175px me-15"
-				alt=""
-			/>
-			<!--end::Illustration-->
+			<!--begin::Card body-->
+			<div class="card-body d-flex align-items-end p-0"></div>
+			<!--end::Card body-->
 		</div>
-		<!--end::Body-->
 	</div>
-	<!--end::Engage widget 12-->
-
-	<!--begin::Chart widget 36-->
-	<div class="card card-flush overflow-hidden">
-		<!--begin::Header-->
-		<div class="card-header pt-5">
-			<!--begin::Title-->
-			<h3 class="card-title align-items-start flex-column d-none">
-				<span class="card-label fw-bold text-dark"
-					>Payment Requests</span
-				>
-				<span class="text-gray-400 mt-1 fw-semibold fs-6">
-					0 requests today
-				</span>
-			</h3>
-			<!--end::Title-->
-
-			<!--begin::Toolbar-->
-			<div class="card-toolbar"></div>
-			<!--end::Toolbar-->
-		</div>
-		<!--end::Header-->
-
-		<!--begin::Card body-->
-		<div class="card-body d-flex align-items-end p-0"></div>
-		<!--end::Card body-->
-	</div>
-	<!--end::Chart widget 36-->
 </template>

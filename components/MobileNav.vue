@@ -10,7 +10,6 @@
 	const config = useRuntimeConfig().public;
 </script>
 <template>
-	<!--begin::Activities drawer-->
 	<div
 		id="kt_activities"
 		class="bg-body"
@@ -96,5 +95,4 @@
 			<!--end::Footer-->
 		</div>
 	</div>
-	<!--end::Activities drawer-->
 </template>

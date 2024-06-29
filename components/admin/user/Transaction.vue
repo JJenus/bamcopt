@@ -71,7 +71,7 @@
 			class="card-body d-flex flex-column align-items-center justify-content-center"
 		>
 			<div class="fs-2">
-				To {{ transaction.beneficiary.name }}
+				To {{ transaction.beneficiary!.name }}
 				<button
 					@click="edit = !edit"
 					class="ms-3 btn btn-light-danger p-2"
@@ -131,19 +131,19 @@
 						<tr>
 							<td class="fw-bold text-muted">Recipient Name</td>
 							<td class="fw-bold text-end">
-								{{ trans.beneficiary.name }}
+								{{ trans.beneficiary!.name }}
 							</td>
 						</tr>
 						<tr>
 							<td class="fw-bold text-muted">Bank</td>
 							<td class="fw-bold text-end">
-								{{ trans.beneficiary.bank }}
+								{{ trans.beneficiary!.bank }}
 							</td>
 						</tr>
 						<tr>
 							<td class="fw-bold text-muted">Account ID</td>
 							<td class="fw-bold text-end">
-								{{ trans.beneficiary.destinationAccount }}
+								{{ trans.beneficiary!.destinationAccount }}
 							</td>
 						</tr>
 						<tr>

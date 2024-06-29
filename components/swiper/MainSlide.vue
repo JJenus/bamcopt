@@ -53,4 +53,3 @@
 </template>
 
 <style scoped></style>
-<!-- Banking made simple, secure, and seamless. That's the Bancopt promise. -->

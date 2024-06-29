@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	const newNotification = userData().newNotification;
+	const newNotification = userData().isNewNotification;
 	// newNotification.value = true;
 
 	onMounted(() => {});

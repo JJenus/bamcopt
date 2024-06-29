@@ -12,10 +12,10 @@ export default defineNuxtRouteMiddleware((to, from) => {
 		return navigateTo("sign-in");
 	}
 
-	// if (
-	// 	!useAuth().isAuthenticated() ||
-	// 	useAuth().userData.value?.user.userType !== "user"
-	// ) {
-	// 	return useAuth().logout();
-	// }
+	if (
+		!useAuth().isAuthenticated() ||
+		useAuth().userData.value?.user.userType !== "user"
+	) {
+		return useAuth().logout();
+	}
 });

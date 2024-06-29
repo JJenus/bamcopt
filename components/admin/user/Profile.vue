@@ -1,4 +1,3 @@
-import { log } from 'console'; import { verify } from 'crypto';
 <script setup lang="ts">
 	import { IUser } from "utils/interfaces/IUser";
 	import axios, {

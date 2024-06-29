@@ -11,7 +11,6 @@
 </script>
 
 <template>
-	<!--begin::Activities drawer-->
 	<div
 		id="kt_activities"
 		class="bg-body mobile-aside"
@@ -79,5 +78,4 @@
 			<!--end::Footer-->
 		</div>
 	</div>
-	<!--end::Activities drawer-->
 </template>

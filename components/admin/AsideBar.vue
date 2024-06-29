@@ -2,7 +2,7 @@
 	import moment from "moment";
 	import { IUser } from "utils/interfaces/IUser";
 
-	const newNotification = userData().newNotification;
+	const newNotification = userData().isNewNotification;
 
 	const users = userData().users;
 	const range = ref(7);

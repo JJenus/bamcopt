@@ -15,7 +15,6 @@
 </script>
 
 <template>
-	<!--begin::Card-->
 	<div class="card user" bis_skin_checked="1">
 		<!--begin::Card body-->
 		<div
@@ -98,5 +97,4 @@
 		</div>
 		<!--begin::Card body-->
 	</div>
-	<!--begin::Card-->
 </template>

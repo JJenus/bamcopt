@@ -3,8 +3,6 @@
 </script>
 
 <template>
-	<!--begin::Footer container-->
-	<!-- -->
 	<div
 		style="border-radius: 0"
 		class="app-containeri container-fluidi fs-5 pt-10 mt-10 py-3"
@@ -113,5 +111,4 @@
 			</div>
 		</div>
 	</div>
-	<!--end::Footer container-->
 </template>
