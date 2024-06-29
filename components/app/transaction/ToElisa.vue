@@ -90,7 +90,7 @@
 					v-if="searching"
 					class="spinner-border spinner-border-sm text-muted"
 				></span>
-				<span class="fs-sm" v-if="userFound === false && !searching"
+				<span class="fs-sm" v-if="userFound === false && !searching && bank == AppName"
 					>User doesn't exist</span
 				>
 			</div>

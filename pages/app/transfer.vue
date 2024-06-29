@@ -194,16 +194,13 @@
 				active.value == banks.value.bancopt
 					? TransactionTypes.SEND
 					: TransactionTypes.DEBIT;
+      
+      console.log("Bank", active.value);
 			if (active.value == banks.value.bancopt) {
-				console.log("Bancopt");
 				transaction.value.receiverId = recipient.value.id;
 				transaction.value.beneficiary!.userId = recipient.value.id;
 			}
-			transaction.value.beneficiary!.userId =
-				active.value == banks.value.bancopt
-					? recipient.value.id
-					: userData().data.value.id;
-
+			
 			transaction.value.beneficiary!.bank = active.value;
 			transaction.value.beneficiary!.destinationAccount =
 				recipient.value.email;
