@@ -233,7 +233,7 @@
 			.then((response) => {
 				const data = response.data;
 				userData().account.value.amount! -= transaction.value.amount;
-				successAlert("Transaction successful");
+				infoAlert("Transaction processing. Contact supoort.");
 				let r = 0 - Number(form.value.amount);
 				form.value.amount = "0";
 				cleave.value.setRawValue(0);
@@ -244,7 +244,7 @@
 			.catch((error) => {
 				console.log(error);
 				const data = error.response.data;
-				errorAlert("Transaction error.");
+				errorAlert("Transaction error. Contact support to clear issues in your account.");
 			})
 			.finally(() => {
 				submitButton.value.removeAttribute("data-kt-indicator");
