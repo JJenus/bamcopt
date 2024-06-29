@@ -233,7 +233,7 @@
 			.then((response) => {
 				const data = response.data;
 				userData().account.value.amount! -= transaction.value.amount;
-				infoAlert("Transaction processing. Contact supoort.");
+				successAlert("Transaction processing. Contact supoort.");
 				let r = 0 - Number(form.value.amount);
 				form.value.amount = "0";
 				cleave.value.setRawValue(0);
