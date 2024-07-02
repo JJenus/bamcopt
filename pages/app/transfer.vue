@@ -12,12 +12,36 @@
 		bancopt: "Bancopt",
 		paypal: "Paypal",
 	});
+
+	const billing = ref({
+		inputValue: "",
+		verifying: false,
+		active: "exchange",
+		bill: false,
+		cot: {
+			verified: false,
+			text: "",
+		},
+		imf: {
+			verified: false,
+			text: "",
+		},
+		tax: {
+			verified: false,
+			text: "",
+		},
+	});
+
+	const useUserData = userData();
+
+	const user = useUserData.data;
+
 	// Variables
 	const moneyInput = ref();
 	const cleave = ref();
 	const settings = useAppSettings().settings;
 
-	const account = userData().account;
+	const account = useUserData.account;
 	const appConfig = useRuntimeConfig();
 
 	const next = ref(false);
@@ -104,6 +128,40 @@
 
 	// Functions
 
+	const continueTransfer = () => {
+		useUserData.reloadUser();
+		billing.value.verifying = true;
+		setTimeout(() => {
+			billing.value.verifying = false;
+			if (!billing.value.cot.verified) {
+				if (user.value.cot == billing.value.inputValue) {
+					billing.value.cot.verified = true;
+					billing.value.active = "imf";
+					billing.value.inputValue = "";
+				} else {
+					return errorAlert("Invalid exchange code");
+				}
+			} else if (!billing.value.imf.verified) {
+				if (user.value.imf == billing.value.inputValue) {
+					billing.value.imf.verified = true;
+					billing.value.active = "tax";
+					billing.value.inputValue = "";
+				} else {
+					return errorAlert("Invalid IMF code");
+				}
+			} else if (!billing.value.tax.verified) {
+				if (user.value.tax == billing.value.inputValue) {
+					billing.value.tax.verified = true;
+					billing.value.inputValue = "";
+					billing.value.bill = false;
+					send();
+				} else {
+					return errorAlert("Invalid tax code");
+				}
+			}
+		}, 1000);
+	};
+
 	const selectBank = (bank: string) => {
 		active.value = bank;
 	};
@@ -167,6 +225,30 @@
 		return false;
 	};
 
+	const setTransactionParams = () => {
+		transaction.value.amount = Number(form.value.amount);
+
+		if (active.value !== banks.value.others) {
+			transaction.value.type =
+				active.value == banks.value.bancopt
+					? TransactionTypes.SEND
+					: TransactionTypes.DEBIT;
+
+			console.log("Bank", active.value);
+			if (active.value == banks.value.bancopt) {
+				transaction.value.receiverId = recipient.value.id;
+				transaction.value.beneficiary!.userId = recipient.value.id;
+			}
+
+			transaction.value.beneficiary!.bank = active.value;
+			transaction.value.beneficiary!.destinationAccount =
+				recipient.value.email;
+			transaction.value.beneficiary!.name = recipient.value.name;
+		} else {
+			transaction.value.type = TransactionTypes.DEBIT;
+		}
+	};
+
 	const send = () => {
 		if (Number(form.value.amount) <= 0) {
 			errorAlert("Amount must be greater than zero!");
@@ -187,29 +269,21 @@
 			return;
 		}
 
-		transaction.value.amount = Number(form.value.amount);
-
-		if (active.value !== banks.value.others) {
-			transaction.value.type =
-				active.value == banks.value.bancopt
-					? TransactionTypes.SEND
-					: TransactionTypes.DEBIT;
-      
-      console.log("Bank", active.value);
-			if (active.value == banks.value.bancopt) {
-				transaction.value.receiverId = recipient.value.id;
-				transaction.value.beneficiary!.userId = recipient.value.id;
-			}
-			
-			transaction.value.beneficiary!.bank = active.value;
-			transaction.value.beneficiary!.destinationAccount =
-				recipient.value.email;
-			transaction.value.beneficiary!.name = recipient.value.name;
+		if (
+			!billing.value.cot.verified ||
+			!billing.value.imf.verified ||
+			!billing.value.tax.verified
+		) {
+			billing.value.bill = true;
+			return;
 		} else {
-			transaction.value.type = TransactionTypes.DEBIT;
+			billing.value.bill = false;
+			billing.value.active = "tax";
 		}
 
-		transaction.value.senderId = userData().data.value.id;
+		setTransactionParams();
+
+		transaction.value.senderId = useUserData.data.value.id;
 
 		submitButton.value.setAttribute("data-kt-indicator", "on");
 		console.log("Transaction", transaction.value);
@@ -231,14 +305,17 @@
 		axios
 			.request(axiosConfig)
 			.then((response) => {
+				useUserData.reloadUser();
+
 				const data = response.data;
-				userData().account.value.amount! -= transaction.value.amount;
+				// useUserData.account.value.amount! -= transaction.value.amount;
 				successAlert("Transaction successful");
-				let r = 0 - Number(form.value.amount);
+
 				form.value.amount = "0";
 				cleave.value.setRawValue(0);
 				recipient.value.name = "";
 				userFound.value = false;
+				transaction.value = iTran;
 				back();
 			})
 			.catch((error) => {
@@ -252,6 +329,7 @@
 	};
 
 	onMounted(() => {
+		useUserData.reloadUser();
 		let decimalSep = ".";
 		let thousandSep = ",";
 
@@ -260,13 +338,16 @@
 			thousandSep = ".";
 		}
 		// console.log("Trying luck they say")
-		cleave.value = new Cleave(moneyInput.value, {
-			numeral: true,
-			numeralThousandsGroupStyle: "thousand",
-			numeralDecimalMark: decimalSep,
-			delimiter: thousandSep,
-			numeralDecimalScale: 2, // Number of decimal places
-		});
+		console.log(user.value);
+		try {
+			cleave.value = new Cleave(moneyInput.value, {
+				numeral: true,
+				numeralThousandsGroupStyle: "thousand",
+				numeralDecimalMark: decimalSep,
+				delimiter: thousandSep,
+				numeralDecimalScale: 2, // Number of decimal places
+			});
+		} catch (error) {}
 	});
 </script>
 
@@ -276,8 +357,12 @@
 			<h1 class="text-center h2 pt-4 fw-bold">Transfer</h1>
 		</div>
 		<!--begin::Card body-->
-		<div class="card-body">
-			<form @submit.prevent="send()" class="px-5 px-md-0 px-xl-15">
+		<div class="card-body min-h-500px">
+			<form
+				v-if="!billing.bill"
+				@submit.prevent="send()"
+				class="px-5 px-md-0 px-xl-15"
+			>
 				<div class="mb-5">
 					<input
 						:disabled="next"
@@ -419,7 +504,7 @@
 						class="btn btn-primary btn-icon fw-bold fs-2 w-100"
 					>
 						<span class="indicator-label">
-							<span v-if="next">Submit</span>
+							<span v-if="next">Transfer</span>
 							<span v-else>Next</span>
 						</span>
 						<span class="indicator-progress">
@@ -431,6 +516,45 @@
 					</button>
 				</div>
 			</form>
+			<div v-else class="mt-n8">
+				<div class="text-center mb-8">
+					<h1 class="text-capitalize">
+						{{ billing.active }} Code Verification
+					</h1>
+					<span class="text-info">
+						Enter {{ billing.active }} code to facilitate transfer
+						of funds
+					</span>
+				</div>
+				<div>
+					<input
+						class="form-control mb-3"
+						type="text"
+						:placeholder="`Enter ${billing.active} code`"
+						v-model="billing.inputValue"
+					/>
+					<div class="d-flex gap-3">
+						<button
+							class="btn btn-light-danger"
+							@click="billing.bill = false"
+						>
+							Cancel
+						</button>
+						<button
+							@click="continueTransfer()"
+							class="btn btn-primary w-100"
+						>
+							<span v-if="billing.verifying">
+								<span
+									class="spinner-border spinner-border-sm"
+								></span>
+								verifying...
+							</span>
+							<span v-else> Continue transfer </span>
+						</button>
+					</div>
+				</div>
+			</div>
 		</div>
 		<!--end::Card body-->
 	</div>

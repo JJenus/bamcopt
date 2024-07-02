@@ -3,10 +3,17 @@
 		middleware: ["auth"],
 	});
 
+	useHead({
+		script: [
+			{
+				src: "//code.jivosite.com/widget/PDfF9tRuON",
+				async: true,
+			},
+		],
+	});
+
 	if (process.client) {
-	  setTimeout(()=>{
-		  useLiveChat().closeChat();
-		}, 2000);
+		useLiveChat().closeChat();
 	}
 </script>
 

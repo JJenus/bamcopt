@@ -90,10 +90,6 @@
 				</button>
 			</div>
 			<!--end::Info-->
-
-			<!--begin::Follow-->
-
-			<!--end::Follow-->
 		</div>
 		<!--begin::Card body-->
 	</div>

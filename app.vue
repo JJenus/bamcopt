@@ -5,14 +5,7 @@
 		ID: "Zc7Mk9Zyk8EBqxpYZ",
 	};
 
-	useHead({
-		script: [
-			{
-				src: "//code.jivosite.com/widget/PDfF9tRuON",
-				async: true,
-			},
-		],
-	});
+	
 </script>
 
 <template>

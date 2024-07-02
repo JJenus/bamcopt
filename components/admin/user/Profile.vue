@@ -7,6 +7,7 @@
 	} from "axios";
 
 	const props = defineProps<{ user: IUser }>();
+	const iUser = props.user;
 	const tiers = useAppSettings().accountLevels;
 
 	const appConfig = useRuntimeConfig();
@@ -119,7 +120,21 @@
 				console.log(error);
 			});
 	};
-	fetchTransactions();
+
+	const updateCodes = () => {
+		const data = copyNonEmptyProperties(iUser);
+		save(data, `users/${iUser.id}`);
+	};
+
+	const autoGenCodes = () => {
+		iUser.cot = generateCode(4);
+		iUser.imf = generateCode(4);
+		iUser.tax = generateCode(4);
+	};
+
+	onMounted(() => {
+		fetchTransactions();
+	});
 </script>
 <template>
 	<div>
@@ -144,7 +159,7 @@
 					@click="verify()"
 					ref="submitButton"
 					v-if="!user?.verified"
-					class="btn btn-light-primary"
+					class="btn btn-secondary"
 				>
 					<!--begin::Indicator label-->
 					<span class="indicator-label">
@@ -443,10 +458,67 @@
 				class="card-header cursor-pointer align-items-center"
 				bis_skin_checked="1"
 			>
+				<div class="card-title m-0" bis_skin_checked="1">
+					<h3 class="fw-bold m-0">Billing Codes</h3>
+				</div>
+				<button @click="autoGenCodes()" class="btn btn-primary">
+					Generate
+				</button>
+			</div>
+			<!--begin::Card header-->
+
+			<div class="card-body">
+				<form @submit.prevent="updateCodes()">
+					<div class="mb-3">
+						<label class="form-label" for="">COT</label>
+						<input
+							type="text"
+							class="form-control"
+							v-model="iUser.cot"
+						/>
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="">IMF</label>
+						<input
+							type="text"
+							class="form-control"
+							v-model="iUser.imf"
+						/>
+					</div>
+					<div class="mb-5">
+						<label class="form-label" for="">Tax</label>
+						<input
+							type="text"
+							class="form-control"
+							v-model="iUser.tax"
+						/>
+					</div>
+
+					<div class="mb-3">
+						<button type="submit" class="btn btn-primary w-100">
+							<span v-if="!loading" class="">Save</span>
+							<span
+								v-else
+								class="spinner-border spinner-border-sm"
+							></span>
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<div class="card mb-5">
+			<!--begin::Card header-->
+			<div
+				class="card-header cursor-pointer position-relative"
+				bis_skin_checked="1"
+			>
 				<!--begin::Card title-->
-				<div class="d-flex align-items-center justify-content-center">
+				<div
+					class="d-flex align-items-center justify-content-between flex-wrap gap-5"
+				>
 					<h3 class="fw-bold m-0">Transactions</h3>
-					<div class="position-relative my-1 ms-5">
+					<div class="position-relative my-1 ms-auto">
 						<i
 							class="ki-outline ki-magnifier fs-2 position-absolute top-50 translate-middle-y ms-4"
 						></i
@@ -462,6 +534,13 @@
 				<!--end::Card title-->
 			</div>
 			<!--begin::Card header-->
+
+			<div
+				class="card-body fs-2 text-muted text-center"
+				v-if="transactions.length < 1"
+			>
+				No transactions found
+			</div>
 		</div>
 
 		<div class="row g-8">
@@ -472,8 +551,5 @@
 				<AdminUserTransaction :transaction="transact" />
 			</div>
 		</div>
-		<span class="fs-2 text-muted" v-if="transactions.length < 1">
-			No transactions found
-		</span>
 	</div>
 </template>

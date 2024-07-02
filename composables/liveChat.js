@@ -8,9 +8,11 @@ export const useLiveChat = () => {
 	};
 
 	const closeChat = () => {
-		try {
-			window.jivo_destroy();
-		} catch (error) {}
+		setTimeout(() => {
+			try {
+				window.jivo_destroy();
+			} catch (error) {}
+		}, 2000);
 	};
 
 	const load = () => {

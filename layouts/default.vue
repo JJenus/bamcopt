@@ -1,6 +1,15 @@
 <script setup>
 	import MainMobileNav from "../components/MainMobileNav.vue";
 
+	useHead({
+		script: [
+			{
+				src: "//code.jivosite.com/widget/PDfF9tRuON",
+				async: true,
+			},
+		],
+	});
+
 	const config = useRuntimeConfig().public;
 
 	if (process.client) {

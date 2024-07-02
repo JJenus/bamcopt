@@ -41,6 +41,9 @@ export const userData = () => {
 		userType: "",
 		createdAt: "",
 		idUrl: undefined,
+		cot: undefined,
+		imf: undefined,
+		tax: undefined,
 	};
 
 	const transactions = useState<any[]>("user-transactions", () => []);
@@ -98,6 +101,38 @@ export const userData = () => {
 					);
 
 				// console.log(users.value);
+			})
+			.catch((error) => {
+				// console.log(error);
+				const data = error.response.data;
+				if (
+					data.message.includes("Access denied") ||
+					error.response.status === 401
+				) {
+					// console.log("Access denied");
+				}
+			});
+	};
+
+	const reloadUser = () => {
+		if (!useAuth().userData.value?.user) {
+			navigateTo("/sign-in");
+		}
+		const axiosConfig: AxiosRequestConfig = {
+			method: "get",
+			url: `${useRuntimeConfig().public.BE_API}/users/${data.value.id}`,
+			timeout: 20000,
+			headers: {
+				Authorization: "Bearer " + useAuth().userData.value?.token,
+			},
+		};
+
+		axios
+			.request(axiosConfig)
+			.then((response: AxiosResponse<IUser, any>) => {
+				data.value = response.data;
+
+				console.log(response.data);
 			})
 			.catch((error) => {
 				// console.log(error);
@@ -210,5 +245,6 @@ export const userData = () => {
 		fetchBalance,
 		getNotifications,
 		showNotifications,
+		reloadUser,
 	};
 };

@@ -7,6 +7,10 @@
 	if (process.client) {
 		// $crisp.push(["do", "chat:hide"]);
 	}
+
+	if (process.client) {
+		useLiveChat().closeChat();
+	}
 </script>
 
 <template>

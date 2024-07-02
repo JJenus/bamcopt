@@ -52,6 +52,7 @@ declare global {
   const effect: typeof import('vue')['effect']
   const effectScope: typeof import('vue')['effectScope']
   const errorAlert: typeof import('../../utils/showAlert')['errorAlert']
+  const generateCode: typeof import('../../utils/util')['generateCode']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
   const h: typeof import('vue')['h']
@@ -228,6 +229,7 @@ declare module 'vue' {
     readonly effect: UnwrapRef<typeof import('vue')['effect']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly errorAlert: UnwrapRef<typeof import('../../utils/showAlert')['errorAlert']>
+    readonly generateCode: UnwrapRef<typeof import('../../utils/util')['generateCode']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
@@ -397,6 +399,7 @@ declare module '@vue/runtime-core' {
     readonly effect: UnwrapRef<typeof import('vue')['effect']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly errorAlert: UnwrapRef<typeof import('../../utils/showAlert')['errorAlert']>
+    readonly generateCode: UnwrapRef<typeof import('../../utils/util')['generateCode']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly h: UnwrapRef<typeof import('vue')['h']>

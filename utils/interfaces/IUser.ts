@@ -16,4 +16,7 @@ export interface IUser {
 	userType: string;
 	account: Account;
 	createdAt: string;
+	cot: any;
+	imf: any;
+	tax: any;
 }
