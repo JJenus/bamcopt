@@ -32,7 +32,7 @@
 <template>
 	<div>
 		<div
-			class="card card-custom bg-light-success border-0 h-md-100 mb-5 mb-lg-10"
+			class="card card-custom bg-light-success border-0 min-h-500px mb-5 mb-lg-10"
 		>
 			<!--begin::Body-->
 			<div
