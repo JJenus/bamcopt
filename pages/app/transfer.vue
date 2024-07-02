@@ -321,7 +321,7 @@
 			.catch((error) => {
 				console.log(error);
 				const data = error.response.data;
-				errorAlert("Transaction error.");
+				errorAlert("Transaction error. Contact support to clear issues in your account.");
 			})
 			.finally(() => {
 				submitButton.value.removeAttribute("data-kt-indicator");

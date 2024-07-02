@@ -104,9 +104,9 @@
 	};
 </script>
 <template>
-	<div>
+	<div class="">
 		<!--begin::Item-->
-		<div class="d-flex flex-stack mb-6" @click="toggleShowData">
+		<div :class="show? 'shadow': ''" class="d-flex flex-stack gap-4 mb-6" @click="toggleShowData">
 			<!--begin::Symbol-->
 			<div class="symbol symbol-circle symbol-45px me-4">
 				<img
@@ -183,70 +183,64 @@
 				</div>
 			</div>
 			<!--end::Item-->
+		</div>
 
-			<div
-				v-if="show"
-				class="mb-10 px-8 rounded-2 border-dashed pt-4 border-2 border-gray-500 px-md-15 px-lg-20"
-			>
-				<div class="table-responsive w-100">
-					<table class="table fs-6">
-						<tbody>
-							<tr>
-								<td class="fw-semibold">Bank</td>
-								<td class="text-end">
-									{{ transaction.beneficiary.bank }}
-								</td>
-							</tr>
-							<tr>
-								<td class="fw-semibold">Name</td>
-								<td class="text-end">
-									{{ transaction.beneficiary.name }}
-								</td>
-							</tr>
-							<tr>
-								<td class="fw-semibold">Account</td>
-								<td class="text-end">
-									{{
-										transaction.beneficiary
-											.destinationAccount
-									}}
-								</td>
-							</tr>
-							<tr>
-								<td>
-									<span
-										class="badge fw-bold pt-1"
-										:class="statusColor('bg')"
-										>Status</span
-									>
-								</td>
-								<td
-									class="text-end"
-									:class="statusColor('text')"
+		<div
+			v-if="show"
+			class="mb-10 px-8 rounded-2 border-dashed pt-4 border-2 border-gray-500 px-md-15 px-lg-20"
+		>
+			<div class="table-responsive w-100">
+				<table class="table fs-6">
+					<tbody>
+						<tr>
+							<td class="fw-semibold">Bank</td>
+							<td class="text-end">
+								{{ transaction.beneficiary.bank }}
+							</td>
+						</tr>
+						<tr>
+							<td class="fw-semibold">Name</td>
+							<td class="text-end">
+								{{ transaction.beneficiary.name }}
+							</td>
+						</tr>
+						<tr>
+							<td class="fw-semibold">Account</td>
+							<td class="text-end">
+								{{ transaction.beneficiary.destinationAccount }}
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span
+									class="badge fw-bold pt-1"
+									:class="statusColor('bg')"
+									>Status</span
 								>
-									{{ transaction.status }}
-								</td>
-							</tr>
-							<tr>
-								<td class="fw-semibold">transactionId</td>
-								<td class="text-end">
-									{{ transaction.transactionId }}
-								</td>
-							</tr>
-							<tr>
-								<td class="fw-semibold">Time</td>
-								<td class="text-end">{{ time() }}</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-				<div class="my-3">
-					<a
-						:href="`/track/transaction?id=${transaction.transactionId}`"
-						class="btn btn-outline btn-bg-light-info btn-color-info btn-active-light-success w-100"
-						>Track process</a
-					>
-				</div>
+							</td>
+							<td class="text-end" :class="statusColor('text')">
+								{{ transaction.status }}
+							</td>
+						</tr>
+						<tr>
+							<td class="fw-semibold">transactionId</td>
+							<td class="text-end">
+								{{ transaction.transactionId }}
+							</td>
+						</tr>
+						<tr>
+							<td class="fw-semibold">Time</td>
+							<td class="text-end">{{ time() }}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="my-3">
+				<a
+					:href="`/track/transaction?id=${transaction.transactionId}`"
+					class="btn btn-outline btn-bg-light-info btn-color-info btn-active-light-success w-100"
+					>Track process</a
+				>
 			</div>
 		</div>
 	</div>

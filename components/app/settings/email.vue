@@ -1,11 +1,30 @@
-<script setup>
+<script setup lang="ts">
+	type ISetting = {
+		id: string;
+		name: string;
+		email: string;
+		bill: string;
+		news: string;
+		dispute: any;
+	};
+	const settings = useCookie<ISetting>("e-set", { maxAge: 15778800000 });
+	const iSet = ref<ISetting>({
+		id: "",
+		name: "",
+		email: "",
+		bill: "",
+		news: "",
+		dispute: "undefined",
+	});
+
 	const save = () => {
 		successAlert("Saved");
+		settings.value = iSet.value;
 	};
 </script>
 
 <template>
-	<div class="card mb-5 mb-xl-10">
+	<div class="card mb-5 mb-xl-10 d-none">
 		<!--begin::Card header-->
 		<div
 			class="card-header border-0 cursor-pointer"
@@ -65,6 +84,7 @@
 					>
 						<!--begin::Input-->
 						<input
+							v-model="iSet.email"
 							class="form-check-input me-3"
 							type="checkbox"
 							name="email-preferences[]"
@@ -96,6 +116,7 @@
 					>
 						<!--begin::Input-->
 						<input
+							v-model="iSet.news"
 							class="form-check-input me-3"
 							type="checkbox"
 							name="email-preferences[]"
@@ -128,6 +149,7 @@
 					>
 						<!--begin::Input-->
 						<input
+							v-model="iSet.bill"
 							class="form-check-input me-3"
 							type="checkbox"
 							name="email-preferences[]"
@@ -161,6 +183,7 @@
 					>
 						<!--begin::Input-->
 						<input
+							v-model="iSet.dispute"
 							class="form-check-input me-3"
 							type="checkbox"
 							name="email-preferences[]"
@@ -181,39 +204,6 @@
 						<!--end::Label-->
 					</label>
 					<!--end::Option-->
-
-					<!--begin::Option-->
-					<div class="separator separator-dashed my-6"></div>
-					<!--end::Option-->
-					<!--begin::Option-->
-					<label
-						class="form-check form-check-custom form-check-solid align-items-start"
-					>
-						<!--begin::Input-->
-						<input
-							class="form-check-input me-3"
-							type="checkbox"
-							name="email-preferences[]"
-							checked
-							value="1"
-						/>
-						<!--end::Input-->
-
-						<!--begin::Label-->
-						<span
-							class="form-check-label d-flex flex-column align-items-start"
-						>
-							<span class="fw-bold fs-5 mb-0"
-								>Invoice Payments</span
-							>
-							<span class="text-muted fs-6"
-								>Receive a notification if a customer sends an
-								incorrect amount to pay their invoice.</span
-							>
-						</span>
-						<!--end::Label-->
-					</label>
-					<!--end::Option-->
 				</div>
 				<!--end::Card body-->
 
@@ -222,7 +212,9 @@
 					<button class="btn btn-light btn-active-light-primary me-2">
 						Discard
 					</button>
-					<button class="btn btn-primary px-6">Save Changes</button>
+					<button @click="save()" class="btn btn-primary px-6">
+						Save Changes
+					</button>
 				</div>
 				<!--end::Card footer-->
 			</form>

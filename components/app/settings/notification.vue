@@ -1,6 +1,29 @@
-<script setup>
+<script setup lang="ts">
+	type ISetting = {
+		id: string;
+		name: string;
+		email: string;
+		bill: string;
+		news: string;
+		dispute: any;
+	};
+	const settings = useCookie<ISetting>("n-sett", { maxAge: 15778800000 });
+	const iSet = ref<ISetting>({
+		id: "",
+		name: "",
+		email: "",
+		bill: "",
+		news: "",
+		dispute: "",
+	});
+
+	if (!!settings.value) {
+		iSet.value = settings.value;
+	}
+
 	const save = () => {
 		successAlert("Saved");
+		settings.value = iSet.value;
 	};
 </script>
 <template>
@@ -34,7 +57,7 @@
 							<tbody class="fs-6 fw-semibold">
 								<!--begin::Table row-->
 								<tr>
-									<td class="min-w-250px fs-4 fw-bold">
+									<td class="min-w-200px fs-4 fw-bold">
 										Notifications
 									</td>
 									<td class="w-125px">
@@ -42,6 +65,7 @@
 											class="form-check form-check-custom form-check-solid"
 										>
 											<input
+												v-model="iSet.bill"
 												class="form-check-input"
 												type="checkbox"
 												value=""
@@ -50,33 +74,6 @@
 												data-kt-check="true"
 												data-kt-check-target="[data-kt-settings-notification=email]"
 											/>
-											<label
-												class="form-check-label ps-2"
-												for="kt_settings_notification_email"
-											>
-												Email
-											</label>
-										</div>
-									</td>
-									<td class="w-125px">
-										<div
-											class="form-check form-check-custom form-check-solid"
-										>
-											<input
-												class="form-check-input"
-												type="checkbox"
-												value=""
-												id="kt_settings_notification_phone"
-												checked
-												data-kt-check="true"
-												data-kt-check-target="[data-kt-settings-notification=phone]"
-											/>
-											<label
-												class="form-check-label ps-2"
-												for="kt_settings_notification_phone"
-											>
-												Phone
-											</label>
 										</div>
 									</td>
 								</tr>
@@ -84,40 +81,21 @@
 
 								<!--begin::Table row-->
 								<tr>
-									<td>Billing Updates</td>
+									<td>Email Updates</td>
 									<td>
 										<div
 											class="form-check form-check-custom form-check-solid"
 										>
 											<input
+												v-model="iSet.email"
 												class="form-check-input"
 												type="checkbox"
-												value="1"
 												id="billing1"
-												checked
 												data-kt-settings-notification="email"
 											/>
 											<label
 												class="form-check-label ps-2"
 												for="billing1"
-											></label>
-										</div>
-									</td>
-									<td>
-										<div
-											class="form-check form-check-custom form-check-solid"
-										>
-											<input
-												class="form-check-input"
-												type="checkbox"
-												value=""
-												id="billing2"
-												checked
-												data-kt-settings-notification="phone"
-											/>
-											<label
-												class="form-check-label ps-2"
-												for="billing2"
 											></label>
 										</div>
 									</td>
@@ -132,32 +110,15 @@
 											class="form-check form-check-custom form-check-solid"
 										>
 											<input
+												v-model="iSet.news"
 												class="form-check-input"
 												type="checkbox"
-												value=""
 												id="newsletter1"
 												data-kt-settings-notification="email"
 											/>
 											<label
 												class="form-check-label ps-2"
 												for="newsletter1"
-											></label>
-										</div>
-									</td>
-									<td class="border-bottom-0">
-										<div
-											class="form-check form-check-custom form-check-solid"
-										>
-											<input
-												class="form-check-input"
-												type="checkbox"
-												value=""
-												id="newsletter2"
-												data-kt-settings-notification="phone"
-											/>
-											<label
-												class="form-check-label ps-2"
-												for="newsletter2"
 											></label>
 										</div>
 									</td>
