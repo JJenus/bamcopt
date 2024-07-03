@@ -14,7 +14,7 @@
 
 	if (process.client) {
 		try {
-			console.log("Yes")
+			console.log("Yes");
 			const mS = useWebsocket();
 			mS.connect();
 			setTimeout(() => {
@@ -24,8 +24,34 @@
 	}
 
 	if (process.client) {
-		KTThemeMode.setMode("dark");
+		var defaultThemeMode = "light";
+		var themeMode;
+
+		if (document.documentElement) {
+			if (document.documentElement.hasAttribute("data-bs-theme-mode")) {
+				themeMode =
+					document.documentElement.getAttribute("data-bs-theme-mode");
+			} else {
+				if (localStorage.getItem("data-bs-theme") !== null) {
+					themeMode = localStorage.getItem("data-bs-theme");
+				} else {
+					themeMode = defaultThemeMode;
+				}
+			}
+
+			if (themeMode === "system") {
+				themeMode = window.matchMedia("(prefers-color-scheme: dark)")
+					.matches
+					? "dark"
+					: "light";
+			}
+
+			document.documentElement.setAttribute("data-bs-theme", themeMode);
+		}
+
+		KTThemeMode.setMode(themeMode);
 	}
+	
 	const route = useRoute();
 	console.log();
 	const user = userData().data;

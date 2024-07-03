@@ -1,52 +1,13 @@
 <script setup>
-	import axios from "axios";
-
-	const appConfig = useRuntimeConfig();
 	const newNotification = userData().isNewNotification;
 
-	const transactions = ref([]);
-	const userId = useAuth().userData.value?.userId;
+	const transactions = useUserSettings().transactions;
 
-	if (process.client) {
-		const interval = setInterval(() => {
-			if (window.tidioChatApi) {
-				window.tidioChatApi.on("close", () => {
-					window.tidioChatApi.hide();
-				});
-				clearInterval(interval);
-			}
-		}, 800);
-	}
+	const userId = useAuth().userData.value?.userId;
 
 	const startChat = () => {
 		const chat = useLiveChat();
 		chat.openChat();
-	};
-
-	const fetchTransactions = () => {
-		const axiosConfig = {
-			method: "get",
-			url: `${appConfig.public.BE_API}/transactions/${userId}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data.sort(
-					(a, b) =>
-						new Date(b.createdAt).getTime() -
-						new Date(a.createdAt).getTime()
-				);
-				transactions.value = data;
-				console.log(data);
-			})
-			.catch((error) => {
-				console.log(error);
-			});
 	};
 
 	const getPreview = () => {
@@ -59,10 +20,6 @@
 		}
 		return list;
 	};
-
-	onMounted(() => {
-		fetchTransactions();
-	});
 </script>
 <template>
 	<div
@@ -178,7 +135,9 @@
 			<!--end::Card widget 21-->
 
 			<!--begin::List widget 27-->
-			<div class="card card-flush card-reset bg-transparent card-p-0">
+			<div
+				class="card card-flush card-reset bg-transparent card-p-0 d-lg-none"
+			>
 				<!--begin::Header-->
 				<div class="card-header pt-5">
 					<!--begin::Title-->

@@ -8,11 +8,13 @@ export const useLiveChat = () => {
 	};
 
 	const closeChat = () => {
-		setTimeout(() => {
+		const closeInt = setInterval(() => {
 			try {
+				console.log("Close")
 				window.jivo_destroy();
+				clearInterval(closeInt);
 			} catch (error) {}
-		}, 2000);
+		}, 500);
 	};
 
 	const load = () => {

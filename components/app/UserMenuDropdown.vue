@@ -4,6 +4,10 @@
 
 	const tiers = useAppSettings().accountLevels;
 	const account = user.value.account;
+
+	const logout = () => {
+		useAuth().logout();
+	};
 </script>
 
 <template>
@@ -290,11 +294,7 @@
 
 			<!--begin::Menu item-->
 			<div class="menu-item px-5">
-				<a
-					@click="useAuth().logout()"
-					role="button"
-					class="menu-link px-5"
-				>
+				<a @click="logout()" role="button" class="menu-link px-5">
 					Sign Out
 				</a>
 			</div>

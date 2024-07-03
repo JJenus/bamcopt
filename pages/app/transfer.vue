@@ -45,10 +45,9 @@
 	const appConfig = useRuntimeConfig();
 
 	const next = ref(false);
-	const active = useState<string>(
-		"bank-recipient",
-		() => banks.value.bancopt
-	);
+
+	const userSettings = useUserSettings();
+	const active = userSettings.transferBank;
 	const iTran: Transaction = {
 		id: undefined,
 		senderId: "",

@@ -8,6 +8,7 @@ export { useAuth } from '../composables/authStates';
 export { useLiveChat } from '../composables/liveChat';
 export { useAppResource } from '../composables/resource';
 export { userData } from '../composables/userData';
+export { useUserSettings } from '../composables/userSettings';
 export { navs, adminNavs, closeDrawer } from '../utils/navs';
 export { errorAlert, successAlert, warningAlert, infoAlert } from '../utils/showAlert';
 export { storage } from '../utils/storage';

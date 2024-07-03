@@ -106,14 +106,13 @@
 <template>
 	<div class="">
 		<!--begin::Item-->
-		<div :class="show? 'shadow': ''" class="d-flex flex-stack gap-4 mb-6" @click="toggleShowData">
+		<div
+			:class="show ? 'shadow ' : ''"
+			class="d-flex flex-stack gap-4 mb-6"
+			@click="toggleShowData"
+		>
 			<!--begin::Symbol-->
 			<div class="symbol symbol-circle symbol-45px me-4">
-				<img
-					src="/assets/media/avatars/300-2.jpg"
-					class="d-none"
-					alt=""
-				/>
 				<i :class="statusIcon()" class="ki-outline fs-1"></i>
 			</div>
 			<!--end::Symbol-->
@@ -121,7 +120,7 @@
 			<!--begin::Section-->
 			<div class="d-flex align-items-center flex-row-fluid flex-wrap">
 				<!--begin:Author-->
-				<div class="flex-grow-1 me-2">
+				<div class="flex-grow-1 me-2 d-done">
 					<a
 						role="button"
 						class="text-hover-primary text-gray-800 fs-5 fw-bolder"
@@ -158,9 +157,9 @@
 
 					<div class="d-flex flex-column text-end">
 						<!--begin::Info-->
-						<span class="text-gray-800 fw-bold fs-6">{{
-							money(transaction.amount, true)
-						}}</span>
+						<span class="text-gray-800 fw-bold fs-6">
+							{{ money(transaction.amount, true) }}
+						</span>
 						<!--end::Info-->
 						<div class="text-gray-400 text-truncate w-80px">
 							{{ transaction.beneficiary.bank }}

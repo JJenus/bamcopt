@@ -155,6 +155,7 @@ declare global {
   const useSwiper: typeof import('swiper/vue')['useSwiper']
   const useSwiperSlide: typeof import('swiper/vue')['useSwiperSlide']
   const useTransitionState: typeof import('vue')['useTransitionState']
+  const useUserSettings: typeof import('../../composables/userSettings')['useUserSettings']
   const userData: typeof import('../../composables/userData')['userData']
   const warningAlert: typeof import('../../utils/showAlert')['warningAlert']
   const watch: typeof import('vue')['watch']
@@ -332,6 +333,7 @@ declare module 'vue' {
     readonly useSwiper: UnwrapRef<typeof import('swiper/vue')['useSwiper']>
     readonly useSwiperSlide: UnwrapRef<typeof import('swiper/vue')['useSwiperSlide']>
     readonly useTransitionState: UnwrapRef<typeof import('vue')['useTransitionState']>
+    readonly useUserSettings: UnwrapRef<typeof import('../../composables/userSettings')['useUserSettings']>
     readonly userData: UnwrapRef<typeof import('../../composables/userData')['userData']>
     readonly warningAlert: UnwrapRef<typeof import('../../utils/showAlert')['warningAlert']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
@@ -502,6 +504,7 @@ declare module '@vue/runtime-core' {
     readonly useSwiper: UnwrapRef<typeof import('swiper/vue')['useSwiper']>
     readonly useSwiperSlide: UnwrapRef<typeof import('swiper/vue')['useSwiperSlide']>
     readonly useTransitionState: UnwrapRef<typeof import('vue')['useTransitionState']>
+    readonly useUserSettings: UnwrapRef<typeof import('../../composables/userSettings')['useUserSettings']>
     readonly userData: UnwrapRef<typeof import('../../composables/userData')['userData']>
     readonly warningAlert: UnwrapRef<typeof import('../../utils/showAlert')['warningAlert']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>

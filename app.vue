@@ -1,5 +1,4 @@
 <script setup>
-	import Chatra from "@chatra/chatra";
 
 	let config = {
 		ID: "Zc7Mk9Zyk8EBqxpYZ",

@@ -20,15 +20,15 @@
 <template>
 	<div>
 		<!--begin::Title-->
-		<div class="card-title mb-7 d-none d-lg-block">
+		<div class="card-title mb-3 mb-lg-7 d-nonei d-lg-block">
 			<span class="widget-title fw-bold fs-4">
-				My Balance
-				<i class="ki-outline ki-question-2 fs-3 text-primary ms-1"></i>
+				Account Balance
+				<i class="ki-outline d-none ki-question-2 fs-3 text-primary ms-1"></i>
 			</span>
 		</div>
 		<!--end::Title-->
 		<!--begin::Text-->
-		<div class="d-flex align-items-center fw-bold mb-3">
+		<div class="d-flex align-items-center fw-bold mb-3 d-none">
 			<i class="ki-solid ki-medal-star text-info fs-1"> </i>
 			<span v-for="tier in tiers">
 				<span v-if="balance.accountLevel === tier.accountLevel">

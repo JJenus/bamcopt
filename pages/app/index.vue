@@ -1,6 +1,31 @@
 <script setup lang="ts">
 	import moment from "moment";
 	const user = userData().data;
+	const userSettings = useUserSettings();
+	const active = userSettings.transferBank;
+	const transactions = userSettings.transactions;
+
+	const banks = ref({
+		skrill: "Skrill",
+		others: "Others",
+		bancopt: "Bancopt",
+		paypal: "Paypal",
+	});
+
+	const selectBank = (bank: string) => {
+		active.value = bank;
+	};
+
+	const getPreview = () => {
+		if (transactions.value.length <= 5) {
+			return transactions.value;
+		}
+		const list = [];
+		for (let i = 0; i < 5; i++) {
+			list.push(transactions.value[i]);
+		}
+		return list;
+	};
 
 	const greet = () => {
 		let userName = user.value.name.split(" ")[0];
@@ -32,11 +57,11 @@
 <template>
 	<div>
 		<div
-			class="card card-custom bg-light-success border-0 min-h-500px mb-5 mb-lg-10"
+			class="card card-custom bg-light-success border-0 min-h-200px mb-5 mb-lg-10"
 		>
 			<!--begin::Body-->
 			<div
-				class="card-body d-flex justify-content-center flex-wrap ps-xl-15 pe-0"
+				class="card-body d-flex align-items-centeri justify-content-center flex-column ps-xl-15 pe-0"
 			>
 				<!--begin::Wrapper-->
 				<div class="flex-grow-1 mt-2 me-9 me-md-0">
@@ -57,7 +82,7 @@
 				<!--begin::Illustration-->
 				<img
 					src="/assets/media/illustrations/misc/credit-card.png"
-					class="h-175px me-15"
+					class="w-175px mx-auto d-none d-lg-block"
 					alt=""
 				/>
 				<!--end::Illustration-->
@@ -67,28 +92,84 @@
 		<!--end::Engage widget 12-->
 
 		<!--begin::Chart widget 36-->
-		<div class="card card-flush overflow-hidden">
+		<div
+			class="card card-flush overflow-hidden mb-5 bg-transparent border-0"
+		>
+			<!--begin::Card body-->
+			<div class="card-body p-4">
+				<div class="d-flex flex-center flex-row mb-3 gap-2">
+					<NuxtLink
+						to="/app/transfer"
+						@click="selectBank(banks.bancopt)"
+						type="button"
+						class="btn btn-light-primary px-4 d-lg-flex fw-semibold py-lg-4"
+					>
+						<NFTexLogoMini
+							class="d-inline"
+							classes="w-20px w-lg-25px m-0 me-lg-2"
+						/>
+						{{ $config.public.APP }}
+					</NuxtLink>
+					<NuxtLink
+						to="/app/transfer"
+						@click="selectBank(banks.others)"
+						type="button"
+						class="btn btn-light-primary fw-semibold"
+					>
+						<i class="ki-solid ki-bank fs-2x mb-1"></i>
+						Banks
+					</NuxtLink>
+					<NuxtLink
+						to="/app/transfer"
+						@click="selectBank(banks.paypal)"
+						type="button"
+						class="btn btn-light-primary fw-semibold"
+					>
+						<i class="ki-duotone ki-paypal fs-2x">
+							<span class="path1"></span>
+							<span class="path2"></span>
+						</i>
+						Paypal
+					</NuxtLink>
+					<NuxtLink
+						to="/app/transfer"
+						@click="selectBank(banks.skrill)"
+						type="button"
+						class="btn btn-light-primary fw-semibold"
+					>
+						<span class="rounded fs-3 fw-bold shadow-lg">S</span>
+						Skrill
+					</NuxtLink>
+				</div>
+			</div>
+			<!--end::Card body-->
+		</div>
+
+		<!--begin::Chart widget 36-->
+		<div class="card card-flush overflow-hidden min-h-200px">
 			<!--begin::Header-->
 			<div class="card-header pt-5">
 				<!--begin::Title-->
-				<h3 class="card-title align-items-start flex-column d-none">
+				<h3 class="card-title align-items-start flex-column">
 					<span class="card-label fw-bold text-dark"
-						>Payment Requests</span
+						>Transactions</span
 					>
 					<span class="text-gray-400 mt-1 fw-semibold fs-6">
-						0 requests today
+						Recent
 					</span>
 				</h3>
 				<!--end::Title-->
-
-				<!--begin::Toolbar-->
-				<div class="card-toolbar"></div>
-				<!--end::Toolbar-->
 			</div>
 			<!--end::Header-->
 
 			<!--begin::Card body-->
-			<div class="card-body d-flex align-items-end p-0"></div>
+			<div class="card-body">
+				<div class="text-muted text-center">No transaction</div>
+				<AppTransactionEntry
+					v-for="transact in getPreview()"
+					:transaction="transact"
+				/>
+			</div>
 			<!--end::Card body-->
 		</div>
 	</div>
