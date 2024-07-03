@@ -98,8 +98,7 @@
 			<!--begin::Card body-->
 			<div class="card-body p-4">
 				<div class="d-flex flex-center flex-row mb-3 gap-2">
-					<NuxtLink
-						to="/app/transfer"
+					<button
 						@click="selectBank(banks.bancopt)"
 						type="button"
 						class="btn btn-light-primary px-4 d-lg-flex fw-semibold py-lg-4"
@@ -109,18 +108,16 @@
 							classes="w-20px w-lg-25px m-0 me-lg-2"
 						/>
 						{{ $config.public.APP }}
-					</NuxtLink>
-					<NuxtLink
-						to="/app/transfer"
+					</button>
+					<button
 						@click="selectBank(banks.others)"
 						type="button"
 						class="btn btn-light-primary fw-semibold"
 					>
 						<i class="ki-solid ki-bank fs-2x mb-1"></i>
 						Banks
-					</NuxtLink>
-					<NuxtLink
-						to="/app/transfer"
+					</button>
+					<button
 						@click="selectBank(banks.paypal)"
 						type="button"
 						class="btn btn-light-primary fw-semibold"
@@ -130,16 +127,15 @@
 							<span class="path2"></span>
 						</i>
 						Paypal
-					</NuxtLink>
-					<NuxtLink
-						to="/app/transfer"
+					</button>
+					<button
 						@click="selectBank(banks.skrill)"
 						type="button"
 						class="btn btn-light-primary fw-semibold"
 					>
 						<span class="rounded fs-3 fw-bold shadow-lg">S</span>
 						Skrill
-					</NuxtLink>
+					</button>
 				</div>
 			</div>
 			<!--end::Card body-->
@@ -164,7 +160,9 @@
 
 			<!--begin::Card body-->
 			<div class="card-body">
-				<div class="text-muted text-center">No transaction</div>
+				<div class="text-muted text-center">
+					No transaction
+				</div>
 				<AppTransactionEntry
 					v-for="transact in getPreview()"
 					:transaction="transact"
