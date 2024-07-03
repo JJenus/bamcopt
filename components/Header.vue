@@ -173,7 +173,7 @@
 				title="Show sidebar menu"
 			>
 				<button
-					class="btn btn-icon btn-icon-white btn-active-icon-white btn-active-color-white w-35px h-35px"
+					class="btn btn-icon w-35px h-35px"
 					id="kt_app_sidebar_mobile_toggle"
 				>
 					<i class="ki-solid ki-burger-menu-5 fs-3x"></i>
