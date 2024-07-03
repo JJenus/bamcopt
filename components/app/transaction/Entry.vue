@@ -108,60 +108,40 @@
 		<!--begin::Item-->
 		<div
 			:class="show ? 'shadow ' : ''"
-			class="d-flex flex-stack gap-4 mb-6"
+			class="d-flex flex-stack gap-3 mb-6"
 			@click="toggleShowData"
 		>
 			<!--begin::Symbol-->
-			<div class="symbol symbol-circle symbol-45px me-4">
+			<div class="symbol symbol-circle symbol-45px">
 				<i :class="statusIcon()" class="ki-outline fs-1"></i>
 			</div>
 			<!--end::Symbol-->
 
 			<!--begin::Section-->
 			<div class="d-flex align-items-center flex-row-fluid flex-wrap">
-				<!--begin:Author-->
-				<div class="flex-grow-1 me-2 d-done">
-					<a
-						role="button"
-						class="text-hover-primary text-gray-800 fs-5 fw-bolder"
-						style="color: #28346c"
-						>{{ user.name }}</a
-					>
-
-					<span class="text-gray-400 fw-semibold d-block fs-n6">
-						<span class="text-primary me-2">{{ getType() }}</span>
-						{{ time() }}
-					</span>
-				</div>
-				<!--end::Symbol-->
-
 				<!--begin::Section-->
-				<div class="d-flex align-items-center flex-row-fluid flex-wrap">
+				<div class="d-flex align-items-center flex-row-fluid justify-content-between">
 					<!--begin:Author-->
-					<div class="flex-grow-1 me-2">
-						<a
-							role="button"
+					<div class="d-flex flex-column">
+						<span
 							class="text-hover-primary text-gray-800 fs-5 fw-bolder"
 							style="color: #28346c"
-							>{{ user.name }}</a
-						>
+							>
+						  {{ user.name }}
+						</span>
 
-						<span class="text-gray-400 fw-semibold d-block fs-n6">
-							<span class="text-primary me-2">{{
-								getType()
-							}}</span>
+						<span class="text-gray-400 fw-semibold fs-n6">
 							{{ time() }}
 						</span>
 					</div>
 					<!--end:Author-->
-
-					<div class="d-flex flex-column text-end">
+					<div :class="getType() == 'sent'? 'text-success':'text-danger'" class="d-flex flex-column text-end">
 						<!--begin::Info-->
 						<span class="text-gray-800 fw-bold fs-6">
-							{{ money(transaction.amount, true) }}
+						{{getType() == 'sent'? '+':'-'}}	{{ money(transaction.amount, true) }}
 						</span>
 						<!--end::Info-->
-						<div class="text-gray-400 text-truncate w-80px">
+						<div class="text-gray-400 text-truncate w-80pxiu">
 							{{ transaction.beneficiary.bank }}
 						</div>
 					</div>
@@ -173,6 +153,7 @@
 						</i>
 					</div>
 				</div>
+				
 				<div v-if="showDetails" class="ms-2 d-none">
 					<i
 						:class="show ? 'ki-up-square' : 'ki-down-square'"
