@@ -10,9 +10,11 @@ export const useLiveChat = () => {
 	const closeChat = () => {
 		const closeInt = setInterval(() => {
 			try {
-				console.log("Close")
-				window.jivo_destroy();
-				clearInterval(closeInt);
+			  if(window.jivo_api){
+			    window.jivo_destroy();
+				  clearInterval(closeInt);
+			  }
+				console.log("Close");
 			} catch (error) {}
 		}, 500);
 	};

@@ -107,7 +107,7 @@
 	<div class="">
 		<!--begin::Item-->
 		<div
-			:class="show ? 'shadow ' : ''"
+			:class="show ? 'shadow rounded px-3 mx-n4' : ''"
 			class="d-flex flex-stack gap-3 mb-6"
 			@click="toggleShowData"
 		>
@@ -135,9 +135,9 @@
 						</span>
 					</div>
 					<!--end:Author-->
-					<div :class="getType() == 'sent'? 'text-success':'text-danger'" class="d-flex flex-column text-end">
+					<div  class="d-flex flex-column text-end">
 						<!--begin::Info-->
-						<span class="text-gray-800 fw-bold fs-6">
+						<span :class="getType() == 'sent'? 'text-success':'text-danger'"  class=" fw-bold fs-6">
 						{{getType() == 'sent'? '+':'-'}}	{{ money(transaction.amount, true) }}
 						</span>
 						<!--end::Info-->

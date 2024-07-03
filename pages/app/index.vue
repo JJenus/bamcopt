@@ -14,6 +14,7 @@
 
 	const selectBank = (bank: string) => {
 		active.value = bank;
+		navigateTo("/app/transfer");
 	};
 
 	const getPreview = () => {
@@ -133,7 +134,7 @@
 						type="button"
 						class="btn btn-light-primary fw-semibold"
 					>
-						<span class="rounded fs-3 fw-bold shadow-lg">S</span>
+						<span class="rounded fs-3 fw-bold shadow-lg bg-transparent">S</span>
 						Skrill
 					</button>
 				</div>
@@ -160,7 +161,7 @@
 
 			<!--begin::Card body-->
 			<div class="card-body">
-				<div class="text-muted text-center">
+				<div v-if="getPreview().length == 0" class="text-muted text-center">
 					No transaction
 				</div>
 				<AppTransactionEntry
