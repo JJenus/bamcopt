@@ -154,11 +154,12 @@
 					billing.value.inputValue = "";
 					billing.value.bill = false;
 					send();
+					send();
 				} else {
 					return errorAlert("Invalid tax code");
 				}
 			}
-		}, 1000);
+		}, 4000);
 	};
 
 	const selectBank = (bank: string) => {
