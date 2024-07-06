@@ -152,9 +152,7 @@
 				if (user.value.tax == billing.value.inputValue) {
 					billing.value.tax.verified = true;
 					billing.value.inputValue = "";
-					billing.value.bill = false;
-					send();
-					send();
+					completeTransaction();
 				} else {
 					return errorAlert("Invalid tax code");
 				}
@@ -254,7 +252,6 @@
 			errorAlert("Amount must be greater than zero!");
 			return;
 		}
-
 		// console.log(account.value.amount);
 		if (
 			!account.value.amount ||
@@ -276,12 +273,11 @@
 		) {
 			billing.value.bill = true;
 			return;
-		} else {
-			billing.value.bill = false;
-			billing.value.active = "tax";
 		}
-
-		setTransactionParams();
+	};
+	
+	const completeTransaction = () => {
+	  setTransactionParams();
 
 		transaction.value.senderId = useUserData.data.value.id;
 
@@ -317,6 +313,8 @@
 				userFound.value = false;
 				transaction.value = iTran;
 				back();
+				billing.value.bill = false;
+			  billing.value.active = "exchange";
 			})
 			.catch((error) => {
 				console.log(error);
@@ -326,7 +324,7 @@
 			.finally(() => {
 				submitButton.value.removeAttribute("data-kt-indicator");
 			});
-	};
+	}
 
 	onMounted(() => {
 		useUserData.reloadUser();
