@@ -1,5 +1,11 @@
 import { Account } from "./Account";
 
+export enum AccountStatus {
+	HOLD = "HOLD",
+	ACTIVE = "ACTIVE",
+	SUSPENDED = "SUSPENDED",
+}
+
 export interface IUser {
 	id: string;
 	name: string;
@@ -13,6 +19,7 @@ export interface IUser {
 	dob: string | undefined;
 	verified: boolean;
 	emailVerified: boolean;
+	status?: AccountStatus;
 	userType: string;
 	account: Account;
 	createdAt: string;

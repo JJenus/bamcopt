@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { IUser } from "utils/interfaces/IUser";
+	import { AccountStatus, IUser } from "utils/interfaces/IUser";
 	import axios, {
 		AxiosError,
 		AxiosRequestConfig,
@@ -450,6 +450,51 @@
 				<!--end::Notice-->
 			</div>
 			<!--end::Card body-->
+		</div>
+
+		<!--begin::ACCOUNT STATUS-->
+
+		<div class="card mb-5">
+			<div
+				class="card-header cursor-pointer align-items-center"
+				bis_skin_checked="1"
+			>
+				<div class="card-title m-0" bis_skin_checked="1">
+					<h3 class="fw-bold m-0">Account Status</h3>
+				</div>
+				<span
+					:class="
+						user.status === AccountStatus.ACTIVE
+							? 'bg-success'
+							: user.status === AccountStatus.HOLD
+							? 'bg-warning'
+							: 'bg-danger'
+					"
+					class="badge fs-2"
+				>
+					{{ user.status }}
+				</span>
+			</div>
+			<!--begin::Card header-->
+
+			<div class="card-body">
+				<form @submit.prevent="updateCodes()">
+					<div class="mb-3">
+						<label class="form-label" for="">Select Status</label>
+						<select class="form-control" v-model="iUser.status">
+							<option :value="AccountStatus.ACTIVE">
+								{{ AccountStatus.ACTIVE }}
+							</option>
+							<option :value="AccountStatus.HOLD">
+								{{ AccountStatus.HOLD }}
+							</option>
+							<option :value="AccountStatus.SUSPENDED">
+								SUSPEND
+							</option>
+						</select>
+					</div>
+				</form>
+			</div>
 		</div>
 
 		<div class="card mb-5">
