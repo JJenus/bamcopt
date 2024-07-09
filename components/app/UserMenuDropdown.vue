@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 	const user = userData().data;
 	const image = user.value.imgUrl || "/assets/media/svg/avatars/blank.svg";
 
-	const tiers = useAppSettings().accountLevels;
+	// const tiers = useAppSettings().accountLevels;
 	const account = user.value.account;
 
 	const logout = () => {

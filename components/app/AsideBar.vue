@@ -103,7 +103,8 @@
 				class="app-navbar-item ms-1 ms-lg-3"
 				id="kt_header_user_menu_toggle"
 			>
-				<AppUserMenuDropdown />
+				<!-- <AppUserMenuDropdown /> -->
+				<LazyAppUserMenuDropdown />
 			</div>
 			<!--end::User menu-->
 		</div>
