@@ -1,10 +1,10 @@
 <script setup lang="ts">
 	import Cleave from "cleave.js";
 	import {
-		Transaction,
+		type Transaction,
 		TransactionTypes,
-	} from "../../utils/interfaces/Transaction";
-	import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
+	} from "~/utils/interfaces/Transaction";
+	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 
 	const banks = ref({
 		skrill: "Skrill",
@@ -72,7 +72,7 @@
 	const form = ref({
 		amount: "",
 	});
-	const submitButton = ref();
+	const sending = ref(false);
 
 	const buttons = [
 		{
@@ -130,6 +130,7 @@
 	const continueTransfer = () => {
 		useUserData.reloadUser();
 		billing.value.verifying = true;
+		console.log(user.value);
 		setTimeout(() => {
 			billing.value.verifying = false;
 			if (!billing.value.cot.verified) {
@@ -201,7 +202,7 @@
 	};
 
 	const back = () => {
-		submitButton.value.removeAttribute("data-kt-indicator");
+		sending.value = false;
 		next.value = false;
 	};
 
@@ -275,13 +276,13 @@
 			return;
 		}
 	};
-	
+
 	const completeTransaction = () => {
-	  setTransactionParams();
+		setTransactionParams();
 
 		transaction.value.senderId = useUserData.data.value.id;
 
-		submitButton.value.setAttribute("data-kt-indicator", "on");
+		sending.value = true;
 		console.log("Transaction", transaction.value);
 
 		const validData = copyNonEmptyProperties(transaction.value);
@@ -314,17 +315,19 @@
 				transaction.value = iTran;
 				back();
 				billing.value.bill = false;
-			  billing.value.active = "exchange";
+				billing.value.active = "exchange";
 			})
 			.catch((error) => {
 				console.log(error);
 				const data = error.response.data;
-				errorAlert("Transaction error. Contact support to clear issues in your account.");
+				errorAlert(
+					"Transaction error. Contact support to clear issues in your account."
+				);
 			})
 			.finally(() => {
-				submitButton.value.removeAttribute("data-kt-indicator");
+				sending.value = false;
 			});
-	}
+	};
 
 	onMounted(() => {
 		useUserData.reloadUser();
@@ -497,15 +500,14 @@
 					</button>
 					<button
 						:disabled="next && disableSend()"
-						ref="submitButton"
 						type="submit"
 						class="btn btn-primary btn-icon fw-bold fs-2 w-100"
 					>
-						<span class="indicator-label">
+						<span v-if="!sending" class="indicator-labeli">
 							<span v-if="next">Transfer</span>
 							<span v-else>Next</span>
 						</span>
-						<span class="indicator-progress">
+						<span v-else class="indicator-progressi">
 							Please wait...
 							<span
 								class="spinner-border spinner-border-sm align-middle ms-2"

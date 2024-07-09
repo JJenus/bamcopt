@@ -3,7 +3,7 @@
 	"private": true,
 	"scripts": {
 		"build": "nuxt build --preset=vercel_edge --dotenv .env",
-		"dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 nuxt dev --dotenv .env.local",
+		"dev": "nuxt dev --dotenv .env.local",
 		"generate": "nuxt generate",
 		"preview": "nuxt preview --dotenv .env",
 		"postinstall": "nuxt prepare"
@@ -14,7 +14,7 @@
 		"@types/cleave.js": "^1.4.7",
 		"@types/moment": "^2.13.0",
 		"@types/node": "^18.17.3",
-		"nuxt": "^3.6.5"
+		"nuxt": "^3.12.3"
 	},
 	"dependencies": {
 		"@chatra/chatra": "^1.0.3",

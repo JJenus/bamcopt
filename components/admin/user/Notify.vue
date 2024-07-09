@@ -1,9 +1,9 @@
 <script setup lang="ts">
-	import { IUser } from "utils/interfaces/IUser";
+	import { type IUser } from "~/utils/interfaces/IUser";
 	import axios, {
 		AxiosError,
-		AxiosRequestConfig,
-		AxiosResponse,
+		type AxiosRequestConfig,
+		type AxiosResponse,
 	} from "axios";
 
 	const props = defineProps<{ user: IUser }>();

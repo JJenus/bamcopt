@@ -8,28 +8,28 @@ export const useLiveChat = () => {
 	};
 
 	const closeChat = () => {
-		const closeInt = setInterval(() => {
-			try {
-			  if(window.jivo_api){
-			    window.jivo_destroy();
-				  clearInterval(closeInt);
-			  }
-				console.log("Close");
-			} catch (error) {}
-		}, 500);
+		// const closeInt = setInterval(() => {
+		// 	try {
+		// 	  if(window.jivo_api){
+		// 	    window.jivo_destroy();
+		// 		  clearInterval(closeInt);
+		// 	  }
+		// 		console.log("Close");
+		// 	} catch (error) {}
+		// }, 500);
 	};
 
 	const load = () => {
 		if (process.client) {
 			const auth = useAuth();
 
-			const interval = setInterval(() => {
-				if (auth.isAuthenticated()) {
-					const user = auth.userData.value.user;
+			// const interval = setInterval(() => {
+			// 	if (auth.isAuthenticated()) {
+			// 		const user = auth.userData.value.user;
 
-					clearInterval(interval);
-				}
-			}, 5000);
+			// 		clearInterval(interval);
+			// 	}
+			// }, 5000);
 		}
 	};
 

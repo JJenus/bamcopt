@@ -1,4 +1,4 @@
-import { Beneficiary } from "./Beneficiary";
+import { type Beneficiary } from "./Beneficiary";
 
 export interface Transaction {
 	id: string | null | undefined;

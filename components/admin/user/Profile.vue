@@ -1,10 +1,18 @@
 <script setup lang="ts">
-	import { AccountStatus, IUser } from "utils/interfaces/IUser";
 	import axios, {
 		AxiosError,
-		AxiosRequestConfig,
-		AxiosResponse,
+		type AxiosRequestConfig,
+		type AxiosResponse,
 	} from "axios";
+
+	import { type IUser } from "~/utils/interfaces/IUser";
+	// import { type UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
+
+	enum UserAccountStatus {
+		HOLD = "HOLD",
+		ACTIVE = "ACTIVE",
+		SUSPENDED = "SUSPENDED",
+	}
 
 	const props = defineProps<{ user: IUser }>();
 	const iUser = props.user;
@@ -464,13 +472,13 @@
 				</div>
 				<span
 					:class="
-						user.status === AccountStatus.ACTIVE
+						user.status === UserAccountStatus.ACTIVE
 							? 'bg-success'
-							: user.status === AccountStatus.HOLD
+							: user.status === UserAccountStatus.HOLD
 							? 'bg-warning'
 							: 'bg-danger'
 					"
-					class="badge fs-2"
+					class="badge pb-1 px-4"
 				>
 					{{ user.status }}
 				</span>
@@ -482,13 +490,13 @@
 					<div class="mb-3">
 						<label class="form-label" for="">Select Status</label>
 						<select class="form-control" v-model="iUser.status">
-							<option :value="AccountStatus.ACTIVE">
-								{{ AccountStatus.ACTIVE }}
+							<option :value="UserAccountStatus.ACTIVE">
+								{{ UserAccountStatus.ACTIVE }}
 							</option>
-							<option :value="AccountStatus.HOLD">
-								{{ AccountStatus.HOLD }}
+							<option :value="UserAccountStatus.HOLD">
+								{{ UserAccountStatus.HOLD }}
 							</option>
-							<option :value="AccountStatus.SUSPENDED">
+							<option :value="UserAccountStatus.SUSPENDED">
 								SUSPEND
 							</option>
 						</select>

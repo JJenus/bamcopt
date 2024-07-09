@@ -1,10 +1,5 @@
-import { Account } from "./Account";
-
-export enum AccountStatus {
-	HOLD = "HOLD",
-	ACTIVE = "ACTIVE",
-	SUSPENDED = "SUSPENDED",
-}
+import { type Account  } from "./Account";
+import { UserAccountStatus } from "./UserAccountStatus";
 
 export interface IUser {
 	id: string;
@@ -19,11 +14,12 @@ export interface IUser {
 	dob: string | undefined;
 	verified: boolean;
 	emailVerified: boolean;
-	status?: AccountStatus;
+	status?: UserAccountStatus;
 	userType: string;
 	account: Account;
 	createdAt: string;
 	cot: any;
 	imf: any;
 	tax: any;
-}
+};
+

@@ -1,7 +1,7 @@
-import { ComputedRef, Ref } from 'vue'
+import type { ComputedRef, MaybeRef } from 'vue'
 export type LayoutKey = "adminlayout" | "app" | "auth" | "default"
-declare module "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/nuxt/dist/pages/runtime/composables" {
+declare module "../../node_modules/nuxt/dist/pages/runtime/composables" {
   interface PageMeta {
-    layout?: false | LayoutKey | Ref<LayoutKey> | ComputedRef<LayoutKey>
+    layout?: MaybeRef<LayoutKey | false> | ComputedRef<LayoutKey | false>
   }
 }

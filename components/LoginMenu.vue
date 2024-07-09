@@ -140,15 +140,16 @@
 		verify.value.loading = true;
 		setTimeout(() => {
 			verify.value.loading = false;
+			console.log(
+				"Is Expired: ",
+				authToken.value.otp
+			);
 
-			if (verify.value.otp !== authToken.value.otp?.token) {
+			if (verify.value.otp !== authToken.value.otp?.token+'') {
 				errorAlert("Invalid Token");
 				return;
 			}
-			console.log(
-				"Is Expired: ",
-				isExpired(authToken.value.otp.createdAt)
-			);
+			
 			if (isExpired(authToken.value.otp.createdAt)) {
 				errorAlert("Token expired. Go back to login");
 				return;
@@ -201,7 +202,9 @@
 			})
 			.finally(() => {
 				loading.value = false;
-				loginButton.value.setAttribute("data-kt-indicator", "");
+				try {
+					loginButton.value.setAttribute("data-kt-indicator", "");
+				} catch (error) {}
 			});
 	};
 

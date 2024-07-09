@@ -1,10 +1,10 @@
 <script setup lang="ts">
 	import axios, {
 		AxiosError,
-		AxiosRequestConfig,
-		AxiosResponse,
+		type AxiosRequestConfig,
+		type AxiosResponse,
 	} from "axios";
-	import { IUser } from "utils/interfaces/IUser";
+	import { type IUser } from "~/utils/interfaces/IUser";
 
 	const user = userData().data;
 	user.value.account = userData().account.value;

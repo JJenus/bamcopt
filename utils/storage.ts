@@ -1,4 +1,4 @@
-import { AuthToken } from "./interfaces/AuthToken";
+import { type AuthToken } from "./interfaces/AuthToken";
 
 export const storage = () => {
 	const authKey = "zipayauthkey";

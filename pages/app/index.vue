@@ -166,6 +166,7 @@
 				</div>
 				<AppTransactionEntry
 					v-for="transact in getPreview()"
+					:show-details="false"
 					:transaction="transact"
 				/>
 			</div>

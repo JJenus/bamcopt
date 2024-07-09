@@ -230,6 +230,7 @@
 					<AppTransactionEntry
 						v-for="transact in getPreview()"
 						:transaction="transact"
+						:show-details="false"
 					/>
 				</div>
 				<!--end::Body-->
