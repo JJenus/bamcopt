@@ -4,9 +4,10 @@
 
 	// const tiers = useAppSettings().accountLevels;
 	const account = user.value.account;
+	const auth = useAuth();
 
 	const logout = () => {
-		useAuth().logout();
+		auth.logout();
 	};
 </script>
 
@@ -49,7 +50,7 @@
 							></i>
 						</div>
 
-						<div
+						<!-- <div
 							class="d-flex align-items-center fw-bold fs-7 text-muted"
 						>
 							<i class="ki-solid ki-medal-star text-primary fs-2">
@@ -64,7 +65,7 @@
 									{{ tier.title }}
 								</span>
 							</span>
-						</div>
+						</div> -->
 					</div>
 					<!--end::Username-->
 				</div>

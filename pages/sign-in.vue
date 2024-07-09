@@ -1,10 +1,10 @@
 <script setup lang="ts">
 	import axios, {
 		AxiosError,
-		AxiosRequestConfig,
-		AxiosResponse,
+		type AxiosRequestConfig,
+		type AxiosResponse,
 	} from "axios";
-	import { AuthToken } from "utils/interfaces/AuthToken";
+	import { type AuthToken } from "~/utils/interfaces/AuthToken";
 
 	definePageMeta({
 		layout: "auth",
@@ -96,7 +96,7 @@
 				<!--begin::Content-->
 				<div class="d-flex flex-column flex-center p-6 p-lg-10 w-100">
 					<!--begin::Logo-->
-					<NFTexLogo :classes="'h-60px'"/>
+					<NFTexLogo :classes="'h-60px'" />
 					<!--end::Logo-->
 
 					<!--begin::Image-->

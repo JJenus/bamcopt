@@ -1,7 +1,6 @@
 <script setup lang="ts">
 	import { type IUser } from "~/utils/interfaces/IUser";
 	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
-	import { type AuthToken } from "~/utils/interfaces/AuthToken";
 
 	definePageMeta({
 		layout: "app",
@@ -10,15 +9,6 @@
 	useSeoMeta({
 		title: `App - ${useRuntimeConfig().public.APP}`,
 	});
-
-	const loaded = useCookie<boolean>("reload", { maxAge: 60 * 60 * 24 });
-
-	if (process.client) {
-		if (!loaded.value) {
-			window.location.reload();
-			loaded.value = true;
-		}
-	}
 
 	const appConfig = useRuntimeConfig();
 

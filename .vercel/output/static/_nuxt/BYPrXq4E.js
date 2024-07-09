@@ -1,0 +1,1 @@
+import{s as u,n as r}from"./92L2RCN-.js";import{u as a}from"./BR2hkClM.js";import{u as e}from"./CGGBS1J1.js";import"./C1v_YKik.js";import"./CgRmDqS1.js";const d=u((i,s)=>{var o;const t=a("auth");if(t.value==null||t.value==null)return r("sign-in");if(!e().isAuthenticated()||((o=e().userData.value)==null?void 0:o.user.userType)!=="user")return e().logout()});export{d as default};

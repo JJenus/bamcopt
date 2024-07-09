@@ -1,0 +1,1 @@
+import{p as s}from"./92L2RCN-.js";const o=s("/assets/media/svg/brand-logos/facebook-4.svg"),t=s("/assets/media/svg/brand-logos/instagram-2016.svg"),r=s("/assets/media/svg/brand-logos/twitter.svg");export{o as _,r as a,t as b};

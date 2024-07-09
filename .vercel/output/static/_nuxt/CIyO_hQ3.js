@@ -1,0 +1,1 @@
+import{s as r}from"./92L2RCN-.js";import{u as a}from"./BR2hkClM.js";import{u as e}from"./CGGBS1J1.js";import"./C1v_YKik.js";import"./CgRmDqS1.js";const p=r((i,s)=>{var u;const o=a("auth");if(o.value==null||o.value==null)return e().logout();const t=e();if(!t.isAuthenticated()||((u=t.userData.value)==null?void 0:u.user.userType)!=="admin")return t.logout()});export{p as default};
