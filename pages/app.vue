@@ -1,6 +1,7 @@
 <script setup lang="ts">
 	import { type IUser } from "~/utils/interfaces/IUser";
 	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
+	import { UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
 
 	definePageMeta({
 		layout: "app",
@@ -59,6 +60,17 @@
 			return useAuth().logout();
 		}
 		getUserData();
+
+		if (data.value.status === UserAccountStatus.HOLD) {
+			infoAlert("Account on hold. Contact support.");
+		}
+
+		if (data.value.status === UserAccountStatus.SUSPENDED) {
+			errorAlert("Account suspended. Contact support immediately!");
+			setTimeout(() => {
+				useAuth().logout();
+			}, 5000);
+		}
 	});
 </script>
 <template>

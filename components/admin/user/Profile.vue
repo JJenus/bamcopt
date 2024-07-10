@@ -501,6 +501,15 @@
 							</option>
 						</select>
 					</div>
+					<div class="mb-3">
+						<button type="submit" class="btn btn-primary w-100">
+							<span v-if="!loading" class="">Save</span>
+							<span
+								v-else
+								class="spinner-border spinner-border-sm"
+							></span>
+						</button>
+					</div>
 				</form>
 			</div>
 		</div>

@@ -5,6 +5,7 @@
 		TransactionTypes,
 	} from "~/utils/interfaces/Transaction";
 	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
+	import { UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
 
 	const banks = ref({
 		skrill: "Skrill",
@@ -249,6 +250,10 @@
 	};
 
 	const send = () => {
+		if (user.value.status === UserAccountStatus.HOLD) {
+			infoAlert("Account on hold. Contact support.");
+			return;
+		}
 		if (Number(form.value.amount) <= 0) {
 			errorAlert("Amount must be greater than zero!");
 			return;
