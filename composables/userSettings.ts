@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Transaction } from "utils/interfaces/Transaction";
+import { type Transaction } from "~/utils/interfaces/Transaction";
 
 export const useUserSettings = () => {
 	const appConfig = useRuntimeConfig();
@@ -48,7 +48,6 @@ export const useUserSettings = () => {
 						new Date(a.createdAt).getTime()
 				);
 				transactions.value = data;
-				console.log(data);
 			})
 			.catch((error) => {
 				console.log(error);

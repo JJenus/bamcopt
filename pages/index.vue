@@ -8,9 +8,7 @@
 
 <template>
 	<div class="container-fluid">
-		<!--begin::Card-->
 		<div class="card border-0 bg-transparent">
-			<!--begin::Card body-->
 			<div class="card-body p-0">
 				<div
 					class="row row-cols-1 row-cols-lg-2 justify-content-between align-items-center mb-5"
@@ -19,7 +17,11 @@
 						<div class="mw-450px ms-md-4i ms-xl-1">
 							<h1 class="display-4">
 								Banking made simple, secure, and seamless.
-								That's the <span class="text-danger">{{ CONFIG.APP }}</span> promise.
+								That's the
+								<span class="text-danger">{{
+									CONFIG.APP
+								}}</span>
+								promise.
 							</h1>
 							<h6 class="text-muted mb-10">
 								Secure, Seamless, and Smart Banking Solutions
@@ -92,7 +94,7 @@
 								<a
 									data-bs-toggle="modal"
 									data-bs-target="#kt_modal_login"
-									@click="useAuth().openAuthModal('login')" 
+									@click="useAuth().openAuthModal('login')"
 									role="button"
 									class="btn btn-color-white bg-white bg-opacity-15 bg-hover-opacity-25 fw-semibold"
 								>
@@ -124,7 +126,7 @@
 							<!--begin::Col-->
 							<div class="col-sm-6 mb-10 mb-sm-0">
 								<!--begin::Overlay-->
-								<a class="d-block overlay h-100" role="button">
+								<div class="overlay h-100" role="button">
 									<!--begin::Image-->
 									<div
 										class="overlay-wrapper bgi-no-repeat bgi-position-center bgi-size-cover card-rounded min-h-200px h-100"
@@ -141,7 +143,7 @@
 										<NFTexLogo :classes="'h-30px'" />
 									</div>
 									<!--end::Action-->
-								</a>
+								</div>
 								<!--end::Overlay-->
 							</div>
 							<!--end::Col-->
@@ -150,7 +152,7 @@
 							<div class="col-sm-6 card border-0">
 								<!--begin::Wrapper-->
 								<div
-									class="card-body  d-flex flex-column justify-content-center h-lg-400px align-items-center"
+									class="card-body d-flex flex-column justify-content-center h-lg-400px align-items-center"
 								>
 									<!--begin::Header-->
 									<div class="mb-0">
@@ -217,7 +219,7 @@
 								class="col-sm-6 mb-10 mb-sm-0 order-1 order-lg-2"
 							>
 								<!--begin::Overlay-->
-								<a class="d-block overlay h-100" role="button">
+								<div class="overlay h-100" role="button">
 									<!--begin::Image-->
 									<div
 										class="overlay-wrapper bgi-no-repeat bgi-position-center bgi-size-cover card-rounded min-h-200px h-100"
@@ -234,13 +236,15 @@
 										<NFTexLogo :classes="'h-30px'" />
 									</div>
 									<!--end::Action-->
-								</a>
+								</div>
 								<!--end::Overlay-->
 							</div>
 							<!--end::Col-->
 
 							<!--begin::Col-->
-							<div class="col-sm-6 card border-0 order-2 order-lg-1">
+							<div
+								class="col-sm-6 card border-0 order-2 order-lg-1"
+							>
 								<!--begin::Wrapper-->
 								<div
 									class="card-body d-flex flex-column justify-content-center h-lg-400px align-items-center"
@@ -302,7 +306,7 @@
 				</div>
 
 				<!-- Hassle-Free Banking Experiences: -->
-				<div class="card  card-flush h-xl-100 mb-5">
+				<div class="card card-flush h-xl-100 mb-5">
 					<!--begin::Body-->
 					<div class="card-body py-9">
 						<!--begin::Row-->

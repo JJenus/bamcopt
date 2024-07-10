@@ -15,7 +15,7 @@ export const userData = () => {
 		status: AccountStatus.ACTIVE,
 		accountLevel: 0,
 		accountNumber: 0,
-	};
+	}; 
 
 	const initUser: IUser = {
 		id: "",

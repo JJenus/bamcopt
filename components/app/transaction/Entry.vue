@@ -40,14 +40,6 @@
 			})
 			.catch((error) => {
 				// console.log(error);
-				const data = error.response.data;
-				if (
-					data.message.includes("Access denied") ||
-					error.response.status === 401
-				) {
-					console.log("Access denied");
-					useAuth().logout();
-				}
 			});
 	};
 
@@ -191,7 +183,9 @@
 						<tr>
 							<td class="fw-semibold">Account</td>
 							<td class="text-end">
-								{{ transaction.beneficiary!.destinationAccount }}
+								{{
+									transaction.beneficiary!.destinationAccount
+								}}
 							</td>
 						</tr>
 						<tr>

@@ -8,7 +8,7 @@
 		<!--begin::Sidebar-->
 		<div
 			id="kt_app_sidebar"
-			class="app-sidebar flex-column"
+			class="app-sidebar flex-column drawer drawer-end"
 			data-kt-drawer="true"
 			data-kt-drawer-name="app-sidebar"
 			data-kt-drawer-activate="{default: true, lg: false}"

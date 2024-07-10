@@ -40,5 +40,6 @@ export { copyNonEmptyProperties, generateCode } from '../utils/util';
 export { useSwiper, useSwiperSlide } from 'swiper/vue';
 export { A11y as SwiperA11y, Autoplay as SwiperAutoplay, Controller as SwiperController, EffectCards as SwiperEffectCards, EffectCoverflow as SwiperEffectCoverflow, EffectCreative as SwiperEffectCreative, EffectCube as SwiperEffectCube, EffectFade as SwiperEffectFade, EffectFlip as SwiperEffectFlip, FreeMode as SwiperFreeMode, Grid as SwiperGrid, HashNavigation as SwiperHashNavigation, History as SwiperHistory, Keyboard as SwiperKeyboard, Manipulation as SwiperManipulation, Mousewheel as SwiperMousewheel, Navigation as SwiperNavigation, Pagination as SwiperPagination, Parallax as SwiperParallax, Scrollbar as SwiperScrollbar, Thumbs as SwiperThumbs, Virtual as SwiperVirtual, Zoom as SwiperZoom } from 'swiper/modules';
 export { useImage } from '../node_modules/@nuxt/image/dist/runtime/composables';
+export { useNuxtDevTools } from '../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools';
 export { definePageMeta } from '../node_modules/nuxt/dist/pages/runtime/composables';
 export { useLink } from 'vue-router';

@@ -295,9 +295,9 @@
 
 			<!--begin::Menu item-->
 			<div class="menu-item px-5">
-				<a @click="logout()" role="button" class="menu-link px-5">
+				<div @click="logout()" role="button" class="menu-link px-5">
 					Sign Out
-				</a>
+				</div>
 			</div>
 			<!--end::Menu item-->
 		</div>

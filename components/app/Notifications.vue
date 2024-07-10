@@ -41,7 +41,7 @@
 		<!--begin::Activities drawer-->
 		<div
 			id="kt_activities"
-			class="bg-body mobile-aside"
+			class="bg-body mobile-aside drawer drawer-end"
 			data-kt-drawer="true"
 			data-kt-drawer-name="activities"
 			data-kt-drawer-activate="true"
