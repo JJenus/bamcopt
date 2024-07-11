@@ -276,12 +276,13 @@
 		}
 	};
 	
+	const sending = ref(false);
+	
 	const completeTransaction = () => {
 	  setTransactionParams();
 
 		transaction.value.senderId = useUserData.data.value.id;
-
-		submitButton.value.setAttribute("data-kt-indicator", "on");
+		sending.value = true;
 		console.log("Transaction", transaction.value);
 
 		const validData = copyNonEmptyProperties(transaction.value);
@@ -318,11 +319,11 @@
 			})
 			.catch((error) => {
 				console.log(error);
-				const data = error.response.data;
+				//const data = error.response.data;
 				errorAlert("Transaction error. Contact support to clear issues in your account.");
 			})
 			.finally(() => {
-				submitButton.value.removeAttribute("data-kt-indicator");
+				sending.value = false;
 			});
 	}
 
@@ -548,7 +549,15 @@
 								></span>
 								verifying...
 							</span>
-							<span v-else> Continue transfer </span>
+							<span v-else> 
+							  <span v-if="sending">
+							    processing...
+							    <span
+									class="spinner-border spinner-border-sm"
+								  ></span>
+							  </span>
+							  <span v-else>Continue transfer</span>
+							</span>
 						</button>
 					</div>
 				</div>
