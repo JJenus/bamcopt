@@ -23,33 +23,6 @@
 
 	calc();
 
-	const fetchTransactions = () => {
-		const axiosConfig = {
-			method: "get",
-			url: `${appConfig.public.BE_API}/transactions/${userId}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data.sort(
-					(a: any, b: any) =>
-						new Date(b.createdAt).getTime() -
-						new Date(a.createdAt).getTime()
-				);
-				transactions.value = data;
-				calc();
-				console.log(data);
-			})
-			.catch((error) => {
-				console.log(error);
-			});
-	};
-
 	const getAmount = (cAmount: number) => {
 		cAmount = cAmount || 0;
 
@@ -59,9 +32,6 @@
 		return amount;
 	};
 
-	onMounted(() => {
-		fetchTransactions();
-	});
 </script>
 
 <template>

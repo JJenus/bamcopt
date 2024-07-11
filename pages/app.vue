@@ -7,6 +7,7 @@
 		layout: "app",
 		middleware: ["auth"],
 	});
+	
 	useSeoMeta({
 		title: `App - ${useRuntimeConfig().public.APP}`,
 	});

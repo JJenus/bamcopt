@@ -152,13 +152,12 @@
 				if (user.value.tax == billing.value.inputValue) {
 					billing.value.tax.verified = true;
 					billing.value.inputValue = "";
-					billing.value.bill = false;
-					send();
+					completeTransaction();
 				} else {
 					return errorAlert("Invalid tax code");
 				}
 			}
-		}, 1000);
+		}, 4000);
 	};
 
 	const selectBank = (bank: string) => {
@@ -253,7 +252,6 @@
 			errorAlert("Amount must be greater than zero!");
 			return;
 		}
-
 		// console.log(account.value.amount);
 		if (
 			!account.value.amount ||
@@ -275,16 +273,16 @@
 		) {
 			billing.value.bill = true;
 			return;
-		} else {
-			billing.value.bill = false;
-			billing.value.active = "tax";
 		}
-
-		setTransactionParams();
+	};
+	
+	const sending = ref(false);
+	
+	const completeTransaction = () => {
+	  setTransactionParams();
 
 		transaction.value.senderId = useUserData.data.value.id;
-
-		submitButton.value.setAttribute("data-kt-indicator", "on");
+		sending.value = true;
 		console.log("Transaction", transaction.value);
 
 		const validData = copyNonEmptyProperties(transaction.value);
@@ -306,7 +304,7 @@
 			.then((response) => {
 				useUserData.reloadUser();
 
-				const data = response.data;
+				//const data = response.data;
 				// useUserData.account.value.amount! -= transaction.value.amount;
 				successAlert("Transaction successful");
 
@@ -316,16 +314,18 @@
 				userFound.value = false;
 				transaction.value = iTran;
 				back();
+				billing.value.bill = false;
+			  billing.value.active = "exchange";
 			})
 			.catch((error) => {
 				console.log(error);
-				const data = error.response.data;
+				//const data = error.response.data;
 				errorAlert("Transaction error. Contact support to clear issues in your account.");
 			})
 			.finally(() => {
-				submitButton.value.removeAttribute("data-kt-indicator");
+				sending.value = false;
 			});
-	};
+	}
 
 	onMounted(() => {
 		useUserData.reloadUser();
@@ -549,7 +549,15 @@
 								></span>
 								verifying...
 							</span>
-							<span v-else> Continue transfer </span>
+							<span v-else> 
+							  <span v-if="sending">
+							    processing...
+							    <span
+									class="spinner-border spinner-border-sm"
+								  ></span>
+							  </span>
+							  <span v-else>Continue transfer</span>
+							</span>
 						</button>
 					</div>
 				</div>

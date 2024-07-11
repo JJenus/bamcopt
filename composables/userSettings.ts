@@ -6,7 +6,7 @@ export const useUserSettings = () => {
 	const user = userData().data;
 	const transferBank = useState<string>("bank-recipient", () => "bancopt");
 
-	const transactions = useState<Transaction[]>("user-transactions", () => []);
+	const transactions = userData().transactions;
 
 	const load = (obj: any, url: string) => {
 		const axiosConfig: any = {
@@ -55,11 +55,10 @@ export const useUserSettings = () => {
 			});
 	};
 
-	fetchTransactions();
-
 	return {
 		transferBank,
 		transactions,
+		fetchTransactions,
 		load,
 	};
 };

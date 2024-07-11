@@ -2,6 +2,8 @@
 	import moment from "moment";
 	const user = userData().data;
 	const userSettings = useUserSettings();
+	userSettings.fetchTransactions();
+	
 	const active = userSettings.transferBank;
 	const transactions = userSettings.transactions;
 
