@@ -1,10 +1,5 @@
 <script setup>
-	definePageMeta({
-		layout: "app",
-		middleware: ["admin-auth"],
-	});
-
-	if (process.client) {
+  if (process.client) {
 		// $crisp.push(["do", "chat:hide"]);
 	}
 
