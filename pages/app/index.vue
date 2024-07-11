@@ -2,8 +2,6 @@
 	import moment from "moment";
 	const user = userData().data;
 	const userSettings = useUserSettings();
-	userSettings.fetchTransactions();
-
 	const active = userSettings.transferBank;
 	const transactions = userSettings.transactions;
 
@@ -136,10 +134,7 @@
 						type="button"
 						class="btn btn-light-primary fw-semibold"
 					>
-						<span
-							class="rounded fs-3 fw-bold shadow-lg bg-transparent"
-							>S</span
-						>
+						<span class="rounded fs-3 fw-bold shadow-lg bg-transparent">S</span>
 						Skrill
 					</button>
 				</div>
@@ -166,10 +161,7 @@
 
 			<!--begin::Card body-->
 			<div class="card-body">
-				<div
-					v-if="getPreview().length == 0"
-					class="text-muted text-center"
-				>
+				<div v-if="getPreview().length == 0" class="text-muted text-center">
 					No transaction
 				</div>
 				<AppTransactionEntry

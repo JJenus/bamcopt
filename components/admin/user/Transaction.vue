@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { Transaction } from "utils/interfaces/Transaction";
+	import { type Transaction } from "~/utils/interfaces/Transaction";
 	import "animate.css";
 	import axios from "axios";
 	import currency from "currency.js";

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-	import currency from "currency.js";
-	import { IUser } from "utils/interfaces/IUser";
+	import { type IUser } from "~/utils/interfaces/IUser";
 
 	const active = userData().active;
 	const money = useAppSettings().formatMoney;

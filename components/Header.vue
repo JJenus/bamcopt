@@ -52,7 +52,6 @@
 
 <template>
 	<div
-		style="z-index: 22"
 		id="kt_app_header"
 		class="app-header d-flex border-0 bg-transparent"
 		:data-kt-sticky="true"
@@ -140,6 +139,8 @@
 						/>
 						<!--end::Drawer toggle-->
 					</a>
+
+					<!--end::Menu wrapper-->
 				</div>
 				<!--end::User menu-->
 

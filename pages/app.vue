@@ -1,25 +1,15 @@
 <script setup lang="ts">
-	import { IUser } from "utils/interfaces/IUser";
-	import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-	import { AuthToken } from "utils/interfaces/AuthToken";
+	import { type IUser } from "~/utils/interfaces/IUser";
+	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
+	import { UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
 
 	definePageMeta({
 		layout: "app",
 		middleware: ["auth"],
 	});
-	
 	useSeoMeta({
 		title: `App - ${useRuntimeConfig().public.APP}`,
 	});
-
-	const loaded = useCookie<boolean>("reload", { maxAge: 60 * 60 * 24 });
-
-	if (process.client) {
-		if (!loaded.value) {
-			window.location.reload();
-			loaded.value = true;
-		}
-	}
 
 	const appConfig = useRuntimeConfig();
 
@@ -65,11 +55,22 @@
 	onBeforeMount(() => {
 		const cookie = useAuth().userAuth;
 		if (cookie.value === null || cookie.value === undefined) {
-			console.log(cookie.value)
+			console.log(cookie.value);
 			infoAlert("Session expired");
 			return useAuth().logout();
 		}
 		getUserData();
+
+		if (data.value.status === UserAccountStatus.HOLD) {
+			infoAlert("Account on hold. Contact support.");
+		}
+
+		if (data.value.status === UserAccountStatus.SUSPENDED) {
+			errorAlert("Account suspended. Contact support immediately!");
+			setTimeout(() => {
+				useAuth().logout();
+			}, 5000);
+		}
 	});
 </script>
 <template>

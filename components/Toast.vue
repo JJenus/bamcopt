@@ -75,41 +75,45 @@
 </script>
 
 <template>
-	<div
-		id="kt_docs_toast_stack_container"
-		class="toast-container position-fixed top-0 end-0 p-3 z-index-3 pt-10 pt-lg-5 w-75 w-md-300px me-3"
-	>
+	<div>
 		<div
-			class="toast z600k"
-			role="alert"
-			aria-live="assertive"
-			aria-atomic="true"
-			data-kt-docs-toast="stack"
+			id="kt_docs_toast_stack_container"
+			class="toast-container z-index-6k position-fixed top-0 end-0 p-3 z-index-3 pt-10 pt-lg-5 w-75 w-md-300px me-3"
 		>
-			<div class="toast-header">
-				<i class="ki-duotone ki-message-notif fs-2 text-info me-3">
-					<span class="path1"></span>
-					<span class="path2"></span>
-					<span class="path3"></span>
-					<span class="path4"></span>
-					<span class="path5"></span>
-				</i>
-				<strong class="me-auto">Bancopt</strong>
-				<small>11 mins ago</small>
-				<button
-					type="button"
-					class="btn-close"
-					data-bs-dismiss="toast"
-					aria-label="Close"
-				></button>
+			<div
+				class="toast"
+				role="alert"
+				aria-live="assertive"
+				aria-atomic="true"
+				data-kt-docs-toast="stack"
+			>
+				<div class="toast-header">
+					<i class="ki-duotone ki-message-notif fs-2 text-info me-3">
+						<span class="path1"></span>
+						<span class="path2"></span>
+						<span class="path3"></span>
+						<span class="path4"></span>
+						<span class="path5"></span>
+					</i>
+					<strong class="me-auto">Bancopt</strong>
+					<small>11 mins ago</small>
+					<button
+						type="button"
+						class="btn-close"
+						data-bs-dismiss="toast"
+						aria-label="Close"
+					></button>
+				</div>
+				<div class="toast-body">
+					Hello, world! This is a toast message.
+				</div>
 			</div>
-			<div class="toast-body">Hello, world! This is a toast message.</div>
 		</div>
 	</div>
 </template>
 
 <style scoped>
-  .z600k {
-    z-index: 60000;
-  }
+	.z-index-6k {
+		z-index: 60000;
+	}
 </style>

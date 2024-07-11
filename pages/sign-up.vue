@@ -1,10 +1,10 @@
 <script setup lang="ts">
 	import axios, {
 		AxiosError,
-		AxiosRequestConfig,
-		AxiosResponse,
+		type AxiosRequestConfig,
+		type AxiosResponse,
 	} from "axios";
-	import { AuthToken } from "utils/interfaces/AuthToken";
+	import { type AuthToken } from "~/utils/interfaces/AuthToken";
 
 	definePageMeta({
 		layout: "auth",

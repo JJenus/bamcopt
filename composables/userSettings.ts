@@ -1,12 +1,12 @@
 import axios from "axios";
-import { Transaction } from "utils/interfaces/Transaction";
+import { type Transaction } from "~/utils/interfaces/Transaction";
 
 export const useUserSettings = () => {
 	const appConfig = useRuntimeConfig();
 	const user = userData().data;
 	const transferBank = useState<string>("bank-recipient", () => "bancopt");
 
-	const transactions = userData().transactions;
+	const transactions = useState<Transaction[]>("user-transactions", () => []);
 
 	const load = (obj: any, url: string) => {
 		const axiosConfig: any = {
@@ -48,17 +48,17 @@ export const useUserSettings = () => {
 						new Date(a.createdAt).getTime()
 				);
 				transactions.value = data;
-				console.log(data);
 			})
 			.catch((error) => {
 				console.log(error);
 			});
 	};
 
+	fetchTransactions();
+
 	return {
 		transferBank,
 		transactions,
-		fetchTransactions,
 		load,
 	};
 };

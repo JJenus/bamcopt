@@ -23,13 +23,13 @@ export const useLiveChat = () => {
 		if (process.client) {
 			const auth = useAuth();
 
-			const interval = setInterval(() => {
-				if (auth.isAuthenticated()) {
-					const user = auth.userData.value.user;
+			// const interval = setInterval(() => {
+			// 	if (auth.isAuthenticated()) {
+			// 		const user = auth.userData.value.user;
 
-					clearInterval(interval);
-				}
-			}, 5000);
+			// 		clearInterval(interval);
+			// 	}
+			// }, 5000);
 		}
 	};
 

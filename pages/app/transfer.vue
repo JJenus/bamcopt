@@ -1,10 +1,11 @@
 <script setup lang="ts">
 	import Cleave from "cleave.js";
 	import {
-		Transaction,
+		type Transaction,
 		TransactionTypes,
-	} from "../../utils/interfaces/Transaction";
-	import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
+	} from "~/utils/interfaces/Transaction";
+	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
+	import { UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
 
 	const banks = ref({
 		skrill: "Skrill",
@@ -72,7 +73,7 @@
 	const form = ref({
 		amount: "",
 	});
-	const submitButton = ref();
+	const sending = ref(false);
 
 	const buttons = [
 		{
@@ -130,6 +131,7 @@
 	const continueTransfer = () => {
 		useUserData.reloadUser();
 		billing.value.verifying = true;
+		console.log(user.value);
 		setTimeout(() => {
 			billing.value.verifying = false;
 			if (!billing.value.cot.verified) {
@@ -201,7 +203,7 @@
 	};
 
 	const back = () => {
-		submitButton.value.removeAttribute("data-kt-indicator");
+		sending.value = false;
 		next.value = false;
 	};
 
@@ -248,6 +250,10 @@
 	};
 
 	const send = () => {
+		if (user.value.status === UserAccountStatus.HOLD) {
+			infoAlert("Account on hold. Contact support.");
+			return;
+		}
 		if (Number(form.value.amount) <= 0) {
 			errorAlert("Amount must be greater than zero!");
 			return;
@@ -275,13 +281,12 @@
 			return;
 		}
 	};
-	
-	const sending = ref(false);
-	
+
 	const completeTransaction = () => {
-	  setTransactionParams();
+		setTransactionParams();
 
 		transaction.value.senderId = useUserData.data.value.id;
+
 		sending.value = true;
 		console.log("Transaction", transaction.value);
 
@@ -304,7 +309,7 @@
 			.then((response) => {
 				useUserData.reloadUser();
 
-				//const data = response.data;
+				const data = response.data;
 				// useUserData.account.value.amount! -= transaction.value.amount;
 				successAlert("Transaction successful");
 
@@ -315,17 +320,19 @@
 				transaction.value = iTran;
 				back();
 				billing.value.bill = false;
-			  billing.value.active = "exchange";
+				billing.value.active = "exchange";
 			})
 			.catch((error) => {
 				console.log(error);
-				//const data = error.response.data;
-				errorAlert("Transaction error. Contact support to clear issues in your account.");
+				const data = error.response.data;
+				errorAlert(
+					"Transaction error. Contact support to clear issues in your account."
+				);
 			})
 			.finally(() => {
 				sending.value = false;
 			});
-	}
+	};
 
 	onMounted(() => {
 		useUserData.reloadUser();
@@ -498,15 +505,14 @@
 					</button>
 					<button
 						:disabled="next && disableSend()"
-						ref="submitButton"
 						type="submit"
 						class="btn btn-primary btn-icon fw-bold fs-2 w-100"
 					>
-						<span class="indicator-label">
+						<span v-if="!sending" class="indicator-labeli">
 							<span v-if="next">Transfer</span>
 							<span v-else>Next</span>
 						</span>
-						<span class="indicator-progress">
+						<span v-else class="indicator-progressi">
 							Please wait...
 							<span
 								class="spinner-border spinner-border-sm align-middle ms-2"
@@ -549,15 +555,7 @@
 								></span>
 								verifying...
 							</span>
-							<span v-else> 
-							  <span v-if="sending">
-							    processing...
-							    <span
-									class="spinner-border spinner-border-sm"
-								  ></span>
-							  </span>
-							  <span v-else>Continue transfer</span>
-							</span>
+							<span v-else> Continue transfer </span>
 						</button>
 					</div>
 				</div>

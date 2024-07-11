@@ -1,6 +1,6 @@
 <script setup lang="ts">
 	import moment from "moment";
-	import { IUser } from "utils/interfaces/IUser";
+	import { type IUser } from "~/utils/interfaces/IUser";
 
 	const newNotification = userData().isNewNotification;
 

@@ -3,7 +3,7 @@
 	import axios from "axios";
 	import currency from "currency.js";
 	import moment from "moment";
-	import { Transaction } from "utils/interfaces/Transaction";
+	import { type Transaction } from "~/utils/interfaces/Transaction";
 
 	const config = useRuntimeConfig().public;
 	const currentPage = "Transaction";

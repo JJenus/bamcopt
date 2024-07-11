@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { Transaction } from "utils/interfaces/Transaction";
+	import { type Transaction } from "~/utils/interfaces/Transaction";
 
 	const appResource = useAppResource();
 	const userCountry = appResource.country;

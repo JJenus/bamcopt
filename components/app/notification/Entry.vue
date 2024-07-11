@@ -1,9 +1,9 @@
 <script setup lang="ts">
 	import moment from "moment";
 	import {
-		INotification,
+		type INotification,
 		NotificationStatus,
-	} from "../../../utils/interfaces/Notification";
+	} from "~/utils/interfaces/Notification";
 
 	const props = defineProps<{ notification: INotification }>();
 	const nDate = () => {

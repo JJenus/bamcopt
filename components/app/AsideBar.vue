@@ -103,7 +103,8 @@
 				class="app-navbar-item ms-1 ms-lg-3"
 				id="kt_header_user_menu_toggle"
 			>
-				<AppUserMenuDropdown />
+				<!-- <AppUserMenuDropdown /> -->
+				<LazyAppUserMenuDropdown />
 			</div>
 			<!--end::User menu-->
 		</div>
@@ -229,8 +230,8 @@
 				<div class="card-body pt-6">
 					<AppTransactionEntry
 						v-for="transact in getPreview()"
-						:show-details="false"
 						:transaction="transact"
+						:show-details="false"
 					/>
 				</div>
 				<!--end::Body-->

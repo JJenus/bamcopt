@@ -1,12 +1,13 @@
-<script setup>
+<script setup lang="ts">
 	const user = userData().data;
 	const image = user.value.imgUrl || "/assets/media/svg/avatars/blank.svg";
 
-	const tiers = useAppSettings().accountLevels;
+	// const tiers = useAppSettings().accountLevels;
 	const account = user.value.account;
+	const auth = useAuth();
 
 	const logout = () => {
-		useAuth().logout();
+		auth.logout();
 	};
 </script>
 
@@ -49,7 +50,7 @@
 							></i>
 						</div>
 
-						<div
+						<!-- <div
 							class="d-flex align-items-center fw-bold fs-7 text-muted"
 						>
 							<i class="ki-solid ki-medal-star text-primary fs-2">
@@ -64,7 +65,7 @@
 									{{ tier.title }}
 								</span>
 							</span>
-						</div>
+						</div> -->
 					</div>
 					<!--end::Username-->
 				</div>
@@ -294,9 +295,9 @@
 
 			<!--begin::Menu item-->
 			<div class="menu-item px-5">
-				<a @click="logout()" role="button" class="menu-link px-5">
+				<div @click="logout()" role="button" class="menu-link px-5">
 					Sign Out
-				</a>
+				</div>
 			</div>
 			<!--end::Menu item-->
 		</div>

@@ -1,8 +1,5 @@
 <script setup lang="ts">
-	import axios from "axios";
 	import currency from "currency.js";
-
-	const appConfig = useRuntimeConfig();
 
 	const transactions = userData().transactions;
 	const userId = useAuth().userData.value?.userId;
@@ -31,7 +28,6 @@
 		}).format();
 		return amount;
 	};
-
 </script>
 
 <template>

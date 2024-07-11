@@ -1,10 +1,18 @@
 <script setup lang="ts">
-	import { IUser } from "utils/interfaces/IUser";
 	import axios, {
 		AxiosError,
-		AxiosRequestConfig,
-		AxiosResponse,
+		type AxiosRequestConfig,
+		type AxiosResponse,
 	} from "axios";
+
+	import { type IUser } from "~/utils/interfaces/IUser";
+	// import { type UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
+
+	enum UserAccountStatus {
+		HOLD = "HOLD",
+		ACTIVE = "ACTIVE",
+		SUSPENDED = "SUSPENDED",
+	}
 
 	const props = defineProps<{ user: IUser }>();
 	const iUser = props.user;
@@ -450,6 +458,60 @@
 				<!--end::Notice-->
 			</div>
 			<!--end::Card body-->
+		</div>
+
+		<!--begin::ACCOUNT STATUS-->
+
+		<div class="card mb-5">
+			<div
+				class="card-header cursor-pointer align-items-center"
+				bis_skin_checked="1"
+			>
+				<div class="card-title m-0" bis_skin_checked="1">
+					<h3 class="fw-bold m-0">Account Status</h3>
+				</div>
+				<span
+					:class="
+						user.status === UserAccountStatus.ACTIVE
+							? 'bg-success'
+							: user.status === UserAccountStatus.HOLD
+							? 'bg-warning'
+							: 'bg-danger'
+					"
+					class="badge pb-1 px-4"
+				>
+					{{ user.status }}
+				</span>
+			</div>
+			<!--begin::Card header-->
+
+			<div class="card-body">
+				<form @submit.prevent="updateCodes()">
+					<div class="mb-3">
+						<label class="form-label" for="">Select Status</label>
+						<select class="form-control" v-model="iUser.status">
+							<option :value="UserAccountStatus.ACTIVE">
+								{{ UserAccountStatus.ACTIVE }}
+							</option>
+							<option :value="UserAccountStatus.HOLD">
+								{{ UserAccountStatus.HOLD }}
+							</option>
+							<option :value="UserAccountStatus.SUSPENDED">
+								SUSPEND
+							</option>
+						</select>
+					</div>
+					<div class="mb-3">
+						<button type="submit" class="btn btn-primary w-100">
+							<span v-if="!loading" class="">Save</span>
+							<span
+								v-else
+								class="spinner-border spinner-border-sm"
+							></span>
+						</button>
+					</div>
+				</form>
+			</div>
 		</div>
 
 		<div class="card mb-5">

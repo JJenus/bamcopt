@@ -1,18 +1,9 @@
 <script setup lang="ts">
-	const props = defineProps({
-		classes: {
-			type: String,
-			required: false,
-		},
-		appClass: {
-			type: String,
-			required: false,
-		},
-		appClassDark: {
-			type: String,
-			required: false,
-		},
-	});
+	const props = defineProps<{
+		classes?: string;
+		appClass?: string;
+		appClassDark?: string;
+	}>();
 
 	const config = useRuntimeConfig().public;
 	// const currentPage = "App";

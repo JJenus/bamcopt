@@ -1,8 +1,8 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import { Account, AccountStatus } from "../utils/interfaces/Account";
-import { IUser } from "../utils/interfaces/IUser";
+import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
+import { type Account, AccountStatus } from "~/utils/interfaces/Account";
+import { type IUser } from "~/utils/interfaces/IUser";
 import {
-	INotification,
+	type INotification,
 	NotificationStatus,
 } from "../utils/interfaces/Notification";
 
@@ -15,7 +15,7 @@ export const userData = () => {
 		status: AccountStatus.ACTIVE,
 		accountLevel: 0,
 		accountNumber: 0,
-	};
+	}; 
 
 	const initUser: IUser = {
 		id: "",
