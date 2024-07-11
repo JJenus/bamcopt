@@ -78,10 +78,9 @@
 	<div
 		id="kt_docs_toast_stack_container"
 		class="toast-container position-fixed top-0 end-0 p-3 z-index-3 pt-10 pt-lg-5 w-75 w-md-300px me-3"
-		style="z-index: 60000"
 	>
 		<div
-			class="toast"
+			class="toast z600k"
 			role="alert"
 			aria-live="assertive"
 			aria-atomic="true"
@@ -108,3 +107,9 @@
 		</div>
 	</div>
 </template>
+
+<style scoped>
+  .z600k {
+    z-index: 60000;
+  }
+</style>

@@ -46,14 +46,6 @@
 			})
 			.catch((error) => {
 				// console.log(error);
-				const data = error.response.data;
-				if (
-					data.message.includes("Access denied") ||
-					error.response.status === 401
-				) {
-					console.log("Access denied");
-					useAuth().logout();
-				}
 			});
 	};
 
