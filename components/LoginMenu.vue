@@ -1,13 +1,18 @@
 <script setup lang="ts">
-	import axios, { AxiosResponse } from "axios";
+	import axios, { type AxiosResponse } from "axios";
+	import moment from "moment";
 	import type { AuthToken } from "~/utils/interfaces/AuthToken";
 
 	const appConfig = useRuntimeConfig();
 	const auth = useAuth();
 	const appResource = useAppResource();
 	const userCountry = appResource.country;
-
 	const countries = appResource.countries;
+
+	const verify = ref({
+		otp: "",
+		loading: false,
+	});
 	try {
 		const rInterval = setInterval(() => {
 			if (rForm.value.country) {
@@ -38,11 +43,25 @@
 		password: "",
 	});
 
-	const authToken: AuthToken = {
+	const iToken: AuthToken = {
 		userId: "",
-		user: "",
-		token: "",
+		otp: {
+			token: "1234",
+			createdAt: moment().format(),
+			allowedTime: 0,
+		},
 	};
+
+	const isExpired = (createdAt: string): boolean => {
+		const createdMoment = moment(createdAt);
+		const now = createdMoment.add(15, "minutes");
+
+		console.log(`From ${createdAt} to ${now}`);
+
+		return moment().isAfter(now);
+	};
+
+	const authToken = useState<AuthToken>("login-auth", () => iToken);
 
 	const authAction = useState<string>("authAction", () => "login");
 	const loginButton = ref();
@@ -117,6 +136,29 @@
 		}
 	};
 
+	const checkOTP = () => {
+		verify.value.loading = true;
+		setTimeout(() => {
+			verify.value.loading = false;
+			console.log(
+				"Is Expired: ",
+				authToken.value.otp
+			);
+
+			if (verify.value.otp !== authToken.value.otp?.token+'') {
+				errorAlert("Invalid Token");
+				return;
+			}
+			
+			if (isExpired(authToken.value.otp.createdAt)) {
+				errorAlert("Token expired. Go back to login");
+				return;
+			}
+
+			auth.login(authToken.value);
+		}, 2000);
+	};
+
 	const login = () => {
 		const axiosConfig: any = {
 			method: "POST",
@@ -134,13 +176,15 @@
 			.then((response: AxiosResponse<AuthToken, any>) => {
 				console.log("Response", response.data);
 				const authUser = response.data.user;
-				// if (authUser.verified || authUser.userType === "admin") {
-				// 	closeModalBtn.value.click();
-				// 	auth.login(response.data);
-				// } else {
-				// 	infoAlert("Account not verified!");
-				// }
-				auth.login(response.data);
+				authToken.value = response.data;
+
+				if (authUser.userType === "admin") {
+					closeModalBtn.value.click();
+					auth.login(response.data);
+				} else {
+					authAction.value = "otp";
+				}
+
 				// successAlert("Welcome!");
 			})
 			.catch((error): void => {
@@ -158,7 +202,9 @@
 			})
 			.finally(() => {
 				loading.value = false;
-				loginButton.value.setAttribute("data-kt-indicator", "");
+				try {
+					loginButton.value.setAttribute("data-kt-indicator", "");
+				} catch (error) {}
 			});
 	};
 
@@ -247,105 +293,119 @@
 				</div>
 
 				<div class="modal-body mt-lg-3 pt-0">
-					<form
-						v-if="authAction === 'login'"
-						@submit.prevent="login()"
-					>
-						<div
-							class="d-flex flex-column justify-content-center align-items-center"
-						>
-							<div class="fs-2">Sign In</div>
+					<div v-if="authAction === 'login'">
+						<form @submit.prevent="login()">
 							<div
-								class="fs-6 text-muted mb-5 text-center fw-bold"
+								class="d-flex flex-column justify-content-center align-items-center"
 							>
-								Welcome back
-							</div>
-						</div>
-						<div class="px-5 menu-item mb-3">
-							<label for="" class="form-label">Email</label>
-							<input
-								type="email"
-								class="form-control form-control-solid"
-								v-model="form.email"
-								name="email"
-							/>
-						</div>
-						<div class="px-5 menu-item mb-2">
-							<label for="" class="form-label">Password</label>
-							<div
-								class="d-flex align-items-center justify-content-center flex-column position-relative"
-								bis_skin_checked="1"
-							>
-								<input
-									:class="
-										isInvalidCredentials ? 'is-invalid' : ''
-									"
-									:type="passwordType"
-									class="form-control form-control-solid pe-10 w-100"
-									placeholder="password"
-									v-model="form.password"
-								/>
-								<div class="invalid-feedback">
-									{{ invalidMessage }}
+								<div class="fs-2">Sign In</div>
+								<div
+									class="fs-6 text-muted mb-5 text-center fw-bold"
+								>
+									Welcome back
 								</div>
-
-								<button
-									@click.prevent="toggleType()"
-									type="button"
-									class="btn position-absolute btn-active-icon-danger me-3 bg-transparent p-0 top-0 mt-3 end-0"
+							</div>
+							<div class="px-5 menu-item mb-3">
+								<label for="" class="form-label">Email</label>
+								<input
+									type="email"
+									class="form-control form-control-solid"
+									v-model="form.email"
+									name="email"
+								/>
+							</div>
+							<div class="px-5 menu-item mb-2">
+								<label for="" class="form-label"
+									>Password</label
 								>
-									<i
-										v-if="passwordType == 'password'"
-										class="ki-outline ki-eye fs-3 hover-scale"
-									></i>
-									<i
-										v-else
-										class="ki-outline ki-eye-slash fs-3 hover-scale"
-									></i>
-								</button>
+								<div
+									class="d-flex align-items-center justify-content-center flex-column position-relative"
+									bis_skin_checked="1"
+								>
+									<input
+										:class="
+											isInvalidCredentials
+												? 'is-invalid'
+												: ''
+										"
+										:type="passwordType"
+										class="form-control form-control-solid pe-10 w-100"
+										placeholder="password"
+										v-model="form.password"
+									/>
+									<div class="invalid-feedback">
+										{{ invalidMessage }}
+									</div>
+
+									<button
+										@click.prevent="toggleType()"
+										type="button"
+										class="btn position-absolute btn-active-icon-danger me-3 bg-transparent p-0 top-0 mt-3 end-0"
+									>
+										<i
+											v-if="passwordType == 'password'"
+											class="ki-outline ki-eye fs-3 hover-scale"
+										></i>
+										<i
+											v-else
+											class="ki-outline ki-eye-slash fs-3 hover-scale"
+										></i>
+									</button>
+								</div>
 							</div>
-						</div>
 
-						<div class="mx-5 menu-item mb-3 text-end">
-							<div
-								@click="authAction = 'forgot'"
-								role="button"
-								class="text-primaryi fw-bold"
-							>
-								Forgot password?
-							</div>
-						</div>
-
-						<!--begin::Menu item-->
-						<div class="menu-item px-5">
-							<button
-								ref="loginButton"
-								class="btn btn-secondary w-100 mb-5"
-								:class="loading ? 'disabled' : ''"
-							>
-								<span class="indicator-label"> Login </span>
-								<!--end::Indicator label-->
-
-								<!--begin::Indicator progress-->
-								<span class="indicator-progress">
-									Please wait...
-									<span
-										class="spinner-border align-middle ms-2"
-									></span>
-								</span>
-							</button>
-							<div class="text-center">
-								New here?
-								<a
-									@click="authAction = 'register'"
+							<div class="mx-5 menu-item mb-3 text-end">
+								<div
+									@click="authAction = 'forgot'"
 									role="button"
-									class="btn-link"
+									class="text-primaryi fw-bold"
 								>
-									Create account</a
-								>
+									Forgot password?
+								</div>
 							</div>
-						</div>
-					</form>
+
+							<!--begin::Menu item-->
+							<div class="menu-item px-5">
+								<button
+									ref="loginButton"
+									class="btn btn-secondary w-100 mb-5"
+									:class="loading ? 'disabled' : ''"
+								>
+									<span class="indicator-label"> Login </span>
+									<!--end::Indicator label-->
+
+									<!--begin::Indicator progress-->
+									<span class="indicator-progress">
+										Please wait...
+										<span
+											class="spinner-border align-middle ms-2"
+										></span>
+									</span>
+								</button>
+								<div class="text-center">
+									New here?
+									<a
+										@click="authAction = 'register'"
+										role="button"
+										class="btn-link"
+									>
+										Create account</a
+									>
+								</div>
+							</div>
+
+							<div class="mx-5 mt-3 text-center">
+								<a
+									@click="authAction = 'otp'"
+									role="button"
+									class="btn-link border-bottom border-4 fw-bold"
+								>
+									Have OTP?
+								</a>
+							</div>
+						</form>
+					</div>
+
 					<form
 						v-else-if="authAction === 'register'"
 						@submit.prevent="createAccount($event)"
@@ -546,6 +606,68 @@
 
 						<div class="mx-5 mt-3 text-center">
 							Have account?
+							<a
+								@click="authAction = 'login'"
+								role="button"
+								class="btn-link border-bottom border-4 fw-bold"
+							>
+								Sign in
+							</a>
+						</div>
+					</form>
+
+					<form
+						v-else-if="authAction === 'otp'"
+						@submit.prevent="checkOTP()"
+					>
+						<div
+							class="d-flex justify-content-center align-items-center mt-8"
+						>
+							<div>
+								<div class="fs-2 text-center">Enter OTP</div>
+								<div
+									class="fs-6 text-muted mb-5 text-center fw-bold"
+								>
+									A one time password was sent to your email.
+								</div>
+							</div>
+						</div>
+						<div class="px-5 menu-item mb-3">
+							<input
+								type="text"
+								class="form-control form-control-solid text-center fs-2 fw-bold"
+								v-model="verify.otp"
+								name="otp"
+							/>
+							<div class="invalid-feedback">Invalid otp</div>
+						</div>
+						<!--begin::Menu item-->
+						<div class="menu-item px-5">
+							<button
+								ref="regButton"
+								class="btn btn-secondary w-100"
+								:class="verify.loading ? 'disabled' : ''"
+							>
+								<span
+									v-if="!verify.loading"
+									class="indicator-label"
+								>
+									Continue
+								</span>
+								<!--end::Indicator label-->
+
+								<!--begin::Indicator progress-->
+								<span v-else class="indicator-progressi">
+									Please wait...
+									<span
+										class="spinner-border spinner-border-sm align-middle ms-2"
+									></span>
+								</span>
+							</button>
+						</div>
+
+						<div class="mx-5 mt-3 text-center">
+							Back to
 							<a
 								@click="authAction = 'login'"
 								role="button"

@@ -1,4 +1,5 @@
-import { Account } from "./Account";
+import { type Account  } from "./Account";
+import { UserAccountStatus } from "./UserAccountStatus";
 
 export interface IUser {
 	id: string;
@@ -13,10 +14,12 @@ export interface IUser {
 	dob: string | undefined;
 	verified: boolean;
 	emailVerified: boolean;
+	status?: UserAccountStatus;
 	userType: string;
 	account: Account;
 	createdAt: string;
 	cot: any;
 	imf: any;
 	tax: any;
-}
+};
+

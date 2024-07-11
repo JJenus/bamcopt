@@ -1,20 +1,15 @@
 <script setup lang="ts">
-	import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
+	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 	import moment from "moment";
-	import { IUser } from "utils/interfaces/IUser";
+	import { type IUser } from "~/utils/interfaces/IUser";
+	import { type Transaction } from "~/utils/interfaces/Transaction";
+
 	const money = useAppSettings().formatMoney;
 
-	const props = defineProps({
-		showDetails: {
-			type: Boolean,
-			required: false,
-			default: false,
-		},
-		transaction: {
-			type: Object,
-			required: true,
-		},
-	});
+	const props = defineProps<{
+		transaction: Transaction;
+		showDetails: boolean;
+	}>();
 
 	const user = ref<any>({
 		name: "",
@@ -24,8 +19,7 @@
 
 	const getUserData = () => {
 		if (!useAuth().userData.value) {
-			useAuth().logout();
-			infoAlert("Session expired, please login.");
+			return useAuth().logout();
 		}
 
 		const axiosConfig: AxiosRequestConfig = {
@@ -56,7 +50,7 @@
 			getUserData();
 			return "Received";
 		}
-		user.value.name = props.transaction.beneficiary.name;
+		user.value.name = props.transaction.beneficiary!!.name;
 
 		return "Sent";
 	};
@@ -112,14 +106,16 @@
 			<!--begin::Section-->
 			<div class="d-flex align-items-center flex-row-fluid flex-wrap">
 				<!--begin::Section-->
-				<div class="d-flex align-items-center flex-row-fluid justify-content-between">
+				<div
+					class="d-flex align-items-center flex-row-fluid justify-content-between"
+				>
 					<!--begin:Author-->
 					<div class="d-flex flex-column">
 						<span
 							class="text-hover-primary text-gray-800 fs-5 fw-bolder"
 							style="color: #28346c"
-							>
-						  {{ user.name }}
+						>
+							{{ user.name }}
 						</span>
 
 						<span class="text-gray-400 fw-semibold fs-n6">
@@ -127,14 +123,22 @@
 						</span>
 					</div>
 					<!--end:Author-->
-					<div  class="d-flex flex-column text-end">
+					<div class="d-flex flex-column text-end">
 						<!--begin::Info-->
-						<span :class="getType() == 'sent'? 'text-success':'text-danger'"  class=" fw-bold fs-6">
-						{{getType() == 'sent'? '+':'-'}}	{{ money(transaction.amount, true) }}
+						<span
+							:class="
+								getType() == 'Sent'
+									? 'text-success'
+									: 'text-danger'
+							"
+							class="fw-bold fs-6"
+						>
+							{{ getType() == "Sent" ? "+" : "-" }}
+							{{ money(transaction.amount, true) }}
 						</span>
 						<!--end::Info-->
 						<div class="text-gray-400 text-truncate w-80pxiu">
-							{{ transaction.beneficiary.bank }}
+							{{ transaction.beneficiary!.bank }}
 						</div>
 					</div>
 					<div v-if="showDetails" class="ms-2">
@@ -145,7 +149,7 @@
 						</i>
 					</div>
 				</div>
-				
+
 				<div v-if="showDetails" class="ms-2 d-none">
 					<i
 						:class="show ? 'ki-up-square' : 'ki-down-square'"
@@ -167,19 +171,21 @@
 						<tr>
 							<td class="fw-semibold">Bank</td>
 							<td class="text-end">
-								{{ transaction.beneficiary.bank }}
+								{{ transaction.beneficiary!.bank }}
 							</td>
 						</tr>
 						<tr>
 							<td class="fw-semibold">Name</td>
 							<td class="text-end">
-								{{ transaction.beneficiary.name }}
+								{{ transaction.beneficiary!.name }}
 							</td>
 						</tr>
 						<tr>
 							<td class="fw-semibold">Account</td>
 							<td class="text-end">
-								{{ transaction.beneficiary.destinationAccount }}
+								{{
+									transaction.beneficiary!.destinationAccount
+								}}
 							</td>
 						</tr>
 						<tr>

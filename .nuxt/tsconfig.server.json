@@ -12,54 +12,54 @@
     "jsxFragmentFactory": "Fragment",
     "paths": {
       "#imports": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/.nuxt/types/nitro-imports"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/.nuxt/types/nitro-imports"
       ],
       "#paths": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/nuxt/dist/core/runtime/nitro/paths"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/node_modules/nuxt/dist/core/runtime/nitro/paths"
       ],
       "~": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt"
       ],
       "~/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/*"
       ],
       "@": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt"
       ],
       "@/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/*"
       ],
       "~~": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt"
       ],
       "~~/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/*"
       ],
       "@@": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt"
       ],
       "@@/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/*"
       ],
       "assets": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/assets"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/assets"
       ],
       "public": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/public"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/public"
       ],
       "public/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/public/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/public/*"
       ],
       "#image": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/@nuxt/image/dist/runtime"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/node_modules/@nuxt/image/dist/runtime"
       ],
       "#image/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/@nuxt/image/dist/runtime/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/node_modules/@nuxt/image/dist/runtime/*"
       ]
     }
   },
   "include": [
-    "/home/jjenus/workbench/apps/bancopt/bancopt/.nuxt/types/nitro-nuxt.d.ts",
+    "/home/jjenus/workbench/apps/bancopt/bamcopt/.nuxt/types/nitro-nuxt.d.ts",
     "./types/nitro.d.ts",
     "../**/*",
     "../server/**/*"

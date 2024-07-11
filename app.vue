@@ -1,10 +1,7 @@
 <script setup>
-
 	let config = {
 		ID: "Zc7Mk9Zyk8EBqxpYZ",
 	};
-
-	
 </script>
 
 <template>

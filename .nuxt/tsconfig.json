@@ -9,7 +9,7 @@
     "skipLibCheck": true,
     "strict": true,
     "allowJs": true,
-    "baseUrl": "/home/jjenus/workbench/apps/bancopt/bancopt",
+    "baseUrl": "/home/jjenus/workbench/apps/bancopt/bamcopt",
     "noEmit": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
@@ -19,67 +19,67 @@
     ],
     "paths": {
       "~": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt"
       ],
       "~/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/*"
       ],
       "@": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt"
       ],
       "@/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/*"
       ],
       "~~": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt"
       ],
       "~~/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/*"
       ],
       "@@": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt"
       ],
       "@@/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/*"
       ],
       "assets": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/assets"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/assets"
       ],
       "public": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/public"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/public"
       ],
       "public/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/public/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/public/*"
       ],
       "#app": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/nuxt/dist/app"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/node_modules/nuxt/dist/app"
       ],
       "#app/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/nuxt/dist/app/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/node_modules/nuxt/dist/app/*"
       ],
       "vue-demi": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/nuxt/dist/app/compat/vue-demi"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/node_modules/nuxt/dist/app/compat/vue-demi"
       ],
       "#image": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/@nuxt/image/dist/runtime"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/node_modules/@nuxt/image/dist/runtime"
       ],
       "#image/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/node_modules/@nuxt/image/dist/runtime/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/node_modules/@nuxt/image/dist/runtime/*"
       ],
       "#vue-router": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/.nuxt/vue-router"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/.nuxt/vue-router"
       ],
       "#imports": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/.nuxt/imports"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/.nuxt/imports"
       ],
       "#build": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/.nuxt"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/.nuxt"
       ],
       "#build/*": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/.nuxt/*"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/.nuxt/*"
       ],
       "#components": [
-        "/home/jjenus/workbench/apps/bancopt/bancopt/.nuxt/components"
+        "/home/jjenus/workbench/apps/bancopt/bamcopt/.nuxt/components"
       ]
     }
   },
@@ -87,14 +87,14 @@
     "./nuxt.d.ts",
     "../**/*",
     "../**/*",
-    "/home/jjenus/workbench/apps/bancopt/bancopt",
-    "/home/jjenus/workbench/apps/bancopt/bancopt/*",
-    "/home/jjenus/workbench/apps/bancopt/bancopt",
-    "/home/jjenus/workbench/apps/bancopt/bancopt/*",
-    "/home/jjenus/workbench/apps/bancopt/bancopt",
-    "/home/jjenus/workbench/apps/bancopt/bancopt/*",
-    "/home/jjenus/workbench/apps/bancopt/bancopt",
-    "/home/jjenus/workbench/apps/bancopt/bancopt/*"
+    "/home/jjenus/workbench/apps/bancopt/bamcopt",
+    "/home/jjenus/workbench/apps/bancopt/bamcopt/*",
+    "/home/jjenus/workbench/apps/bancopt/bamcopt",
+    "/home/jjenus/workbench/apps/bancopt/bamcopt/*",
+    "/home/jjenus/workbench/apps/bancopt/bamcopt",
+    "/home/jjenus/workbench/apps/bancopt/bamcopt/*",
+    "/home/jjenus/workbench/apps/bancopt/bamcopt",
+    "/home/jjenus/workbench/apps/bancopt/bamcopt/*"
   ],
   "exclude": [
     "../dist",

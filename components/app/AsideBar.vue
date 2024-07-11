@@ -229,6 +229,7 @@
 				<div class="card-body pt-6">
 					<AppTransactionEntry
 						v-for="transact in getPreview()"
+						:show-details="false"
 						:transaction="transact"
 					/>
 				</div>
