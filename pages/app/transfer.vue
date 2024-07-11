@@ -304,7 +304,7 @@
 			.then((response) => {
 				useUserData.reloadUser();
 
-				const data = response.data;
+				//const data = response.data;
 				// useUserData.account.value.amount! -= transaction.value.amount;
 				successAlert("Transaction successful");
 
