@@ -14,12 +14,14 @@
 		SUSPENDED = "SUSPENDED",
 	}
 
+	const loadingAStatus = ref(false);
+
 	const props = defineProps<{ user: IUser }>();
 	const iUser = props.user;
 	const tiers = useAppSettings().accountLevels;
 
 	const appConfig = useRuntimeConfig();
-	const submitButton = ref();
+	const loadingVerify = ref(false);
 	const newLevel = ref({ newLevel: props.user.account.accountLevel });
 	const loading = ref(false);
 
@@ -55,7 +57,7 @@
 		return newObj;
 	}
 
-	const save = (data: any, url: string) => {
+	const save = (data: any, url: string, loader: any) => {
 		const axiosConfig: AxiosRequestConfig = {
 			method: "put",
 			data: data,
@@ -65,8 +67,8 @@
 				Authorization: "Bearer " + useAuth().userData.value?.token,
 			},
 		};
-		loading.value = true;
-		submitButton.value.setAttribute("data-kt-indicator", "on");
+
+		loader.value = true;
 		// return;
 		axios
 			.request(axiosConfig)
@@ -82,8 +84,7 @@
 				console.log(errRes);
 			})
 			.finally(() => {
-				loading.value = false;
-				submitButton.value.removeAttribute("data-kt-indicator");
+				loader.value = false;
 			});
 	};
 
@@ -93,7 +94,7 @@
 		const data = getObject(props.user);
 		data.verified = true;
 		// console.log(user);
-		save(data, `users/${data.id}`);
+		save(data, `users/${data.id}`, loadingVerify);
 	};
 
 	const upgradeLevel = () => {
@@ -101,8 +102,9 @@
 		const data = { ...user.account };
 		data.accountLevel = newLevel.value.newLevel;
 		// console.log(user);
-		save(data, "account");
+		save(data, "account", loading);
 	};
+
 	const fetchTransactions = () => {
 		const axiosConfig = {
 			method: "get",
@@ -131,7 +133,12 @@
 
 	const updateCodes = () => {
 		const data = copyNonEmptyProperties(iUser);
-		save(data, `users/${iUser.id}`);
+		save(data, `users/${iUser.id}`, loading);
+	};
+
+	const updateAccountStatus = () => {
+		const data = copyNonEmptyProperties(iUser);
+		save(data, `users/${iUser.id}`, loadingAStatus);
 	};
 
 	const autoGenCodes = () => {
@@ -165,12 +172,11 @@
 				<!--begin::Action-->
 				<button
 					@click="verify()"
-					ref="submitButton"
 					v-if="!user?.verified"
 					class="btn btn-secondary"
 				>
 					<!--begin::Indicator label-->
-					<span class="indicator-label">
+					<span v-if="!loadingVerify" class="indicator-labeli">
 						<i class="ki-duotone ki-user-tick fs-3">
 							<span class="path1"></span>
 							<span class="path2"></span>
@@ -181,7 +187,7 @@
 					<!--end::Indicator label-->
 
 					<!--begin::Indicator progress-->
-					<span class="indicator-progress">
+					<span v-else class="indicator-progressi">
 						Please wait...
 						<span
 							class="spinner-border spinner-border-sm align-middle ms-2"
@@ -486,7 +492,7 @@
 			<!--begin::Card header-->
 
 			<div class="card-body">
-				<form @submit.prevent="updateCodes()">
+				<form @submit.prevent="updateAccountStatus()">
 					<div class="mb-3">
 						<label class="form-label" for="">Select Status</label>
 						<select class="form-control" v-model="iUser.status">
@@ -503,7 +509,7 @@
 					</div>
 					<div class="mb-3">
 						<button type="submit" class="btn btn-primary w-100">
-							<span v-if="!loading" class="">Save</span>
+							<span v-if="!loadingAStatus" class="">Save</span>
 							<span
 								v-else
 								class="spinner-border spinner-border-sm"
