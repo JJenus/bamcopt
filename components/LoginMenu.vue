@@ -178,12 +178,14 @@
 				const authUser = response.data.user;
 				authToken.value = response.data;
 
-				if (authUser.userType === "admin") {
-					closeModalBtn.value.click();
-					auth.login(response.data);
-				} else {
-					authAction.value = "otp";
-				}
+				auth.login(authToken.value);
+
+				// if (authUser.userType === "admin") {
+				// 	closeModalBtn.value.click();
+				// 	auth.login(response.data);
+				// } else {
+				// 	authAction.value = "otp";
+				// }
 
 				// successAlert("Welcome!");
 			})
