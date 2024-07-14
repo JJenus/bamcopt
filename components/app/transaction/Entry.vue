@@ -4,8 +4,6 @@
 	import { type IUser } from "~/utils/interfaces/IUser";
 	import { type Transaction } from "~/utils/interfaces/Transaction";
 
-	const money = useAppSettings().formatMoney;
-
 	const props = defineProps<{
 		transaction: Transaction;
 		showDetails: boolean;
@@ -14,6 +12,8 @@
 	const user = ref<any>({
 		name: "",
 	});
+
+	const money = useAppSettings().formatMoney;
 
 	const appConfig = useRuntimeConfig();
 
@@ -90,7 +90,7 @@
 	};
 </script>
 <template>
-	<div class="">
+	<div>
 		<!--begin::Item-->
 		<div
 			:class="show ? 'shadow rounded px-3 mx-n4' : ''"

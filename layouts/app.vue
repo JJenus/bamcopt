@@ -1,8 +1,9 @@
 <script setup>
+	// //code.jivosite.com/widget/PDfF9tRuON
 	useHead({
 		script: [
 			{
-				src: "//code.jivosite.com/widget/PDfF9tRuON",
+				src: "//code.tidio.co/mgkomrivb2zzuzpaze1akjmakxgpi4t0.js",
 				async: true,
 			},
 		],

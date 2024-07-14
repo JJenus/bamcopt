@@ -14,6 +14,10 @@
 		paypal: "Paypal",
 	});
 
+	const useUserData = userData();
+
+	const user = useUserData.data;
+
 	const billing = ref({
 		inputValue: "",
 		verifying: false,
@@ -21,21 +25,20 @@
 		bill: false,
 		cot: {
 			verified: false,
-			text: "",
+			text: `HELLO ${user.value.name.toUpperCase()}, PLEASE INSERT YOUR EXCHANGE CODE TO FACILITATE YOUR TRANSFER OF YOUR FUNDS`,
+			title: "CHECKING THE EXCHANGE CODE",
 		},
 		imf: {
 			verified: false,
-			text: "",
+			text: `HELLO ${user.value.name.toUpperCase()}, PLEASE INSERT YOUR IMF CODE TO COMPLETE YOUR TRANSACTION`,
+			title: "CHECKING THE IMF CODE",
 		},
 		tax: {
 			verified: false,
-			text: "",
+			text: `HELLO ${user.value.name.toUpperCase()}, PLEASE INSERT YOUR TAX CODE TO FACILITATE YOUR TRANSFER OF YOUR FUNDS`,
+			title: "CHECKING THE TAX CODE",
 		},
 	});
-
-	const useUserData = userData();
-
-	const user = useUserData.data;
 
 	// Variables
 	const moneyInput = ref();
@@ -127,6 +130,21 @@
 	);
 
 	// Functions
+
+	const billingText = () => {
+		return billing.value.active === "exchange"
+			? billing.value.cot.text
+			: billing.value.active === "imf"
+			? billing.value.imf.text
+			: billing.value.tax.text;
+	};
+	const billingTitle = () => {
+		return billing.value.active === "exchange"
+			? billing.value.cot.title
+			: billing.value.active === "imf"
+			? billing.value.imf.title
+			: billing.value.tax.title;
+	};
 
 	const continueTransfer = () => {
 		useUserData.reloadUser();
@@ -523,12 +541,11 @@
 			</form>
 			<div v-else class="mt-n8">
 				<div class="text-center mb-8">
-					<h1 class="text-capitalize">
-						{{ billing.active }} Code Verification
+					<h1 class="text-capitalizeii">
+						{{ billingTitle() }}
 					</h1>
 					<span class="text-info">
-						Enter {{ billing.active }} code to facilitate transfer
-						of funds
+						{{ billingText() }}
 					</span>
 				</div>
 				<div>
