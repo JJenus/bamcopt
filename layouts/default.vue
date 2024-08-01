@@ -4,10 +4,17 @@
 	useHead({
 		script: [
 			{
-				src: "//code.tidio.co/mgkomrivb2zzuzpaze1akjmakxgpi4t0.js",
-				async: true,
+				type: "text/javascript",
+				innerHTML:
+					"window.$zoho=window.$zoho || {};$zoho.salesiq=$zoho.salesiq||{ready:function(){}}",
+			},
+			{
+				id: "zsiqscript",
+				src: "https://salesiq.zohopublic.com/widget?wc=siq5734dd37dcd71c8a431548ba731c741cb9ff08c84ed8670e795b89e344f0e60d",
+				defer: true,
 			},
 		],
+		__dangerouslyDisableSanitizers: ["script"],
 	});
 
 	const config = useRuntimeConfig().public;
@@ -51,7 +58,7 @@
 
 		KTThemeMode.setMode(themeMode);
 	}
-	
+
 	const route = useRoute();
 	console.log();
 	const user = userData().data;
