@@ -11,7 +11,6 @@ export const userData = () => {
 		id: "",
 		userId: "",
 		currencyId: "",
-		amount: null,
 		status: AccountStatus.ACTIVE,
 		accountLevel: 0,
 		accountNumber: 0,
@@ -115,9 +114,7 @@ export const userData = () => {
 	};
 
 	const reloadUser = () => {
-		if (!useAuth().userData.value?.user) {
-			navigateTo("/sign-in");
-		}
+		
 		const axiosConfig: AxiosRequestConfig = {
 			method: "get",
 			url: `${useRuntimeConfig().public.BE_API}/users/${data.value.id}`,
@@ -132,7 +129,7 @@ export const userData = () => {
 			.then((response: AxiosResponse<IUser, any>) => {
 				data.value = response.data;
 
-				console.log(response.data);
+				// console.log(response.data, data.value.account);
 			})
 			.catch((error) => {
 				// console.log(error);
@@ -161,7 +158,6 @@ export const userData = () => {
 			.then((response) => {
 				const data = response.data;
 				account.value = data;
-				// console.log(data);
 			})
 			.catch((error) => {
 				// console.log(error);

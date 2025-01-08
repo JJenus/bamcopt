@@ -2,7 +2,7 @@ export type Account = {
 	id: string;
 	userId: string;
 	currencyId: string;
-	amount: number | null;
+	amount?: number;
 	status: AccountStatus;
 	accountLevel: number;
 	accountNumber: number;

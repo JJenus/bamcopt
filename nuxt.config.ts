@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
 	modules: ["nuxt-swiper", "@nuxt/image"],
-	devtools: { enabled: false },
+	devtools: { enabled: true },
 	ssr: true,
 	routeRules: {
 		// "/": { redirect: "/about-us" },

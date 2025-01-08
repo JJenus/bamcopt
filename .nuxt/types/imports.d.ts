@@ -139,6 +139,7 @@ declare global {
   const useModel: typeof import('vue')['useModel']
   const useNuxtApp: typeof import('../../node_modules/nuxt/dist/app')['useNuxtApp']
   const useNuxtData: typeof import('../../node_modules/nuxt/dist/app')['useNuxtData']
+  const useNuxtDevTools: typeof import('../../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools')['useNuxtDevTools']
   const useRequestEvent: typeof import('../../node_modules/nuxt/dist/app')['useRequestEvent']
   const useRequestFetch: typeof import('../../node_modules/nuxt/dist/app')['useRequestFetch']
   const useRequestHeaders: typeof import('../../node_modules/nuxt/dist/app')['useRequestHeaders']
@@ -146,6 +147,7 @@ declare global {
   const useRoute: typeof import('../../node_modules/nuxt/dist/app')['useRoute']
   const useRouter: typeof import('../../node_modules/nuxt/dist/app')['useRouter']
   const useRuntimeConfig: typeof import('../../node_modules/nuxt/dist/app')['useRuntimeConfig']
+  const useSSE: typeof import('../../composables/sse')['useSSE']
   const useSeoMeta: typeof import('@unhead/vue')['useSeoMeta']
   const useServerHead: typeof import('@unhead/vue')['useServerHead']
   const useServerHeadSafe: typeof import('@unhead/vue')['useServerHeadSafe']
@@ -317,6 +319,7 @@ declare module 'vue' {
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
     readonly useNuxtApp: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useNuxtApp']>
     readonly useNuxtData: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useNuxtData']>
+    readonly useNuxtDevTools: UnwrapRef<typeof import('../../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools')['useNuxtDevTools']>
     readonly useRequestEvent: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRequestEvent']>
     readonly useRequestFetch: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRequestFetch']>
     readonly useRequestHeaders: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRequestHeaders']>
@@ -324,6 +327,7 @@ declare module 'vue' {
     readonly useRoute: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRouter']>
     readonly useRuntimeConfig: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRuntimeConfig']>
+    readonly useSSE: UnwrapRef<typeof import('../../composables/sse')['useSSE']>
     readonly useSeoMeta: UnwrapRef<typeof import('@unhead/vue')['useSeoMeta']>
     readonly useServerHead: UnwrapRef<typeof import('@unhead/vue')['useServerHead']>
     readonly useServerHeadSafe: UnwrapRef<typeof import('@unhead/vue')['useServerHeadSafe']>
@@ -488,6 +492,7 @@ declare module '@vue/runtime-core' {
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
     readonly useNuxtApp: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useNuxtApp']>
     readonly useNuxtData: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useNuxtData']>
+    readonly useNuxtDevTools: UnwrapRef<typeof import('../../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools')['useNuxtDevTools']>
     readonly useRequestEvent: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRequestEvent']>
     readonly useRequestFetch: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRequestFetch']>
     readonly useRequestHeaders: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRequestHeaders']>
@@ -495,6 +500,7 @@ declare module '@vue/runtime-core' {
     readonly useRoute: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRouter']>
     readonly useRuntimeConfig: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app')['useRuntimeConfig']>
+    readonly useSSE: UnwrapRef<typeof import('../../composables/sse')['useSSE']>
     readonly useSeoMeta: UnwrapRef<typeof import('@unhead/vue')['useSeoMeta']>
     readonly useServerHead: UnwrapRef<typeof import('@unhead/vue')['useServerHead']>
     readonly useServerHeadSafe: UnwrapRef<typeof import('@unhead/vue')['useServerHeadSafe']>

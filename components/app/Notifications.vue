@@ -92,7 +92,7 @@
 							No notification
 						</div>
 
-						<AppNotificationEntry
+						<LazyAppNotificationEntry
 							:notification="notify"
 							v-for="notify in notifications"
 						/>

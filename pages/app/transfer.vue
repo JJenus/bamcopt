@@ -12,6 +12,7 @@
 		others: "Others",
 		bancopt: "Bancopt",
 		paypal: "Paypal",
+		mbway: "Mbway" //new
 	});
 
 	const useUserData = userData();

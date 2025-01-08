@@ -17,6 +17,8 @@
 
 	const appConfig = useRuntimeConfig();
 
+	const tType = ref("");
+
 	const getUserData = () => {
 		if (!useAuth().userData.value) {
 			return useAuth().logout();
@@ -24,7 +26,7 @@
 
 		const axiosConfig: AxiosRequestConfig = {
 			method: "get",
-			url: `${appConfig.public.BE_API}/users/${props.transaction.receiverId}`,
+			url: `${appConfig.public.BE_API}/users/${props.transaction.senderId}`,
 			timeout: 15000,
 			headers: {
 				Authorization: "Bearer " + useAuth().userData.value?.token,
@@ -35,11 +37,11 @@
 			.request<IUser>(axiosConfig)
 			.then((response: AxiosResponse<IUser, any>) => {
 				user.value = response.data;
-
-				// console.log(data.value);
+				props.transaction.beneficiary!.name = user.value.name;
+				console.log("SENDER", user.value);
 			})
 			.catch((error) => {
-				// console.log(error);
+				console.log(error);
 			});
 	};
 
@@ -47,12 +49,16 @@
 
 	const getType = () => {
 		if (props.transaction.receiverId === userData().data.value.id) {
-			getUserData();
-			return "Received";
+			if (props.transaction.beneficiary && !user.value.name)
+				getUserData();
+			tType.value = "Received";
+			return;
 		}
-		user.value.name = props.transaction.beneficiary!!.name;
 
-		return "Sent";
+		// if (props.transaction.beneficiary)
+		user.value.name = props.transaction.beneficiary!.name;
+
+		tType.value = "Sent";
 	};
 
 	const statusColor = (val: string) => {
@@ -88,6 +94,10 @@
 	const toggleShowData = () => {
 		if (props.showDetails) show.value = !show.value;
 	};
+
+	onMounted(() => {
+		getType();
+	});
 </script>
 <template>
 	<div>
@@ -115,7 +125,7 @@
 							class="text-hover-primary text-gray-800 fs-5 fw-bolder"
 							style="color: #28346c"
 						>
-							{{ user.name }}
+							{{ transaction.beneficiary ? tType : "Deposit" }}
 						</span>
 
 						<span class="text-gray-400 fw-semibold fs-n6">
@@ -127,17 +137,18 @@
 						<!--begin::Info-->
 						<span
 							:class="
-								getType() == 'Sent'
-									? 'text-success'
-									: 'text-danger'
+								tType == 'Sent' ? 'text-danger' : 'text-success'
 							"
 							class="fw-bold fs-6"
 						>
-							{{ getType() == "Sent" ? "+" : "-" }}
+							{{ tType == "Sent" ? "-" : "+" }}
 							{{ money(transaction.amount, true) }}
 						</span>
 						<!--end::Info-->
-						<div class="text-gray-400 text-truncate w-80pxiu">
+						<div
+							v-if="transaction.beneficiary"
+							class="text-gray-400 text-truncate w-80pxiu"
+						>
 							{{ transaction.beneficiary!.bank }}
 						</div>
 					</div>
@@ -162,20 +173,22 @@
 		</div>
 
 		<div
-			v-if="show"
+			v-if="show && transaction.beneficiary"
 			class="mb-10 px-8 rounded-2 border-dashed pt-4 border-2 border-gray-500 px-md-15 px-lg-20"
 		>
 			<div class="table-responsive w-100">
 				<table class="table fs-6">
 					<tbody>
-						<tr>
+						<tr v-if="tType == 'Sent'">
 							<td class="fw-semibold">Bank</td>
 							<td class="text-end">
 								{{ transaction.beneficiary!.bank }}
 							</td>
 						</tr>
 						<tr>
-							<td class="fw-semibold">Name</td>
+							<td class="fw-semibold">
+								{{ tType === "Sent" ? "Recipient" : "From" }}
+							</td>
 							<td class="text-end">
 								{{ transaction.beneficiary!.name }}
 							</td>

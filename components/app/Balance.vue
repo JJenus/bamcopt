@@ -2,19 +2,26 @@
 	const money = useAppSettings().formatMoney;
 	const settings = useAppSettings().settings;
 
-	const balance = userData().account;
+	const { data } = userData();
+	const balance = ref(data.value.account);
+	watch(
+		data,
+		(newVal) => {
+			balance.value = newVal.account;
+		},
+	);
 	const tiers = useAppSettings().accountLevels;
 
 	const getBalance = () => {
-		let cAmount = balance.value.amount || 0;
+		let cAmount = data.value.account.amount || 0;
 		return money(cAmount, false);
 	};
 
-	onBeforeMount(() => {
-		if (!balance.value.amount) {
-			userData().fetchBalance();
-		}
-	});
+	// onBeforeMount(() => {
+	// 	if (!balance.value.amount) {
+	// 		userData().fetchBalance();
+	// 	}
+	// });
 </script>
 
 <template>
@@ -23,7 +30,9 @@
 		<div class="card-title mb-3 mb-lg-7 d-nonei d-lg-block">
 			<span class="widget-title fw-bold fs-4">
 				Account Balance
-				<i class="ki-outline d-none ki-question-2 fs-3 text-primary ms-1"></i>
+				<i
+					class="ki-outline d-none ki-question-2 fs-3 text-primary ms-1"
+				></i>
 			</span>
 		</div>
 		<!--end::Title-->
@@ -48,10 +57,10 @@
 
 			<!--begin::Amount-->
 			<span
-				v-if="balance.amount !== null"
+				v-if="balance"
 				class="page-title fs-2tx fw-bold me-2 lh-1 ls-n2"
 			>
-				{{ getBalance() }}
+				{{ money(data.account.amount, false) }}
 			</span>
 			<span
 				v-else
@@ -62,7 +71,7 @@
 		</div>
 		<!--end::Info-->
 
-		<div class="mb-8 d-none">
+		<div class="mb-8 d-none" v-if="balance" >
 			<h6 class="text-muted">Account Number</h6>
 			<h1 class="fw-bold">{{ balance.accountNumber }}</h1>
 		</div>

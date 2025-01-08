@@ -38,12 +38,12 @@ export const useAppSettings = () => {
 			});
 	};
 
-	const formatMoney = (amount: string | number, addSymbol: boolean) => {
+	const formatMoney = (amount?: string | number, addSymbol?: boolean) => {
 		let decimalSep = ".";
 		let thousandSep = ",";
 		let pattern = `!#`;
 
-		const actual = currency(amount).value;
+		const actual = currency(amount || 0).value;
 
 		if (settings.value.defaultBaseCurrency !== "USD") {
 			decimalSep = ",";
