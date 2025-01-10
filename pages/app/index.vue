@@ -10,6 +10,7 @@
 		others: "Others",
 		bancopt: "Bancopt",
 		paypal: "Paypal",
+		mbway: "MB Way", //new
 	});
 
 	const selectBank = (bank: string) => {
@@ -134,8 +135,22 @@
 						type="button"
 						class="btn btn-light-primary fw-semibold"
 					>
-						<span class="rounded fs-3 fw-bold shadow-lg bg-transparent">S</span>
+						<span
+							class="rounded fs-3 fw-bold shadow-lg bg-transparent"
+							>S</span
+						>
 						Skrill
+					</button>
+					<button
+						@click="selectBank(banks.mbway)"
+						type="button"
+						class="btn btn-light-primary fw-semibold"
+					>
+						<span
+							class="rounded fs-3 fw-bold shadow-lg bg-transparent"
+							>MB</span
+						>
+						Way
 					</button>
 				</div>
 			</div>
@@ -161,7 +176,10 @@
 
 			<!--begin::Card body-->
 			<div class="card-body">
-				<div v-if="getPreview().length == 0" class="text-muted text-center">
+				<div
+					v-if="getPreview().length == 0"
+					class="text-muted text-center"
+				>
 					No transaction
 				</div>
 				<AppTransactionEntry

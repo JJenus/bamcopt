@@ -9,6 +9,7 @@
 			required: true,
 		},
 	});
+	const { data: user } = userData();
 
 	const recipient = useState<any>("transfer-recipient");
 	const bank = useState<string>("bank-recipient");
@@ -57,7 +58,11 @@
 	};
 
 	const searchUser = () => {
-		if (searching.value || bank.value != AppName.value) {
+		if (bank.value != AppName.value) {
+			// recipient.value = user.value;
+			return;
+		}
+		if (searching.value) {
 			return;
 		}
 		const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -79,7 +84,9 @@
 				v-model="recipient.email"
 				name="email"
 				type="text"
-				:placeholder="`Enter ${bank} email: jon@gmail.com`"
+				:placeholder="`Enter ${bank} ${
+					bank === 'MB Way' ? ' number' : 'email: jon@gmail.com'
+				} `"
 				class="form-control disabled money-input fs-5 form-control fw-bold form-control-solid"
 			/>
 			<div
@@ -90,13 +97,19 @@
 					v-if="searching"
 					class="spinner-border spinner-border-sm text-muted"
 				></span>
-				<span class="fs-sm" v-if="userFound === false && !searching && bank == AppName"
+				<span
+					class="fs-sm"
+					v-if="userFound === false && !searching && bank == AppName"
 					>User doesn't exist</span
 				>
 			</div>
 		</div>
 
-		<div v-if="userFound && bank == AppName" style="margin-bottom: 15px" bis_skin_checked="1">
+		<div
+			v-if="userFound && bank == AppName"
+			style="margin-bottom: 15px"
+			bis_skin_checked="1"
+		>
 			<!--begin:Title-->
 			<h3 class="mb-3" style="color: #181c32">Transfer</h3>
 			<!--end:Title-->

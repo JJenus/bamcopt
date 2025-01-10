@@ -1,5 +1,5 @@
 export interface Beneficiary {
-	id: string | undefined,
+	id?: string | undefined,
 	userId: string,
 	name: string,
 	destinationAccount: string,

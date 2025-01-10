@@ -1,16 +1,16 @@
 import { Beneficiary } from "./Beneficiary";
 
 export interface Transaction {
-	id: string | null | undefined;
+	id?: string | null | undefined;
 	senderId: string;
 	receiverId: string | undefined;
 	amount: number;
 	type: TransactionTypes;
-	notes: string | undefined;
-	beneficiary: Beneficiary | null | undefined;
-	transactionId: string | null | undefined;
+	notes?: string | undefined;
+	beneficiary?: Beneficiary;
+	transactionId?: string | null | undefined;
 	status: string | null | undefined;
-	createdAt: string | null | undefined;
+	createdAt?: string | null | undefined;
 }
 
 export enum TransactionTypes {

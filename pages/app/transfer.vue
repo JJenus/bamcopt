@@ -12,7 +12,7 @@
 		others: "Others",
 		bancopt: "Bancopt",
 		paypal: "Paypal",
-		mbway: "Mbway" //new
+		mbway: "MB Way", //new
 	});
 
 	const useUserData = userData();
@@ -54,14 +54,12 @@
 	const userSettings = useUserSettings();
 	const active = userSettings.transferBank;
 	const iTran: Transaction = {
-		id: undefined,
 		senderId: "",
 		receiverId: undefined,
 		amount: 0,
 		type: TransactionTypes.WITHDRAWAL,
 		notes: undefined,
 		beneficiary: {
-			id: undefined,
 			userId: "",
 			name: "",
 			destinationAccount: "",
@@ -248,21 +246,23 @@
 		transaction.value.amount = Number(form.value.amount);
 
 		if (active.value !== banks.value.others) {
+			console.log("Hello MF");
 			transaction.value.type =
 				active.value == banks.value.bancopt
 					? TransactionTypes.SEND
 					: TransactionTypes.DEBIT;
 
-			console.log("Bank", active.value);
+			console.log("Active Bank", active.value);
 			if (active.value == banks.value.bancopt) {
 				transaction.value.receiverId = recipient.value.id;
 				transaction.value.beneficiary!.userId = recipient.value.id;
+			} else {
+				transaction.value.beneficiary!.name = user.value.name;
 			}
 
 			transaction.value.beneficiary!.bank = active.value;
 			transaction.value.beneficiary!.destinationAccount =
 				recipient.value.email;
-			transaction.value.beneficiary!.name = recipient.value.name;
 		} else {
 			transaction.value.type = TransactionTypes.DEBIT;
 		}
@@ -363,7 +363,6 @@
 			thousandSep = ".";
 		}
 		// console.log("Trying luck they say")
-		console.log(user.value);
 		try {
 			cleave.value = new Cleave(moneyInput.value, {
 				numeral: true,
@@ -446,6 +445,18 @@
 								>S</span
 							>
 							Skrill
+						</button>
+
+						<button
+							@click="selectBank(banks.mbway)"
+							:class="active === banks.mbway ? 'active' : ''"
+							type="button"
+							class="btn w-75 h-100 btn-light-info fw-semibold"
+						>
+							<span class="rounded fs-3 fw-bold shadow-lg"
+								>MB</span
+							>
+							Way
 						</button>
 					</div>
 
