@@ -1,11 +1,11 @@
 <script setup lang="ts">
-	import moment from "moment";
-	import { type IUser } from "~/utils/interfaces/IUser";
+	import { formatRelative } from "~/utils/date";
+	import type { IUser } from "~/utils/interfaces/IUser";
 
 	const props = defineProps<{ user: IUser }>();
 	// console.log(props.user);
 	const timeAgo = () => {
-		return moment(props.user.createdAt).fromNow();
+		return formatRelative(props.user.createdAt);
 	};
 </script>
 

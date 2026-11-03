@@ -1,5 +1,5 @@
-import { AccountLevel } from "~/utils/interfaces/AccountLevel";
-import { AppSettings } from "~/utils/interfaces/AppSettings";
+import type { AccountLevel } from "~/utils/interfaces/AccountLevel";
+import type { AppSettings } from "~/utils/interfaces/AppSettings";
 import currency from "currency.js";
 
 export const useAppSettings = () => {
@@ -13,12 +13,29 @@ export const useAppSettings = () => {
 	};
 
 	const settings = useState<AppSettings>("app-settings", () => init);
-	const isPageLoading = useState("load-page", () => true);
+	const isPageLoading = useState<boolean>("load-page", () => true);
 	const accountLevels = useState<AccountLevel[]>("account-levels", () => []);
+	const loaded = useState<boolean>("app-settings-loaded", () => false);
+	const loading = useState<boolean>("app-settings-loading", () => false);
 
-	const load = () => {
-		settingsService.getApp().then((s) => (settings.value = s)).catch(() => {});
-		settingsService.listLevels().then((l) => (accountLevels.value = l)).catch(() => {});
+	const load = async (force = false) => {
+		if (loading.value || (loaded.value && !force)) return;
+
+		loading.value = true;
+		try {
+			const [appSettings, levels] = await Promise.all([
+				settingsService.getApp(),
+				settingsService.listLevels(),
+			]);
+
+			settings.value = appSettings;
+			accountLevels.value = levels;
+			loaded.value = true;
+		} catch {
+			// The service layer reports the failure; keep the safe defaults.
+		} finally {
+			loading.value = false;
+		}
 	};
 
 	const formatMoney = (amount?: string | number, addSymbol?: boolean) => {

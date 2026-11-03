@@ -1,6 +1,6 @@
 <script setup lang="ts">
-	import moment from "moment";
-	import { type IUser } from "~/utils/interfaces/IUser";
+	import { isWithinDays } from "~/utils/date";
+	import type { IUser } from "~/utils/interfaces/IUser";
 
 	const newNotification = userData().isNewNotification;
 
@@ -8,12 +8,7 @@
 	const range = ref(7);
 
 	const getPreview = (): IUser[] => {
-		return users.value.filter((user) => {
-			const userDate = moment(user.createdAt);
-			const sevenDaysAgo = moment().subtract(range.value, "days");
-			// }
-			return !userDate.isBefore(sevenDaysAgo);
-		});
+		return users.value.filter((user) => isWithinDays(user.createdAt, range.value));
 	};
 
 	onMounted(() => {});

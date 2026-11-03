@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import moment from "moment";
+	import { formatMessageTime } from "~/utils/date";
 
 	const props = defineProps({
 		showDetails: {
@@ -32,20 +32,7 @@
 		} else return "ki-check-circle text-success";
 	};
 
-	const time = () => {
-		const now = moment();
-		const inputTime = moment(props.transaction.createdAt);
-
-		console.log("Time diff: ", now.diff(inputTime, "hours"));
-
-		if (now.diff(inputTime, "hours") <= 1) {
-			return inputTime.fromNow();
-		} else if (now.isSame(inputTime, "day")) {
-			return inputTime.format("hh:mm A");
-		} else {
-			return inputTime.format("DD/MM/YYYY hh:mm A");
-		}
-	};
+	const time = () => formatMessageTime(props.transaction.createdAt);
 
 	const toggleShowData = () => {
 		if (props.showDetails) show.value = !show.value;

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-	import { type AuthToken } from "~/utils/interfaces/AuthToken";
-
 	definePageMeta({
 		layout: "auth",
 	});
@@ -17,26 +15,23 @@
 
 	const auth = useAuth();
 
-	const submitButton = ref();
-	const emailExists = ref();
+	const submitButton = ref<HTMLButtonElement>();
+	const emailExists = ref("");
 
 	const form = ref({
-		name: null,
-		email: null,
-		imgUrl: null,
-		phone: null,
-		address: null,
-		city: null,
-		country: null,
-		dob: null,
-		password: null,
-		confirmPassword: null,
+		name: "",
+		email: "",
+		phone: "",
+		address: "",
+		city: "",
+		country: "",
+		password: "",
+		confirmPassword: "",
 	});
 
-	const submitForm = (event: Event) => {
-		emailExists.value = false;
-		const { confirmPassword, dob, imgUrl, ...data } = form.value;
-		console.log(data);
+	const submitForm = () => {
+		emailExists.value = "";
+		const { confirmPassword, ...data } = form.value;
 		if (
 			!form.value.address ||
 			!form.value.city ||

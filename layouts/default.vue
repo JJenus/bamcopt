@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 	import MainMobileNav from "../components/MainMobileNav.vue";
 
 	useHead({
@@ -14,88 +14,31 @@
 				defer: true,
 			},
 		],
-		__dangerouslyDisableSanitizers: ["script"],
 	});
 
-	const config = useRuntimeConfig().public;
+	const applyTheme = () => {
+		const defaultThemeMode = "light";
+		let themeMode = defaultThemeMode;
 
-	if (process.client) {
-		try {
-			console.log("Yes");
-			const mS = useWebsocket();
-			mS.connect();
-			setTimeout(() => {
-				//mS.sendNotification();
-			}, 5000);
-		} catch (error) {}
-	}
-
-	if (process.client) {
-		var defaultThemeMode = "light";
-		var themeMode;
-
-		if (document.documentElement) {
-			if (document.documentElement.hasAttribute("data-bs-theme-mode")) {
-				themeMode =
-					document.documentElement.getAttribute("data-bs-theme-mode");
-			} else {
-				if (localStorage.getItem("data-bs-theme") !== null) {
-					themeMode = localStorage.getItem("data-bs-theme");
-				} else {
-					themeMode = defaultThemeMode;
-				}
-			}
-
-			if (themeMode === "system") {
-				themeMode = window.matchMedia("(prefers-color-scheme: dark)")
-					.matches
-					? "dark"
-					: "light";
-			}
-
-			document.documentElement.setAttribute("data-bs-theme", themeMode);
+		if (document.documentElement.hasAttribute("data-bs-theme-mode")) {
+			themeMode =
+				document.documentElement.getAttribute("data-bs-theme-mode") ||
+				defaultThemeMode;
+		} else if (localStorage.getItem("data-bs-theme") !== null) {
+			themeMode = localStorage.getItem("data-bs-theme") || defaultThemeMode;
 		}
 
-		KTThemeMode.setMode(themeMode);
-	}
+		if (themeMode === "system") {
+			themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches
+				? "dark"
+				: "light";
+		}
 
-	const route = useRoute();
-	console.log();
-	const user = userData().data;
-
-	const active = ref("all");
-
-	const navs = [
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "About",
-			path: "/resources/about",
-		},
-		{
-			name: "Contact-us",
-			path: "/resources/contact-us",
-		},
-	];
-
-	const loaded = useCookie("reload", { maxAge: 60 * 60 * 24 });
-	loaded.value = false;
-	const setActive = (data) => {
-		const a = active.value.toLocaleLowerCase() === data.toLocaleLowerCase();
-
-		return a ? "active border-bottom border-danger" : "";
+		document.documentElement.setAttribute("data-bs-theme", themeMode);
+		(window as any).KTThemeMode?.setMode(themeMode);
 	};
 
-	onMounted(() => {
-		const paths = route.path.split("/");
-		if (paths[2]) {
-			active.value = paths[2];
-		} else if (!paths[1]) {
-			active.value = "home";
-		}
-	});
+	onMounted(applyTheme);
 </script>
 
 <template>

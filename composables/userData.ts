@@ -3,7 +3,8 @@ import { type IUser } from "~/utils/interfaces/IUser";
 import {
 	type INotification,
 	NotificationStatus,
-} from "../utils/interfaces/Notification";
+} from "~/utils/interfaces/Notification";
+import type { Transaction } from "~/utils/interfaces/Transaction";
 
 export const userData = () => {
 	const initAcc: Account = {
@@ -13,7 +14,7 @@ export const userData = () => {
 		status: AccountStatus.ACTIVE,
 		accountLevel: 0,
 		accountNumber: 0,
-	}; 
+	};
 
 	const initUser: IUser = {
 		id: "",
@@ -44,7 +45,7 @@ export const userData = () => {
 		tax: undefined,
 	};
 
-	const transactions = useState<any[]>("user-transactions", () => []);
+	const transactions = useState<Transaction[]>("user-transactions", () => []);
 	const notifications = useState<INotification[]>("notifications", () => []);
 	const newNotifications = useState<INotification[]>(
 		"new-notifications",
@@ -57,26 +58,33 @@ export const userData = () => {
 	const data = useState<IUser>("userData", () => initUser);
 	const account = useState<Account>("userAccount", () => initAcc);
 	const users = useState<IUser[]>("users", () => []);
-	const active = useState<IUser | null>("active-user");
+	const active = useState<IUser | null>("active-user", () => null);
 	const admins = useState<IUser[]>("admin", () => []);
 
-	const byNewest = (a: IUser, b: IUser) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+	const byNewest = (a: IUser, b: IUser) =>
+		new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 
 	const getUsers = () => {
-		if (!useAuth().userData.value?.user) {
+		if (!useAuth().isAuthenticated.value) {
 			navigateTo("/sign-in");
 			return;
 		}
 		userService
 			.list()
 			.then((all) => {
-				users.value = all.filter((u) => u.userType !== "admin").sort(byNewest);
-				admins.value = all.filter((u) => u.userType === "admin").sort(byNewest);
+				users.value = all
+					.filter((u) => u.userType !== "admin")
+					.sort(byNewest);
+				admins.value = all
+					.filter((u) => u.userType === "admin")
+					.sort(byNewest);
 			})
 			.catch(() => {});
 	};
 
 	const reloadUser = () => {
+		if (!data.value.id) return;
+
 		userService
 			.get(data.value.id)
 			.then((user) => (data.value = user))
@@ -84,6 +92,8 @@ export const userData = () => {
 	};
 
 	const fetchBalance = () => {
+		if (!data.value.id) return;
+
 		accountService
 			.get(data.value.id)
 			.then((acc) => (account.value = acc))
@@ -92,17 +102,29 @@ export const userData = () => {
 
 	const showNotifications = () => {
 		if (!isNewNotification.value) return;
+
+		notifications.value = notifications.value.map((notification) => ({
+			...notification,
+			status: NotificationStatus.READ,
+		}));
+		newNotifications.value = [];
+		isNewNotification.value = false;
+
 		notificationService.markAllRead().catch(() => {});
 	};
 
 	const getNotifications = () => {
+		if (!data.value.id) return;
+
 		notificationService
 			.listForUser(data.value.id)
 			.then((list) => {
 				notifications.value = list;
-				const unread = list.filter((n) => n.status === NotificationStatus.UNREAD);
-				if (unread.length) isNewNotification.value = true;
-				if (isNewNotification.value && list.length == 0) newNotifications.value = unread;
+				newNotifications.value = list.filter(
+					(notification) =>
+						notification.status === NotificationStatus.UNREAD
+				);
+				isNewNotification.value = newNotifications.value.length > 0;
 			})
 			.catch(() => {});
 	};

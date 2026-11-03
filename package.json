@@ -1,7 +1,13 @@
 {
   "name": "nuxt-app",
   "private": true,
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=11.0.0"
+  },
   "scripts": {
+    "preinstall": "node scripts/ensure-pnpm.mjs",
     "dev": "nuxt dev",
     "build": "nuxt build",
     "start": "node .output/server/index.mjs",
@@ -12,10 +18,9 @@
     "lint:api": "node scripts/check-no-api-in-ui.mjs"
   },
   "devDependencies": {
-    "@nuxt/devtools": "latest",
+    "@nuxt/devtools": "^3.4.4",
     "@types/cleave.js": "^1.4.7",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/moment": "^2.13.0",
     "@types/node": "^18.17.3",
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
@@ -29,10 +34,10 @@
     "bcryptjs": "^3.0.3",
     "cleave.js": "^1.6.0",
     "currency.js": "^2.0.4",
+    "date-fns": "^4.4.0",
     "express": "^4.18.2",
     "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.3",
-    "moment": "^2.29.4",
     "nodemailer": "^10.3.1",
     "nuxt-swiper": "^1.2.2",
     "pg": "^8.23.1",

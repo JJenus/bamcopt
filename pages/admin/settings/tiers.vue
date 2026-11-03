@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import Cleave from "cleave.js";
 	import currency from "currency.js";
-	import { AccountLevel } from "~/utils/interfaces/AccountLevel";
+	import type { AccountLevel } from "~/utils/interfaces/AccountLevel";
 
 	const tiers = useAppSettings().accountLevels;
 	const loading = ref(false);

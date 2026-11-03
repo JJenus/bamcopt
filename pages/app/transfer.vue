@@ -74,6 +74,7 @@
 		amount: "",
 	});
 	const sending = ref(false);
+	const errors = ref<Record<string, string>>({});
 
 	const buttons = [
 		{
@@ -111,6 +112,7 @@
 		},
 	];
 	const startDelete = ref(false);
+const cancelRAF = ref<number | null>(null);
 	const recipientIni = ref({
 		id: "",
 		name: "",
@@ -168,7 +170,7 @@
 					else if (step === "imf") billing.value.active = "tax";
 					else completeTransaction();
 				})
-				.catch((e: ApiError) => errorAlert(e.message || "Invalid code"))
+				.catch((e: ApiError) => { errors.value.codes = e.message || "Invalid code"; })
 				.finally(() => {
 					billing.value.verifying = false;
 				});
@@ -180,20 +182,28 @@
 	};
 
 	const addAmount = (num: number | string) => {
-		const newValue = form.value.amount + num;
+		const newValue = String(form.value.amount || "") + num;
 		form.value.amount = newValue;
 
-		cleave.value.setRawValue(newValue);
+		cleave.value?.setRawValue(newValue);
 	};
 
 	const delNum = async () => {
 		if (startDelete.value) {
 			await new Promise((resolve) => setTimeout(resolve, 160));
-			console.log("Del");
-			form.value.amount = form.value.amount.slice(0, -1);
+			const current = form.value.amount;
+			if (current.length > 1) {
+				form.value.amount = current.slice(0, -1);
+			} else {
+				form.value.amount = "0";
+			}
 			cleave.value.setRawValue(form.value.amount);
 
-			requestAnimationFrame(delNum);
+			// Cancel previous RAF if any, then store new RAF ID
+			if (cancelRAF.value) {
+				cancelAnimationFrame(cancelRAF.value);
+			}
+			cancelRAF.value = requestAnimationFrame(delNum);
 		}
 	};
 
@@ -207,15 +217,14 @@
 	};
 
 	const enterAmount = (event: any) => {
-		const num: string = moneyInput.value.value.replace(/[a-zA-Z]/g, "");
-		if (num.includes(".")) {
-			const part: string[] = num.split(".");
-			form.value.amount = part[0] + "." + part[1].slice(0, 2);
-			console.log(form.value.amount);
+		// Cleave handles formatting; sync form value from Cleave's raw value
+		if (cleave.value) {
+			form.value.amount = cleave.value.getRawValue();
 		}
 	};
 
 	const back = () => {
+		errors.value = {};
 		sending.value = false;
 		next.value = false;
 	};
@@ -265,12 +274,13 @@
 	};
 
 	const send = () => {
+		errors.value = {};
 		if (user.value.status === UserAccountStatus.HOLD) {
-			infoAlert("Account on hold. Contact support.");
+			errors.value.account = "Account on hold. Contact support.";
 			return;
 		}
 		if (Number(form.value.amount) <= 0) {
-			errorAlert("Amount must be greater than zero!");
+			errors.value.amount = "Amount must be greater than zero!";
 			return;
 		}
 		// console.log(account.value.amount);
@@ -278,7 +288,7 @@
 			!account.value.amount ||
 			Number(form.value.amount) > account.value.amount
 		) {
-			errorAlert("Insufficient balance!");
+			errors.value.amount = "Insufficient balance!";
 			return;
 		}
 		if (!next.value) {
@@ -318,7 +328,7 @@
 			.then(() => {
 				useUserData.reloadUser();
 
-				successAlert("Transaction successful");
+				inlineMsg.value = { text: "Transaction successful", type: "success" };
 
 				form.value.amount = "0";
 				cleave.value.setRawValue(0);
@@ -333,11 +343,7 @@
 				// codes changed meanwhile: ask for them again
 				if (error.status === 422 && /code/i.test(error.message)) resetBilling();
 				// the server says why (insufficient balance, account on hold, ...)
-				errorAlert(
-					error.status && error.status < 500
-						? error.message
-						: "Transaction error. Contact support to clear issues in your account."
-				);
+				errors.value.form = error.status && error.status < 500 ? error.message : "Transaction error. Contact support to clear issues in your account.";
 			})
 			.finally(() => {
 				sending.value = false;
@@ -364,6 +370,17 @@
 			});
 		} catch (error) {}
 	});
+
+	// Cleanup Cleave instance to prevent memory leaks
+	onUnmounted(() => {
+		if (cancelRAF.value) {
+			cancelAnimationFrame(cancelRAF.value);
+		}
+		if (cleave.value) {
+			cleave.value.destroy();
+			cleave.value = null;
+		}
+	});
 </script>
 
 <template>
@@ -386,7 +403,9 @@
 						type="text"
 						placeholder="0"
 						class="form-control disabled money-input fs-2 form-control-lg text-center fw-bold form-control-solid"
+					:class="{ 'is-invalid': errors.amount }"
 					/>
+					<div v-if="errors.amount" class="text-danger fs-6 mt-1 text-start">{{ errors.amount }}</div>
 				</div>
 
 				<div v-if="next" class="mb-8 min-h-250px">

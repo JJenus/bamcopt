@@ -47,7 +47,7 @@
 					user.account.currencyId
 						.toLowerCase()
 						.includes(searchString)) ||
-				(user.account.amount !== null &&
+				(user.account.amount != null &&
 					user.account.amount
 						.toString()
 						.toLowerCase()

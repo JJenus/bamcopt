@@ -12,15 +12,17 @@
 	});
 
 	const appConfig = useRuntimeConfig();
-	const submitButton = ref();
+	const route = useRoute();
+	const submitButton = ref<HTMLButtonElement>();
 
-	const id = useRoute().query["token"];
+	const token =
+		typeof route.query["token"] === "string"
+			? route.query["token"]
+			: undefined;
 	const form = ref({
-		id: id,
 		password: "",
 		cPassword: "",
 	});
-	console.log(id);
 	const loading = ref(false);
 
 	const save = () => {
@@ -38,11 +40,13 @@
 			return;
 		}
 
+		loading.value = true;
 		authService
 			.resetPassword(token, form.value.password)
 			.then(() => successAlert("Success. Proceed to sign in."))
 			.catch(() => errorAlert("Unable to set new password. Try again."))
 			.finally(() => {
+				loading.value = false;
 				submitButton.value?.removeAttribute("data-kt-indicator");
 			});
 	};

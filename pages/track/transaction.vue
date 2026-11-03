@@ -1,8 +1,8 @@
 <script setup lang="ts">
 	import "animate.css";
 	import currency from "currency.js";
-	import moment from "moment";
-	import { type Transaction } from "~/utils/interfaces/Transaction";
+	import { formatLongDateTime } from "~/utils/date";
+	import type { Transaction } from "~/utils/interfaces/Transaction";
 
 	const config = useRuntimeConfig().public;
 	const currentPage = "Transaction";
@@ -12,17 +12,17 @@
 
 	const route = useRoute();
 
-	const transactionId = ref();
+	const transactionId = ref<string | null>(null);
 
 	if (route.query["id"]) {
-		transactionId.value = route.query["id"];
+		transactionId.value = String(route.query["id"]);
 	}
 
 	const showReceipt = ref(false);
 	const loading = ref(false);
-	const transaction: Transaction | any = ref();
+	const transaction = ref<Transaction | null>(null);
 
-	const money = (amount: string) => {
+	const money = (amount: string | number) => {
 		return currency(amount, { symbol: "" }).format();
 	};
 
@@ -45,7 +45,7 @@
 			});
 	};
 
-	const isActive = (status: string, level: string) => {
+	const isActive = (status?: string | null, level?: string | null) => {
 		if (status === "completed") {
 			return true; // Color the element if status is completed
 		} else if (
@@ -105,7 +105,7 @@
 					class="d-flex flex-column align-items-center justify-content-center"
 				>
 					<div class="fs-2">
-						To {{ transaction.beneficiary.name }}
+						To {{ transaction.beneficiary?.name }}
 					</div>
 					<div class="fs-3x fw-bold mb-5">
 						${{ money(transaction.amount) }}
@@ -272,13 +272,13 @@
 											Recipient Name
 										</td>
 										<td class="fw-bold text-end">
-											{{ transaction.beneficiary.name }}
+											{{ transaction.beneficiary?.name }}
 										</td>
 									</tr>
 									<tr>
 										<td class="fw-bold text-muted">Bank</td>
 										<td class="fw-bold text-end">
-											{{ transaction.beneficiary.bank }}
+											{{ transaction.beneficiary?.bank }}
 										</td>
 									</tr>
 									<tr>
@@ -288,7 +288,7 @@
 										<td class="fw-bold text-end">
 											{{
 												transaction.beneficiary
-													.destinationAccount
+													?.destinationAccount
 											}}
 										</td>
 									</tr>
@@ -303,10 +303,12 @@
 									<tr>
 										<td colspan="2" class="text-center">
 											{{
-												moment(
-													transaction.createdAt
-												).format("lll")
-											}}
+											transaction.createdAt
+												? formatLongDateTime(
+														transaction.createdAt
+												  )
+												: "-"
+										}}
 										</td>
 									</tr>
 								</tbody>

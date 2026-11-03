@@ -54,7 +54,7 @@ Same `/api/...` paths and request/response shapes, so the frontend keeps working
 
 ## Frontend
 - `services/` is the only place that calls the API (`http.ts` = single `$fetch` wrapper that adds the token, normalises errors to `ApiError`, logs out on an expired session). One file per area: auth, user, account, transaction, notification, settings, upload.
-- Components / pages / layouts never call the API. `npm run lint:api` fails if they do.
+- Components / pages / layouts never call the API. `pnpm lint:api` fails if they do.
 - Composables only hold state and call services.
 - Removed: axios, SSE composable (dead), ip2location call (dead), Cloudinary secret in the public config, committed `.output`, TLS keys, `.env.local`.
 
@@ -73,5 +73,5 @@ server/
   utils/                 env, errors, validate, money, jwt, mail
   emails/                html templates
 db/migrations/           explicit SQL
-tests/smoke.mjs          end-to-end check against SQLite (`npm test`)
+tests/smoke.mjs          end-to-end check against SQLite (`pnpm test`)
 ```

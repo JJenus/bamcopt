@@ -10,3 +10,9 @@ node_modules
 .DS_Store
 *.key
 *.crt
+
+# Other package managers' lockfiles (this project uses pnpm)
+package-lock.json
+yarn.lock
+bun.lock
+bun.lockb

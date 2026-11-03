@@ -1,6 +1,6 @@
 /**
  * End-to-end smoke test: boots the Nitro dev server against a throw-away SQLite file and
- * checks auth, authorization and (above all) the money invariants. Run: `npm test`
+ * checks auth, authorization and (above all) the money invariants. Run: `pnpm test`
  */
 import { spawn } from "node:child_process";
 import { mkdirSync, rmSync } from "node:fs";

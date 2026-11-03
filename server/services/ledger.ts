@@ -12,7 +12,7 @@ import {
 import { sequelize } from "../utils/db";
 import { badRequest, forbidden, notFound, unprocessable } from "../utils/errors";
 import { fromMinor, positiveMinor, toMinor } from "../utils/money";
-import { checkAllCodes, Codes } from "./codes";
+import { checkAllCodes, type Codes } from "./codes";
 import { getUser, getUserByEmail } from "./users";
 import { notifySafe } from "./notifications";
 
@@ -36,10 +36,9 @@ const limitsFor = async (account: Account, t: DbTx) => {
 	return { daily: level ? minorOf(level.dailyLimit) : 0, max: level ? minorOf(level.maxBalanceLimit) : 0 };
 };
 
-/** Money that left the account in the last 24h (failed attempts and refunds are not counted). */
+/** Money that left the account in the last 24h (failed attempts and refunds are not counted). Computed at DB level. */
 const sentLast24h = async (userId: string, t: DbTx) => {
-	const rows = await Transaction.findAll({
-		attributes: ["amount"],
+	const result = await Transaction.sum("amount", {
 		where: {
 			senderId: userId,
 			type: { [Op.in]: OUTGOING },
@@ -48,7 +47,7 @@ const sentLast24h = async (userId: string, t: DbTx) => {
 		},
 		transaction: t,
 	});
-	return rows.reduce((sum, r) => sum + toMinor(r.amount), 0);
+	return toMinor(result || 0);
 };
 
 export type TransferInput = {
@@ -213,15 +212,34 @@ const withBeneficiaries = async (txs: Transaction[]) => {
 	return txs.map((t) => ({ ...t.toJSON(), ...(t.beneficiaryId && byId.has(t.beneficiaryId) && { beneficiary: byId.get(t.beneficiaryId) }) }));
 };
 
-export const listUserTransactions = async (userId: string) => {
+export const listUserTransactions = async (userId: string, opts?: { limit?: number; offset?: number }) => {
+	const limit = opts?.limit ?? 20;
+	const offset = opts?.offset ?? 0;
 	const txs = await Transaction.findAll({
 		where: { [Op.or]: [{ senderId: userId }, { receiverId: userId }] },
 		order: [["createdAt", "DESC"]],
+		limit,
+		offset,
 	});
 	const user = await User.findByPk(userId);
 	const list = await withBeneficiaries(txs);
 	// a deposit to yourself shows your own name as the beneficiary (as before)
 	return list.map((t: any) => (t.beneficiary && t.beneficiaryId === t.senderId && user ? { ...t, beneficiary: { ...t.beneficiary, name: user.name } } : t));
+};
+
+/** DB-level aggregates for the transactions page (no full list loaded just for sums). */
+export const getUserTransactionAggregates = async (userId: string) => {
+	const totalReceived = await Transaction.sum("amount", {
+		where: { receiverId: userId, status: TransactionStatus.COMPLETED },
+	});
+	const totalSent = await Transaction.sum("amount", {
+		where: { senderId: userId, type: { [Op.in]: OUTGOING }, status: { [Op.ne]: TransactionStatus.FAILED } },
+	});
+	return {
+		received: totalReceived ? toMinor(totalReceived) : 0,
+		sent: totalSent ? toMinor(totalSent) : 0,
+		net: (totalReceived ? toMinor(totalReceived) : 0) - (totalSent ? toMinor(totalSent) : 0),
+	};
 };
 
 /** Public receipt lookup (tracking page): no internal ids. */

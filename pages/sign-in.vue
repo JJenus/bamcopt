@@ -16,12 +16,12 @@
 	const auth = useAuth();
 	const forgot = useState<boolean>("forgot", () => false);
 
-	const submitButton = ref();
-	const isInvalidCredentials = ref();
+	const submitButton = ref<HTMLButtonElement>();
+	const isInvalidCredentials = ref("");
 
 	const form = ref({
-		email: null,
-		password: null,
+		email: "",
+		password: "",
 	});
 
 	// step 2: one-time code sent by e-mail (verified by the server)
@@ -68,8 +68,8 @@
 	};
 
 	onMounted(() => {
-		if (auth.isAuthenticated()) {
-			auth.login(auth.userData.value!);
+		if (auth.isAuthenticated.value && auth.userData.value) {
+			auth.login(auth.userData.value);
 		}
 	});
 </script>

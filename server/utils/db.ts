@@ -1,4 +1,4 @@
-import { Sequelize, Options } from "sequelize";
+import { Sequelize, type Options } from "sequelize";
 
 const common: Options = { logging: false, define: { underscored: true } };
 

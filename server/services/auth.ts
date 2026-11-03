@@ -45,7 +45,8 @@ export const login = async (email: string, password: string) => {
 	const valid = await bcrypt.compare(password, user?.password ?? DUMMY_HASH);
 	if (!user || !valid) throw unauthorized("Invalid credentials");
 
-	const code = String(crypto.randomInt(100000, 1000000));
+  const code = String(crypto.randomInt(100000, 1000000));
+	console.log("OTP: ", code);
 	sendOtpEmail(user, code);
 	return {
 		challenge: signOtpChallenge(user.id, code),

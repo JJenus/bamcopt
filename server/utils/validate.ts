@@ -1,5 +1,5 @@
 import { H3Event, readBody, getValidatedRouterParams, createError } from "h3";
-import { z, ZodError, ZodTypeAny } from "zod";
+import { z, ZodError, type ZodTypeAny } from "zod";
 
 const toHttpError = (error: ZodError) =>
 	createError({

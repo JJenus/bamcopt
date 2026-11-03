@@ -1,4 +1,4 @@
-import nodemailer, { Transporter } from "nodemailer";
+import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "./env";
 import { welcomeEmail } from "../emails/welcome";
 import { passwordEmail } from "../emails/password";

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-	import { type Transaction } from "~/utils/interfaces/Transaction";
+	import type { Transaction } from "~/utils/interfaces/Transaction";
 	import "animate.css";
 	import currency from "currency.js";
-	import moment from "moment";
+	import { formatLongDateTime } from "~/utils/date";
 
 	const config = useRuntimeConfig().public;
 
@@ -138,7 +138,7 @@
 						</tr>
 						<tr>
 							<td colspan="2" class="text-center">
-								{{ moment(trans.createdAt).format("lll") }}
+								{{ formatLongDateTime(trans.createdAt) }}
 							</td>
 						</tr>
 					</tbody>
