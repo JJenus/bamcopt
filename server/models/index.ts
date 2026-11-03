@@ -165,4 +165,23 @@ AccountLevel.init(
 	{ sequelize, paranoid: true, modelName: "AccountLevel" }
 );
 
+export class FundingAccount extends Model {
+	declare id: string; declare label: string; declare type: string; declare bankName: string | null;
+	declare accountName: string | null; declare accountNumber: string; declare currency: string | null;
+	declare instructions: string | null; declare balance: number; declare active: boolean;
+}
+FundingAccount.init(
+	{
+		id,
+		label: { type: DataTypes.STRING, allowNull: false },
+		type: { type: DataTypes.STRING, allowNull: false, defaultValue: "bank" },
+		bankName: DataTypes.STRING, accountName: DataTypes.STRING,
+		accountNumber: { type: DataTypes.STRING, allowNull: false },
+		currency: DataTypes.STRING, instructions: DataTypes.TEXT,
+		balance: money("balance"),
+		active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+	},
+	{ sequelize, modelName: "FundingAccount" }
+);
+
 export { sequelize };

@@ -39,7 +39,15 @@ export const TransferBody = z.object({
 	}),
 });
 export const TransactionUpdateBody = z.object({ id: uuid, status: z.nativeEnum(TransactionStatus).optional(), notes: z.string().optional() });
-export const TopUpBody = z.object({ email: z.string().email(), amount: z.number() });
+export const TopUpBody = z.object({ email: z.string().email(), amount: z.number(), fundingAccountId: uuid.optional() });
+
+export const FundingAccountBody = z.object({
+	label: z.string().min(2), type: z.enum(["bank", "crypto", "other"]).default("bank"),
+	bankName: z.string().optional(), accountName: z.string().optional(), accountNumber: z.string().min(1),
+	currency: z.string().optional(), instructions: z.string().optional(), active: z.boolean().optional(),
+});
+/** Balance only moves through `adjustment` (signed, in major units), never by overwriting it. */
+export const FundingAccountUpdateBody = FundingAccountBody.partial().extend({ adjustment: z.number().optional() });
 
 export const AccountUpdateBody = z.object({
 	id: uuid.optional(), userId: uuid, currencyId: z.string().optional(),

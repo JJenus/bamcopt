@@ -5,6 +5,6 @@ import { topUp } from "../../services/ledger";
 
 export default defineEventHandler(async (event) => {
 	requireAdmin(event);
-	const { email, amount } = await parseBody(event, S.TopUpBody);
-	return topUp(email, amount);
+	const { email, amount, fundingAccountId } = await parseBody(event, S.TopUpBody);
+	return topUp(email, amount, fundingAccountId);
 });

@@ -291,6 +291,35 @@ async function main() {
 	const verify = await call("POST", "/api/auth/verify-email", { body: { token: jwt.sign({ sub: bob.id, purpose: "verify-email" }, SECRET, { expiresIn: "1d" }) } });
 	check("e-mail verification works", verify.status === 200 && verify.data.emailVerified === true);
 
+	console.log("\nfunding accounts & stats");
+	const fbody = { label: "Main bank", type: "bank", bankName: "First Bank", accountName: "Bancopt Ltd", accountNumber: "0123456789", currency: "USD" };
+	check("user cannot create funding account", (await call("POST", "/api/funding-accounts", { token: alice.token, body: fbody })).status === 403);
+	const fa = await call("POST", "/api/funding-accounts", { token: admin.token, body: fbody });
+	check("admin creates funding account", fa.status === 200 && fa.data.balance === 0, JSON.stringify(fa.data));
+	const adj = await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { adjustment: 250.75 } });
+	check("adjustment raises the balance", adj.status === 200 && adj.data.balance === 250.75, JSON.stringify(adj.data));
+	check("balance cannot go negative", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { adjustment: -1000 } })).status === 422);
+	check("balance cannot be overwritten", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { balance: 9999 } })).data.balance === 250.75);
+	check("user cannot update funding account", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: alice.token, body: { adjustment: 5 } })).status === 403);
+	const seen = await call("GET", "/api/funding-accounts", { token: alice.token });
+	check("user sees the account without balance", seen.status === 200 && seen.data.length >= 1 && seen.data.every((a) => a.balance === undefined && a.accountNumber));
+	await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { active: false } });
+	check("inactive account hidden from users", (await call("GET", "/api/funding-accounts", { token: alice.token })).data.length === 0);
+	await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { active: true } });
+	const fundBefore = (await call("GET", "/api/funding-accounts", { token: admin.token })).data.find((a) => a.id === fa.data.id).balance;
+	check("top-up with a funding account", (await call("POST", "/api/account", { token: admin.token, body: { email: "bob@x.com", amount: 10, fundingAccountId: fa.data.id } })).status === 200);
+	check("...credits the funding account", (await call("GET", "/api/funding-accounts", { token: admin.token })).data.find((a) => a.id === fa.data.id).balance === fundBefore + 10);
+	check("top-up with unknown funding account -> 404 and no money moved", (await (async () => {
+		const b = await bal(bob);
+		const r = await call("POST", "/api/account", { token: admin.token, body: { email: "bob@x.com", amount: 10, fundingAccountId: "00000000-0000-4000-8000-000000000000" } });
+		return r.status === 404 && (await bal(bob)) === b;
+	})()));
+	const ag = await call("GET", "/api/transactions/aggregates", { token: alice.token });
+	check("aggregates are in major units", ag.status === 200 && ag.data.sent > 0 && ag.data.sent < 1000 && typeof ag.data.count === "number", JSON.stringify(ag.data));
+	check("stats need admin", (await call("GET", "/api/admin/stats", { token: alice.token })).status === 403);
+	const st = await call("GET", "/api/admin/stats", { token: admin.token });
+	check("admin stats", st.status === 200 && st.data.users.total >= 2 && st.data.balances.funding === fundBefore + 10 && st.data.recentTransactions.length > 0, JSON.stringify(st.data).slice(0, 200));
+
 	console.log("\nhousekeeping");
 	check("mark all notifications read", (await call("PUT", "/api/notifications/all", { token: alice.token })).data.every((n) => n.status === "read"));
 	check("unknown route -> 404 json", (await call("GET", "/api/nope", { token: alice.token })).status === 404);

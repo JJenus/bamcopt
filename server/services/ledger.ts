@@ -7,7 +7,7 @@
 import crypto from "node:crypto";
 import { Op, Transaction as DbTx } from "sequelize";
 import {
-	Account, AccountLevel, AccountStatus, Beneficiary, NotificationType, Transaction, TransactionStatus, TransactionType, User,
+	Account, AccountLevel, AccountStatus, Beneficiary, FundingAccount, NotificationType, Transaction, TransactionStatus, TransactionType, User,
 } from "../models";
 import { sequelize } from "../utils/db";
 import { badRequest, forbidden, notFound, unprocessable } from "../utils/errors";
@@ -133,7 +133,8 @@ export const transfer = async (input: TransferInput) => {
 };
 
 /** Admin credits a user's account by e-mail. */
-export const topUp = async (email: string, amount: number) => {
+/** `fundingAccountId`: the admin funding account that received the money; its balance goes up in the same DB transaction. */
+export const topUp = async (email: string, amount: number, fundingAccountId?: string) => {
 	const minor = positiveMinor(amount);
 	const user = await getUserByEmail(email);
 
@@ -147,6 +148,11 @@ export const topUp = async (email: string, amount: number) => {
 		}
 
 		await account.update({ amount: fromMinor(toMinor(account.amount) + minor) }, { transaction: t });
+		if (fundingAccountId) {
+			const funding = await FundingAccount.findByPk(fundingAccountId, { transaction: t, lock: t.LOCK.UPDATE });
+			if (!funding) throw notFound("Funding account not found");
+			await funding.update({ balance: fromMinor(toMinor(funding.balance) + minor) }, { transaction: t });
+		}
 		await Transaction.create(
 			{
 				senderId: user.id, receiverId: user.id, transactionId: newTransactionId(), amount: fromMinor(minor),
@@ -227,18 +233,24 @@ export const listUserTransactions = async (userId: string, opts?: { limit?: numb
 	return list.map((t: any) => (t.beneficiary && t.beneficiaryId === t.senderId && user ? { ...t, beneficiary: { ...t.beneficiary, name: user.name } } : t));
 };
 
-/** DB-level aggregates for the transactions page (no full list loaded just for sums). */
+/** DB-level aggregates for the stats cards (amounts in major units, counts are plain numbers). */
 export const getUserTransactionAggregates = async (userId: string) => {
-	const totalReceived = await Transaction.sum("amount", {
-		where: { receiverId: userId, status: TransactionStatus.COMPLETED },
-	});
-	const totalSent = await Transaction.sum("amount", {
-		where: { senderId: userId, type: { [Op.in]: OUTGOING }, status: { [Op.ne]: TransactionStatus.FAILED } },
-	});
+	const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+	const incoming = { receiverId: userId, status: TransactionStatus.COMPLETED };
+	const outgoing = { senderId: userId, type: { [Op.in]: OUTGOING }, status: { [Op.ne]: TransactionStatus.FAILED } };
+	const mine = { [Op.or]: [{ senderId: userId }, { receiverId: userId }] };
+	const [received, sent, monthReceived, monthSent, count, pending] = await Promise.all([
+		Transaction.sum("amount", { where: incoming }),
+		Transaction.sum("amount", { where: outgoing }),
+		Transaction.sum("amount", { where: { ...incoming, createdAt: { [Op.gte]: monthStart } } }),
+		Transaction.sum("amount", { where: { ...outgoing, createdAt: { [Op.gte]: monthStart } } }),
+		Transaction.count({ where: mine }),
+		Transaction.count({ where: { ...mine, status: { [Op.in]: [TransactionStatus.PENDING, TransactionStatus.AWAITING, TransactionStatus.PROCESSING] } } }),
+	]);
+	const m = (n: number | null) => fromMinor(n ? toMinor(n) : 0);
 	return {
-		received: totalReceived ? toMinor(totalReceived) : 0,
-		sent: totalSent ? toMinor(totalSent) : 0,
-		net: (totalReceived ? toMinor(totalReceived) : 0) - (totalSent ? toMinor(totalSent) : 0),
+		received: m(received), sent: m(sent), net: fromMinor((received ? toMinor(received) : 0) - (sent ? toMinor(sent) : 0)),
+		monthReceived: m(monthReceived), monthSent: m(monthSent), count, pending,
 	};
 };
 
