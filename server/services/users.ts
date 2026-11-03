@@ -44,8 +44,9 @@ export const createUser = async (
 	);
 };
 
-export const withAccount = async (user: User) => ({
-	...user.toJSON(),
+/** `admin` = include the transfer codes (cot / imf / tax). */
+export const withAccount = async (user: User, admin = false) => ({
+	...(admin ? user.toAdminJSON() : user.toJSON()),
 	account: (await Account.findOne({ where: { userId: user.id } }))?.toJSON() ?? null,
 });
 
@@ -53,7 +54,7 @@ export const listWithAccounts = async () => {
 	const users = await User.findAll();
 	const accounts = await Account.findAll({ where: { userId: users.map((u) => u.id) } });
 	const byUser = new Map(accounts.map((a) => [a.userId, a.toJSON()]));
-	return users.map((u) => ({ ...u.toJSON(), account: byUser.get(u.id) ?? null }));
+	return users.map((u) => ({ ...u.toAdminJSON(), account: byUser.get(u.id) ?? null }));
 };
 
 /** What other (non-admin) users may see about someone. */

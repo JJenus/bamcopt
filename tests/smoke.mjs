@@ -41,7 +41,13 @@ const check = (name, ok, extra = "") => {
 	console.log(`${ok ? "  ok " : "FAIL "} ${name}${ok ? "" : " " + extra}`);
 };
 
+// transfers need the user's COT/IMF/TAX codes: inject them (unless the test sets _noCodes / its own codes)
+const CODES = new Map();
 const call = async (method, path, { token, body } = {}) => {
+	if (method === "POST" && path === "/api/transactions" && body) {
+		if (body._noCodes) body = Object.fromEntries(Object.entries(body).filter(([k]) => k !== "_noCodes"));
+		else if (!body.codes && CODES.has(token)) body = { ...body, codes: CODES.get(token) };
+	}
 	const res = await fetch(BASE + path, {
 		method,
 		headers: { "content-type": "application/json", ...(token && { authorization: `Bearer ${token}` }) },
@@ -117,6 +123,15 @@ async function main() {
 	const admin = { id: adm.data.userId, token: adm.data.token };
 	check("admin token carries role", jwt.decode(admin.token).userType === "admin");
 
+	const loadCodes = async (...users) => {
+		const list = (await call("GET", "/api/users", { token: admin.token })).data;
+		for (const u of users) {
+			const { cot, imf, tax } = list.find((x) => x.id === u.id);
+			CODES.set(u.token, { cot, imf, tax });
+		}
+	};
+	await loadCodes(alice, bob);
+
 	console.log("\nauthorization");
 	check("no token -> 401", (await call("GET", `/api/account/${alice.id}`)).status === 401);
 	check("bad token -> 401", (await call("GET", `/api/account/${alice.id}`, { token: "x.y.z" })).status === 401);
@@ -185,6 +200,7 @@ async function main() {
 	};
 	const [carol, dave, erin, frank] = [await mk("carol"), await mk("dave"), await mk("erin"), await mk("frank")];
 	const topUp = (email, amount) => call("POST", "/api/account", { token: admin.token, body: { email, amount } });
+	await loadCodes(carol, dave, erin, frank);
 	for (const [u, amt] of [[carol, 1000], [dave, 450], [erin, 1000], [frank, 100]]) await topUp(u.email, amt);
 	const lvl = await call("POST", "/api/account-levels", { token: admin.token, body: { title: "Basic", dailyLimit: 100, maxBalanceLimit: 500, accountLevel: 1 } });
 	check("admin creates level 1 (daily 100, max balance 500)", lvl.status === 200, JSON.stringify(lvl.data));
@@ -221,6 +237,45 @@ async function main() {
 
 	await call("PUT", "/api/account-levels", { token: admin.token, body: { id: lvl.data.id, title: "Basic", dailyLimit: 0, maxBalanceLimit: 0, accountLevel: 1 } });
 	check("limit 0 means unlimited", (await call("POST", "/api/transactions", { token: carol.token, body: sendBody(bob, 5) })).status === 200 && (await topUp("dave@x.com", 1000)).status === 200);
+
+	console.log("\ntransfer codes (COT / IMF / TAX)");
+	const noCodesIn = (o) => ["cot", "imf", "tax"].every((k) => o[k] === undefined);
+	check("session user has no codes", noCodesIn(otpOk.data.user) && noCodesIn(evil.data.user));
+	check("own profile has no codes", noCodesIn((await call("GET", `/api/users/${alice.id}`, { token: alice.token })).data));
+	check("profile update response has no codes", noCodesIn((await call("PUT", `/api/users/${alice.id}`, { token: alice.token, body: { name: "Alice A" } })).data));
+	const adminView = (await call("GET", `/api/users/${alice.id}`, { token: admin.token })).data;
+	check("admin can see the codes", /^\d{4}$/.test(adminView.cot) && /^\d{4}$/.test(adminView.imf) && /^\d{4}$/.test(adminView.tax));
+	check("admin list shows codes too", /^\d{4}$/.test((await call("GET", "/api/users", { token: admin.token })).data.find((u) => u.id === alice.id).tax));
+
+	const own = CODES.get(bob.token);
+	const wrongOf = (c) => (c === "0000" ? "1111" : "0000");
+	check("verify-code: right code ok", (await call("POST", "/api/transactions/verify-code", { token: bob.token, body: { step: "cot", code: own.cot } })).status === 200);
+	check("verify-code: wrong code -> 422", (await call("POST", "/api/transactions/verify-code", { token: bob.token, body: { step: "imf", code: wrongOf(own.imf) } })).status === 422);
+	check("verify-code: unknown step -> 422", (await call("POST", "/api/transactions/verify-code", { token: bob.token, body: { step: "pin", code: "1" } })).status === 422);
+	check("verify-code needs a session", (await call("POST", "/api/transactions/verify-code", { body: { step: "cot", code: "1" } })).status === 401);
+
+	const balBefore = await bal(bob);
+	check("transfer without codes -> 422", (await call("POST", "/api/transactions", { token: bob.token, body: { ...sendBody(alice, 1), _noCodes: true } })).status === 422);
+	const badTax = await call("POST", "/api/transactions", { token: bob.token, body: sendBody(alice, 1, { codes: { ...own, tax: wrongOf(own.tax) } }) });
+	check("transfer with a wrong code -> 422 and names it", badTax.status === 422 && /tax code/i.test(badTax.data.message), JSON.stringify(badTax.data));
+	check("...and no money moved", (await bal(bob)) === balBefore);
+	check("transfer with right codes works", (await call("POST", "/api/transactions", { token: bob.token, body: sendBody(alice, 1) })).status === 200);
+
+	await call("PUT", `/api/users/${bob.id}`, { token: admin.token, body: { cot: "9999" } });
+	check("old code stops working after admin changes it", (await call("POST", "/api/transactions", { token: bob.token, body: sendBody(alice, 1) })).status === 422);
+	check("new code works", (await call("POST", "/api/transactions", { token: bob.token, body: sendBody(alice, 1, { codes: { ...own, cot: "9999" } }) })).status === 200);
+	check("user cannot change their own codes", (await call("PUT", `/api/users/${bob.id}`, { token: bob.token, body: { cot: "1234" } })).status === 200 && (await call("GET", `/api/users/${bob.id}`, { token: admin.token })).data.cot === "9999");
+
+	const gina = await mk("gina");
+	await loadCodes(gina);
+	await topUp("gina@x.com", 50);
+	const gc = CODES.get(gina.token);
+	let last;
+	for (let i = 0; i < 5; i++) last = await call("POST", "/api/transactions/verify-code", { token: gina.token, body: { step: "cot", code: wrongOf(gc.cot) } });
+	check("5 wrong codes are rejected", last.status === 422);
+	const locked2 = await call("POST", "/api/transactions/verify-code", { token: gina.token, body: { step: "cot", code: gc.cot } });
+	check("then guessing is locked out (429), even with the right code", locked2.status === 429, JSON.stringify(locked2.data));
+	check("transfers are locked too", (await call("POST", "/api/transactions", { token: gina.token, body: sendBody(bob, 1) })).status === 429 && (await bal(gina)) === 50);
 
 	console.log("\npassword reset / e-mail verification");
 	const reset = (token, password = "newpass123") => call("POST", "/api/auth/reset-password", { body: { token, password } });

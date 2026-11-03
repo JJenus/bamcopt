@@ -29,9 +29,14 @@ export class User extends Model {
 	declare city: string; declare country: string; declare dob: Date; declare verified: boolean;
 	declare emailVerified: boolean; declare status: string; declare userType: string;
 	declare cot: string; declare imf: string; declare tax: string;
-	/** Never leak the password hash. */
-	toJSON() {
+	/** Everything except the password hash. Only admin endpoints may use this. */
+	toAdminJSON() {
 		const { password, ...rest } = this.get({ plain: true }) as any;
+		return rest;
+	}
+	/** Default JSON: no password hash and no transfer codes (cot / imf / tax). */
+	toJSON() {
+		const { cot, imf, tax, ...rest } = this.toAdminJSON();
 		return rest;
 	}
 }

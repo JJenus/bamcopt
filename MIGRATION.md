@@ -43,8 +43,14 @@ Same `/api/...` paths and request/response shapes, so the frontend keeps working
 - **Failed bank transfers are refunded.** Admin sets status `failed` on a debit / withdrawal: the sender is credited once (row locked, so double clicks cannot refund twice), a `Refund of <id>` ledger row is written and the user is notified.
   Internal transfers and deposits cannot be failed; a failed transaction cannot be reopened. Transactions that an admin already marked failed in the past were NOT refunded retroactively.
 
-## Not changed (needs a product decision)
-- COT/IMF/TAX "billing codes" are still verified in the browser and visible to their owner.
+## Transfer codes (COT / IMF / TAX)
+- Verified **on the server**. `POST /api/transactions/verify-code {step, code}` gives step-by-step feedback to the transfer screen (moves no money); `POST /api/transactions` also requires `codes: {cot, imf, tax}` and re-checks all three before any money moves.
+- Codes are only ever returned to admins (admin user list / profile). Users' own profile, login session and update responses no longer contain them.
+- Constant-time comparison; 5 wrong codes lock the user out for 15 minutes (HTTP 429). The counter is in memory (single instance).
+- If an admin has not set a user's codes, transfers are refused ("Contact support") instead of passing.
+- Sessions created before this change may still hold the codes in the browser cookie until the next login.
+
+## Nothing left open from the original review
 
 ## Frontend
 - `services/` is the only place that calls the API (`http.ts` = single `$fetch` wrapper that adds the token, normalises errors to `ApiError`, logs out on an expired session). One file per area: auth, user, account, transaction, notification, settings, upload.

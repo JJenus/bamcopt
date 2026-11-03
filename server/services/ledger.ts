@@ -12,6 +12,7 @@ import {
 import { sequelize } from "../utils/db";
 import { badRequest, forbidden, notFound, unprocessable } from "../utils/errors";
 import { fromMinor, positiveMinor, toMinor } from "../utils/money";
+import { checkAllCodes, Codes } from "./codes";
 import { getUser, getUserByEmail } from "./users";
 import { notifySafe } from "./notifications";
 
@@ -54,6 +55,7 @@ export type TransferInput = {
 	senderId: string;
 	type: TransactionType;
 	amount: number;
+	codes: Codes;
 	notes?: string;
 	beneficiary: { userId?: string; name: string; destinationAccount: string; bank: string };
 };
@@ -70,6 +72,7 @@ export const transfer = async (input: TransferInput) => {
 
 	const sender = await getUser(input.senderId);
 	if (sender.status.toUpperCase() === "HOLD") throw forbidden("Account on hold. Contact support.");
+	checkAllCodes(sender, input.codes); // before any money moves
 
 	try {
 		const { tx, beneficiary } = await sequelize.transaction(async (t) => {

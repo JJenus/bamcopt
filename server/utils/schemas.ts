@@ -25,8 +25,10 @@ export const UserUpdateBody = z.object({
 	cot: z.any().optional(), imf: z.any().optional(), tax: z.any().optional(),
 });
 
+export const CodeBody = z.object({ step: z.enum(["cot", "imf", "tax"]), code: z.string().min(1) });
 export const TransferBody = z.object({
 	amount: z.number(),
+	codes: z.object({ cot: z.string(), imf: z.string(), tax: z.string() }),
 	type: z.nativeEnum(TransactionType),
 	notes: z.string().optional(),
 	beneficiary: z.object({

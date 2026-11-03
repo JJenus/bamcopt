@@ -143,37 +143,35 @@
 			: billing.value.tax.title;
 	};
 
+	const resetBilling = () => {
+		for (const step of ["cot", "imf", "tax"] as const) {
+			billing.value[step].verified = false;
+			billing.value[step].value = "";
+		}
+		billing.value.inputValue = "";
+		billing.value.active = "exchange";
+	};
+
+	// each code is checked by the server (never in the browser)
 	const continueTransfer = () => {
-		useUserData.reloadUser();
+		const step = billing.value.active === "exchange" ? "cot" : billing.value.active === "imf" ? "imf" : "tax";
+		const code = billing.value.inputValue;
 		billing.value.verifying = true;
-		console.log(user.value);
 		setTimeout(() => {
-			billing.value.verifying = false;
-			if (!billing.value.cot.verified) {
-				if (user.value.cot == billing.value.inputValue) {
-					billing.value.cot.verified = true;
-					billing.value.active = "imf";
+			transactionService
+				.verifyCode(step, code)
+				.then(() => {
+					billing.value[step].verified = true;
+					billing.value[step].value = code;
 					billing.value.inputValue = "";
-				} else {
-					return errorAlert("Invalid exchange code");
-				}
-			} else if (!billing.value.imf.verified) {
-				if (user.value.imf == billing.value.inputValue) {
-					billing.value.imf.verified = true;
-					billing.value.active = "tax";
-					billing.value.inputValue = "";
-				} else {
-					return errorAlert("Invalid IMF code");
-				}
-			} else if (!billing.value.tax.verified) {
-				if (user.value.tax == billing.value.inputValue) {
-					billing.value.tax.verified = true;
-					billing.value.inputValue = "";
-					completeTransaction();
-				} else {
-					return errorAlert("Invalid tax code");
-				}
-			}
+					if (step === "cot") billing.value.active = "imf";
+					else if (step === "imf") billing.value.active = "tax";
+					else completeTransaction();
+				})
+				.catch((e: ApiError) => errorAlert(e.message || "Invalid code"))
+				.finally(() => {
+					billing.value.verifying = false;
+				});
 		}, 4000);
 	};
 
@@ -309,7 +307,11 @@
 
 		const validData = copyNonEmptyProperties(transaction.value);
 
-		console.log("Valid data", validData);
+		validData.codes = {
+			cot: billing.value.cot.value,
+			imf: billing.value.imf.value,
+			tax: billing.value.tax.value,
+		};
 
 		transactionService
 			.send(validData)
@@ -328,6 +330,8 @@
 				billing.value.active = "exchange";
 			})
 			.catch((error: ApiError) => {
+				// codes changed meanwhile: ask for them again
+				if (error.status === 422 && /code/i.test(error.message)) resetBilling();
 				// the server says why (insufficient balance, account on hold, ...)
 				errorAlert(
 					error.status && error.status < 500

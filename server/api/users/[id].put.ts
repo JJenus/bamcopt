@@ -6,5 +6,6 @@ import { updateUser } from "../../services/users";
 export default defineEventHandler(async (event) => {
 	const id = await uuidParam(event);
 	const auth = requireSelfOrAdmin(event, id);
-	return updateUser(id, await parseBody(event, S.UserUpdateBody), isAdmin(auth));
+	const user = await updateUser(id, await parseBody(event, S.UserUpdateBody), isAdmin(auth));
+	return isAdmin(auth) ? user.toAdminJSON() : user;
 });
