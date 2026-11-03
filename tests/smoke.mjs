@@ -178,6 +178,50 @@ async function main() {
 	check("money conserved across accounts", after.alice + after.bob === before, JSON.stringify(after));
 	check("balances match successful transfers", after.alice === 59.25 - 20 * okCount, JSON.stringify({ after, okCount }));
 
+	console.log("\nlimits (account level) and refunds");
+	const mk = async (name) => {
+		const r = await call("POST", "/api/auth/register", { body: profile(`${name}@x.com`) });
+		return { id: r.data.userId, name, email: `${name}@x.com`, token: r.data.token };
+	};
+	const [carol, dave, erin, frank] = [await mk("carol"), await mk("dave"), await mk("erin"), await mk("frank")];
+	const topUp = (email, amount) => call("POST", "/api/account", { token: admin.token, body: { email, amount } });
+	for (const [u, amt] of [[carol, 1000], [dave, 450], [erin, 1000], [frank, 100]]) await topUp(u.email, amt);
+	const lvl = await call("POST", "/api/account-levels", { token: admin.token, body: { title: "Basic", dailyLimit: 100, maxBalanceLimit: 500, accountLevel: 1 } });
+	check("admin creates level 1 (daily 100, max balance 500)", lvl.status === 200, JSON.stringify(lvl.data));
+
+	const wd = (amount) => ({ amount, type: "withdrawal", beneficiary: { name: "X", destinationAccount: "0123456789", bank: "Some Bank" } });
+	check("within daily limit ok", (await call("POST", "/api/transactions", { token: carol.token, body: sendBody(bob, 60) })).status === 200);
+	const over = await call("POST", "/api/transactions", { token: carol.token, body: sendBody(bob, 50) });
+	check("over the daily limit -> 422 with reason", over.status === 422 && /Daily transfer limit/.test(over.data.message), JSON.stringify(over.data));
+	check("exactly up to the limit is ok", (await call("POST", "/api/transactions", { token: carol.token, body: sendBody(bob, 40) })).status === 200);
+	check("limit reached -> 422 (also for bank transfers)", (await call("POST", "/api/transactions", { token: carol.token, body: wd(1) })).status === 422);
+	check("refused attempts moved no money", (await bal(carol)) === 900);
+
+	check("top-up above max balance -> 422", (await topUp("dave@x.com", 100)).status === 422);
+	check("top-up exactly to max balance ok", (await topUp("dave@x.com", 50)).data.amount === 500);
+	const cap = await call("POST", "/api/transactions", { token: erin.token, body: sendBody(dave, 1) });
+	check("receiving above max balance -> 422, no balance leaked", cap.status === 422 && !/\d{3}/.test(cap.data.message), JSON.stringify(cap.data));
+	check("sender not debited when beneficiary is capped", (await bal(erin)) === 1000 && (await bal(dave)) === 500);
+
+	const w1 = await call("POST", "/api/transactions", { token: frank.token, body: wd(40) });
+	check("bank transfer debits the sender", w1.status === 200 && (await bal(frank)) === 60);
+	check("only admins can change status", (await call("PUT", "/api/transactions", { token: frank.token, body: { id: w1.data.id, status: "failed" } })).status === 403);
+	check("failing a bank transfer refunds the sender", (await call("PUT", "/api/transactions", { token: admin.token, body: { id: w1.data.id, status: "failed" } })).status === 200 && (await bal(frank)) === 100);
+	check("marking failed again does not refund twice", (await call("PUT", "/api/transactions", { token: admin.token, body: { id: w1.data.id, status: "failed" } })).status === 200 && (await bal(frank)) === 100);
+	check("failed transaction cannot be reopened", (await call("PUT", "/api/transactions", { token: admin.token, body: { id: w1.data.id, status: "completed" } })).status === 422);
+	const w2 = await call("POST", "/api/transactions", { token: frank.token, body: wd(90) });
+	check("failed/refunded transfers do not count towards the daily limit", w2.status === 200 && (await bal(frank)) === 10, JSON.stringify(w2.data));
+	await Promise.all([1, 2, 3].map(() => call("PUT", "/api/transactions", { token: admin.token, body: { id: w2.data.id, status: "failed" } })));
+	check("concurrent 'failed' clicks refund exactly once", (await bal(frank)) === 100);
+	const history = (await call("GET", `/api/transactions/${frank.id}`, { token: frank.token })).data;
+	check("each refund has a ledger row", history.filter((x) => /^Refund of /.test(x.notes || "")).length === 2);
+	const before2 = [await bal(alice), await bal(bob)];
+	check("internal transfer cannot be marked failed", (await call("PUT", "/api/transactions", { token: admin.token, body: { id: t1.data.id, status: "failed" } })).status === 422);
+	check("...and no money moved", (await bal(alice)) === before2[0] && (await bal(bob)) === before2[1]);
+
+	await call("PUT", "/api/account-levels", { token: admin.token, body: { id: lvl.data.id, title: "Basic", dailyLimit: 0, maxBalanceLimit: 0, accountLevel: 1 } });
+	check("limit 0 means unlimited", (await call("POST", "/api/transactions", { token: carol.token, body: sendBody(bob, 5) })).status === 200 && (await topUp("dave@x.com", 1000)).status === 200);
+
 	console.log("\npassword reset / e-mail verification");
 	const reset = (token, password = "newpass123") => call("POST", "/api/auth/reset-password", { body: { token, password } });
 	check("raw user id is not a valid reset token", (await reset(alice.id)).status === 401);

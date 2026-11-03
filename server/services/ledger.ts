@@ -7,7 +7,7 @@
 import crypto from "node:crypto";
 import { Op, Transaction as DbTx } from "sequelize";
 import {
-	Account, AccountStatus, Beneficiary, NotificationType, Transaction, TransactionStatus, TransactionType, User,
+	Account, AccountLevel, AccountStatus, Beneficiary, NotificationType, Transaction, TransactionStatus, TransactionType, User,
 } from "../models";
 import { sequelize } from "../utils/db";
 import { badRequest, forbidden, notFound, unprocessable } from "../utils/errors";
@@ -24,6 +24,30 @@ const lockAccounts = async (userIds: string[], t: DbTx) => {
 	const ids = [...new Set(userIds)].sort(); // fixed order => no deadlocks
 	const rows = await Account.findAll({ where: { userId: ids }, order: [["userId", "ASC"]], transaction: t, lock: t.LOCK.UPDATE });
 	return new Map(rows.map((a) => [a.userId, a]));
+};
+
+const OUTGOING = [TransactionType.DEBIT, TransactionType.WITHDRAWAL, TransactionType.SEND];
+const minorOf = (n: number | string) => Math.round(Number(n) * 100);
+
+/** Limits of the account's level, in minor units. A limit that is 0 / unset means "no limit". */
+const limitsFor = async (account: Account, t: DbTx) => {
+	const level = (await AccountLevel.findOne({ where: { accountLevel: account.accountLevel }, transaction: t })) as any;
+	return { daily: level ? minorOf(level.dailyLimit) : 0, max: level ? minorOf(level.maxBalanceLimit) : 0 };
+};
+
+/** Money that left the account in the last 24h (failed attempts and refunds are not counted). */
+const sentLast24h = async (userId: string, t: DbTx) => {
+	const rows = await Transaction.findAll({
+		attributes: ["amount"],
+		where: {
+			senderId: userId,
+			type: { [Op.in]: OUTGOING },
+			status: { [Op.ne]: TransactionStatus.FAILED },
+			createdAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+		},
+		transaction: t,
+	});
+	return rows.reduce((sum, r) => sum + toMinor(r.amount), 0);
 };
 
 export type TransferInput = {
@@ -56,9 +80,19 @@ export const transfer = async (input: TransferInput) => {
 			if (from.status !== AccountStatus.ACTIVE) throw forbidden("Your account is not active");
 			const fromBalance = toMinor(from.amount);
 			if (fromBalance < minor) throw unprocessable("Insufficient balance");
+			// sender is locked, so this running total cannot race with another transfer
+			const { daily } = await limitsFor(from, t);
+			if (daily > 0 && (await sentLast24h(input.senderId, t)) + minor > daily) {
+				throw unprocessable(`Daily transfer limit of ${fromMinor(daily)} exceeded`);
+			}
 
 			const to = receiverId ? accounts.get(receiverId) : undefined;
 			if (isSend && (!to || to.status !== AccountStatus.ACTIVE)) throw unprocessable("Beneficiary account is unavailable");
+			if (to) {
+				const { max } = await limitsFor(to, t);
+				// deliberately vague: do not reveal the beneficiary's balance
+				if (max > 0 && toMinor(to.amount) + minor > max) throw unprocessable("Beneficiary account cannot receive this amount");
+			}
 
 			await from.update({ amount: fromMinor(fromBalance - minor) }, { transaction: t });
 			if (to) await to.update({ amount: fromMinor(toMinor(to.amount) + minor) }, { transaction: t });
@@ -105,6 +139,10 @@ export const topUp = async (email: string, amount: number) => {
 		const account = (await lockAccounts([user.id], t)).get(user.id);
 		if (!account) throw notFound("Account not found");
 		if (account.status === AccountStatus.CLOSED) throw unprocessable("Account is closed");
+		const { max } = await limitsFor(account, t);
+		if (max > 0 && toMinor(account.amount) + minor > max) {
+			throw unprocessable(`Exceeds the account's maximum balance of ${fromMinor(max)}`);
+		}
 
 		await account.update({ amount: fromMinor(toMinor(account.amount) + minor) }, { transaction: t });
 		await Transaction.create(
@@ -118,18 +156,50 @@ export const topUp = async (email: string, amount: number) => {
 	});
 };
 
-/** Admin changes the status / notes of a transaction (e.g. "sent to bank"). Does not move money. */
+/**
+ * Admin changes the status / notes of a transaction (e.g. "sent to bank").
+ * Marking a transfer to another bank as FAILED refunds the sender (once, atomically).
+ * Internal transfers and deposits cannot be failed, and a failed transaction cannot be reopened.
+ */
 export const updateTransaction = async (id: string, data: { status?: TransactionStatus; notes?: string }) => {
-	const tx = await Transaction.findByPk(id);
-	if (!tx) throw notFound("Transaction not found");
-	await tx.update({ ...(data.status && { status: data.status }), ...(data.notes !== undefined && { notes: data.notes }) });
+	const { tx, refunded } = await sequelize.transaction(async (t) => {
+		const tx = await Transaction.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE }); // serialises double-clicks
+		if (!tx) throw notFound("Transaction not found");
 
-	await notifySafe({
-		userId: tx.senderId,
-		title: tx.status === TransactionStatus.COMPLETED ? "Transaction Successful" : "Transfer Processing",
-		message: `${tx.amount} ${tx.status === TransactionStatus.AWAITING ? "Sent to bank" : tx.status}`,
-		type: NotificationType.DEBIT,
+		let refunded = false;
+		if (data.status && data.status !== tx.status) {
+			if (tx.status === TransactionStatus.FAILED) throw unprocessable("A failed transaction cannot be reopened");
+			if (data.status === TransactionStatus.FAILED) {
+				if (tx.type === TransactionType.SEND || tx.type === TransactionType.CREDIT) {
+					throw unprocessable("Only transfers to other banks can be marked as failed");
+				}
+				const account = (await lockAccounts([tx.senderId], t)).get(tx.senderId);
+				if (!account) throw notFound("Account not found");
+				await account.update({ amount: fromMinor(toMinor(account.amount) + toMinor(tx.amount)) }, { transaction: t });
+				await Transaction.create(
+					{
+						senderId: tx.senderId, receiverId: tx.senderId, transactionId: newTransactionId(), amount: tx.amount,
+						type: TransactionType.CREDIT, notes: `Refund of ${tx.transactionId}`, status: TransactionStatus.COMPLETED,
+					},
+					{ transaction: t }
+				);
+				refunded = true;
+			}
+		}
+		await tx.update({ ...(data.status && { status: data.status }), ...(data.notes !== undefined && { notes: data.notes }) }, { transaction: t });
+		return { tx, refunded };
 	});
+
+	await notifySafe(
+		refunded
+			? { userId: tx.senderId, title: "Transfer failed", message: `${tx.amount} was refunded to your account`, type: NotificationType.FAILED }
+			: {
+					userId: tx.senderId,
+					title: tx.status === TransactionStatus.COMPLETED ? "Transaction Successful" : "Transfer Processing",
+					message: `${tx.amount} ${tx.status === TransactionStatus.AWAITING ? "Sent to bank" : tx.status}`,
+					type: NotificationType.DEBIT,
+			  }
+	);
 	return tx;
 };
 

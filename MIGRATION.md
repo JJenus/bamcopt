@@ -36,9 +36,15 @@ Same `/api/...` paths and request/response shapes, so the frontend keeps working
 - Consistent error codes (400/401/403/404/409/422), no stack traces in production.
 - Dead code removed: SSE controller (never mounted), jest/ts-node, `src.zip`, test DB, `.fff`.
 
+## Limits and refunds
+- **Account-level limits are enforced** (`AccountLevel` matched on `account.accountLevel`; a limit of 0 or no level row = no limit):
+  - `dailyLimit`: total outgoing in the last 24h (debit / withdrawal / send; failed attempts and refunds do not count) plus the new amount may not exceed it. Checked inside the locked transfer, so parallel requests cannot slip past it.
+  - `maxBalanceLimit`: a credit (transfer in, admin top-up) may not push the balance above it. The beneficiary only sees a vague "cannot receive this amount".
+- **Failed bank transfers are refunded.** Admin sets status `failed` on a debit / withdrawal: the sender is credited once (row locked, so double clicks cannot refund twice), a `Refund of <id>` ledger row is written and the user is notified.
+  Internal transfers and deposits cannot be failed; a failed transaction cannot be reopened. Transactions that an admin already marked failed in the past were NOT refunded retroactively.
+
 ## Not changed (needs a product decision)
 - COT/IMF/TAX "billing codes" are still verified in the browser and visible to their owner.
-- Account-level `dailyLimit` / `maxBalanceLimit` are stored but were never enforced.
 
 ## Frontend
 - `services/` is the only place that calls the API (`http.ts` = single `$fetch` wrapper that adds the token, normalises errors to `ApiError`, logs out on an expired session). One file per area: auth, user, account, transaction, notification, settings, upload.

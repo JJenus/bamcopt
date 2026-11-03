@@ -38,8 +38,11 @@
 		loading.value = true;
 		transactionService
 			.update({ id: trans.value.id, status: trans.value.status, notes: trans.value.notes })
-			.then(() => successAlert("Saved!"))
-			.catch(() => errorAlert("Failed to update"))
+			.then(() => {
+				successAlert("Saved!");
+				userData().fetchBalance(); // a failed transfer is refunded
+			})
+			.catch((e: ApiError) => errorAlert(e.message || "Failed to update"))
 			.finally(() => {
 				loading.value = false;
 			});
