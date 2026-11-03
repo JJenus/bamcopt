@@ -6,17 +6,29 @@ import { spawn } from "node:child_process";
 import { mkdirSync, rmSync } from "node:fs";
 import jwt from "jsonwebtoken";
 import sqlite3 from "sqlite3";
+import pg from "pg";
 
 const PORT = 3111;
 const BASE = `http://localhost:${PORT}`;
 const DB = ".data/smoke.db";
 const SECRET = "smoke-secret";
+// TEST_DATABASE_URL=postgres://... runs against PostgreSQL (needs an empty database); otherwise SQLite
+const PG_URL = process.env.TEST_DATABASE_URL;
+if (PG_URL) {
+	const c = new pg.Client({ connectionString: PG_URL });
+	await c.connect();
+	await c.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
+	await c.end();
+}
 
 mkdirSync(".data", { recursive: true });
 rmSync(DB, { force: true });
 
 const server = spawn("npx", ["nuxt", "dev", "--port", String(PORT)], {
-	env: { ...process.env, DB_DIALECT: "sqlite", DB_STORAGE: DB, DB_SYNC: "true", JWT_SECRET: SECRET },
+	env: {
+		...process.env, DB_SYNC: "true", JWT_SECRET: SECRET,
+		...(PG_URL ? { DATABASE_URL: PG_URL } : { DB_DIALECT: "sqlite", DB_STORAGE: DB }),
+	},
 	stdio: "ignore",
 	detached: true,
 });
@@ -63,10 +75,18 @@ async function main() {
 	check("short password -> 422", (await call("POST", "/api/auth/register", { body: { ...profile("z@x.com"), password: "1" } })).status === 422);
 	const bobReg = await call("POST", "/api/auth/register", { body: profile("bob@x.com") });
 	const adminReg = await call("POST", "/api/auth/register", { body: profile("admin@x.com") });
-	await new Promise((resolve, reject) => {
-		const db = new sqlite3.Database(DB);
-		db.run("UPDATE Users SET user_type='admin' WHERE email='admin@x.com'", (e) => (e ? reject(e) : resolve()));
-	});
+	if (PG_URL) {
+		const c = new pg.Client({ connectionString: PG_URL });
+		await c.connect();
+		await c.query(`UPDATE users SET user_type='admin' WHERE email='admin@x.com'`);
+		await c.end();
+	} else {
+		await new Promise((resolve, reject) => {
+			const db = new sqlite3.Database(DB);
+			db.run("UPDATE Users SET user_type='admin' WHERE email='admin@x.com'", (e) => (e ? reject(e) : resolve()));
+		});
+	}
+
 
 	// login = password step -> OTP challenge -> session
 	const login = async (email, password = "secret123") => {

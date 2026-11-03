@@ -1,11 +1,14 @@
 import { getHeader, getRequestURL } from "h3";
 import { verifySession } from "../utils/auth";
+import { dbReady } from "../utils/db";
+import "../models";
 import { unauthorized } from "../utils/errors";
 
 /** Everything under /api needs a valid session token, except the few public routes. */
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
 	const path = getRequestURL(event).pathname;
 	if (!path.startsWith("/api/") || event.method === "OPTIONS") return;
+	await dbReady();
 	if (path.startsWith("/api/auth/")) return;
 	if (event.method === "GET" && path.startsWith("/api/transactions/find/")) return; // public receipt tracking
 

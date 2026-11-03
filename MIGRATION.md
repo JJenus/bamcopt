@@ -5,7 +5,7 @@ Same `/api/...` paths and request/response shapes, so the frontend keeps working
 
 ## Approach
 - The API now lives in this Nuxt app: `server/api/**` (Nitro, same process as the UI, same origin, no CORS). The old `bancopt-api` repo is retired.
-- Keep Sequelize + MySQL (no ORM swap). Routers/controllers collapse into thin route files; logic lives in `server/services`.
+- Keep Sequelize + PostgreSQL (no ORM swap). Routers/controllers collapse into thin route files; logic lives in `server/services`.
 - Route file = validate (zod) -> call service -> return. No business logic in routes.
 
 ## Lapses found and how they are fixed
@@ -13,7 +13,7 @@ Same `/api/...` paths and request/response shapes, so the frontend keeps working
 ### Money (balances / crediting)
 | # | Problem | Fix |
 |---|---------|-----|
-| 1 | `BIGINT` comes back from MySQL as a **string**, so `receiver.amount + amount` concatenated ("100" + 50 = "10050") | money is `DECIMAL(20,2)`; all math in integer minor units (`utils/money.ts`); API returns numbers |
+| 1 | `BIGINT` comes back from PostgreSQL as a **string**, so `receiver.amount + amount` concatenated ("100" + 50 = "10050") | money is `DECIMAL(20,2)`; all math in integer minor units (`utils/money.ts`); API returns numbers |
 | 2 | Amount columns were whole-number types but the UI allows 2 decimals, so cents were silently dropped | `DECIMAL(20,2)` (SQL in `db/migrations`) |
 | 3 | Transfer = read, check, write with no DB transaction: a crash after the debit lost money; concurrent sends could overdraw | one DB transaction, rows locked `FOR UPDATE` in a fixed order, debit + credit + ledger row commit together |
 | 4 | Credit notification went to the **account id** instead of the user id (never delivered); `receiverId` was taken from the client instead of the beneficiary | notification -> user id; `receiverId` derived server-side |

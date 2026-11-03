@@ -33,8 +33,8 @@ export default defineNuxtConfig({
 	// UI never calls the API directly: everything goes through /services
 	imports: { dirs: ["services"] },
 	nitro: {
-		// Sequelize loads its MySQL driver dynamically
-		externals: { traceInclude: ["node_modules/mysql2/index.js"] },
+		// Sequelize loads its PostgreSQL driver dynamically
+		externals: { traceInclude: ["node_modules/pg/lib/index.js", "node_modules/pg-hstore/lib/index.js"] },
 	},
 	devServer: {
 		// https: {
