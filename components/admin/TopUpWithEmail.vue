@@ -5,7 +5,10 @@
 	const form = ref({
 		email: "",
 		amount: "",
+		fundingAccountId: "",
 	});
+	const funding = useFunding();
+	onMounted(() => funding.load());
 
 	const save = () => {
 		// successAlert("Saved!");
@@ -18,11 +21,12 @@
 		submitButton.value.setAttribute("data-kt-indicator", "on");
 
 		accountService
-			.topUp(form.value.email, Number(form.value.amount))
+			.topUp(form.value.email, Number(form.value.amount), form.value.fundingAccountId || undefined)
 			.then((account) => {
 				successAlert("Saved! New balance: " + account.amount);
 				userData().fetchBalance();
 				userData().getUsers();
+				funding.load();
 			})
 			.catch((e: ApiError) => errorAlert(e.message || "Unable to update balance"))
 			.finally(() => {
@@ -146,6 +150,16 @@
 							></div>
 						</div>
 						<!--end::Input group-->
+
+						<div class="d-flex flex-column mb-7">
+							<label class="fs-6 fw-semibold form-label mb-2">Received in (optional)</label>
+							<select v-model="form.fundingAccountId" class="form-select form-select-solid">
+								<option value="">Not tracked</option>
+								<option v-for="a in funding.accounts.value" :key="a.id" :value="a.id">
+									{{ a.label }}
+								</option>
+							</select>
+						</div>
 
 						<!--begin::Actions-->
 						<div class="text-center pt-15">
