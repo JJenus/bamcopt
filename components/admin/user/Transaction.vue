@@ -1,7 +1,6 @@
 <script setup lang="ts">
 	import { type Transaction } from "~/utils/interfaces/Transaction";
 	import "animate.css";
-	import axios from "axios";
 	import currency from "currency.js";
 	import moment from "moment";
 
@@ -36,29 +35,11 @@
 	};
 
 	const save = () => {
-		const conf = {
-			method: "PUT",
-			data: trans.value,
-			url: `${config.BE_API}/transactions`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
 		loading.value = true;
-
-		axios
-			.request(conf)
-			.then((response) => {
-				console.log("Yes ", response.data);
-				successAlert("Saved!");
-			})
-			.catch((err) => {
-				const errRes = err.response;
-				errorAlert("Failed to update");
-				console.log(errRes);
-			})
+		transactionService
+			.update({ id: trans.value.id, status: trans.value.status, notes: trans.value.notes })
+			.then(() => successAlert("Saved!"))
+			.catch(() => errorAlert("Failed to update"))
 			.finally(() => {
 				loading.value = false;
 			});

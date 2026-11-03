@@ -1,5 +1,4 @@
 <script setup lang="ts">
-	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 	import moment from "moment";
 	import { type IUser } from "~/utils/interfaces/IUser";
 	import { type Transaction } from "~/utils/interfaces/Transaction";
@@ -15,8 +14,6 @@
 
 	const money = useAppSettings().formatMoney;
 
-	const appConfig = useRuntimeConfig();
-
 	const tType = ref("");
 
 	const getUserData = () => {
@@ -24,25 +21,13 @@
 			return useAuth().logout();
 		}
 
-		const axiosConfig: AxiosRequestConfig = {
-			method: "get",
-			url: `${appConfig.public.BE_API}/users/${props.transaction.senderId}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request<IUser>(axiosConfig)
-			.then((response: AxiosResponse<IUser, any>) => {
-				user.value = response.data;
-				props.transaction.beneficiary!.name = user.value.name;
-				console.log("SENDER", user.value);
+		userService
+			.get(props.transaction.senderId)
+			.then((sender) => {
+				user.value = sender;
+				props.transaction.beneficiary!.name = sender.name;
 			})
-			.catch((error) => {
-				console.log(error);
-			});
+			.catch(() => {});
 	};
 
 	const show = ref(false);

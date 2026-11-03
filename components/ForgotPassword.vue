@@ -1,7 +1,4 @@
 <script setup lang="ts">
-	import axios, { AxiosRequestConfig } from "axios";
-
-	const appConfig = useRuntimeConfig();
 
 	const loading = ref(false);
 
@@ -18,26 +15,11 @@
 		if (!form.value.email) {
 			return errorAlert(null);
 		}
-		const axiosConfig: AxiosRequestConfig = {
-			method: "post",
-			data: form.value,
-			url: `${appConfig.public.BE_API}/auth/request-password-reset`,
-			timeout: 15000,
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				console.log(response.data);
-				successAlert("Sent. Check your email to continue");
-			})
-			.catch((error) => {
-				errorAlert(
-					"Account was not found. Check your email and try again."
-				);
-				console.log(error);
-				const data = error.response.data;
-			})
+		loading.value = true;
+		authService
+			.requestPasswordReset(form.value.email)
+			.then(() => successAlert("Sent. Check your email to continue"))
+			.catch(() => errorAlert("Something went wrong. Try again."))
 			.finally(() => {
 				loading.value = false;
 			});

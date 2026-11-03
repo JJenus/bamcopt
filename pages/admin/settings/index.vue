@@ -1,5 +1,4 @@
 <script setup lang="ts">
-	import axios from "axios";
 
 	const settings = useAppSettings().settings;
 	const form = ref({ ...settings.value });
@@ -8,28 +7,10 @@
 	const save = () => {
 		loading.value = true;
 
-		const method = !!settings.value.id ? "PUT" : "POST";
-		const path = !!settings.value.id ? `/${settings.value.id}` : "";
-
-		const axiosConfig: any = {
-			method: method,
-			url: `${useRuntimeConfig().public.BE_API}/app-settings${path}`,
-			timeout: 20000,
-			data: form.value,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				successAlert("Saved!");
-			})
-			.catch((error): void => {
-				console.log(error);
-				errorAlert("Error occurred");
-			})
+		settingsService
+			.saveApp(form.value)
+			.then(() => successAlert("Saved!"))
+			.catch(() => errorAlert("Error occurred"))
 			.finally(() => (loading.value = false));
 	};
 </script>

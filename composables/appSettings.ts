@@ -1,6 +1,5 @@
-import axios from "axios";
-import { AccountLevel } from "utils/interfaces/AccountLevel";
-import { AppSettings } from "utils/interfaces/AppSettings";
+import { AccountLevel } from "~/utils/interfaces/AccountLevel";
+import { AppSettings } from "~/utils/interfaces/AppSettings";
 import currency from "currency.js";
 
 export const useAppSettings = () => {
@@ -17,25 +16,9 @@ export const useAppSettings = () => {
 	const isPageLoading = useState("load-page", () => true);
 	const accountLevels = useState<AccountLevel[]>("account-levels", () => []);
 
-	const load = (obj: any, url: string) => {
-		const axiosConfig: any = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/${url}`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				obj.value = response.data;
-				// console.log(settings.value);
-			})
-			.catch((error): void => {
-				console.log(error);
-			});
+	const load = () => {
+		settingsService.getApp().then((s) => (settings.value = s)).catch(() => {});
+		settingsService.listLevels().then((l) => (accountLevels.value = l)).catch(() => {});
 	};
 
 	const formatMoney = (amount?: string | number, addSymbol?: boolean) => {
@@ -61,8 +44,7 @@ export const useAppSettings = () => {
 		return cash;
 	};
 
-	load(settings, "app-settings");
-	load(accountLevels, "account-levels");
+	load();
 
 	return {
 		settings,

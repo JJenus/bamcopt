@@ -1,6 +1,5 @@
 <script setup lang="ts">
 	import "animate.css";
-	import axios from "axios";
 	import currency from "currency.js";
 	import moment from "moment";
 	import { type Transaction } from "~/utils/interfaces/Transaction";
@@ -34,24 +33,13 @@
 
 		loading.value = true;
 
-		const conf = {
-			method: "GET",
-			url: `${config.BE_API}/transactions/find/${transactionId.value}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(conf)
+		transactionService
+			.findReceipt(transactionId.value)
 			.then((res) => {
-				transaction.value = res.data;
+				transaction.value = res;
 				showReceipt.value = true;
 			})
-			.catch((error): void => {
-				console.log(error);
-			})
+			.catch(() => {})
 			.finally(() => {
 				loading.value = false;
 			});

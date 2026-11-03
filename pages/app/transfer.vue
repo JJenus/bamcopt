@@ -4,7 +4,6 @@
 		type Transaction,
 		TransactionTypes,
 	} from "~/utils/interfaces/Transaction";
-	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 	import { UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
 
 	const banks = ref({
@@ -47,7 +46,6 @@
 	const settings = useAppSettings().settings;
 
 	const account = useUserData.account;
-	const appConfig = useRuntimeConfig();
 
 	const next = ref(false);
 
@@ -313,23 +311,11 @@
 
 		console.log("Valid data", validData);
 
-		const axiosConfig: AxiosRequestConfig = {
-			method: "post",
-			data: validData,
-			url: `${appConfig.public.BE_API}/transactions`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
+		transactionService
+			.send(validData)
+			.then(() => {
 				useUserData.reloadUser();
 
-				const data = response.data;
-				// useUserData.account.value.amount! -= transaction.value.amount;
 				successAlert("Transaction successful");
 
 				form.value.amount = "0";
@@ -341,11 +327,12 @@
 				billing.value.bill = false;
 				billing.value.active = "exchange";
 			})
-			.catch((error) => {
-				console.log(error);
-				const data = error.response.data;
+			.catch((error: ApiError) => {
+				// the server says why (insufficient balance, account on hold, ...)
 				errorAlert(
-					"Transaction error. Contact support to clear issues in your account."
+					error.status && error.status < 500
+						? error.message
+						: "Transaction error. Contact support to clear issues in your account."
 				);
 			})
 			.finally(() => {

@@ -1,9 +1,4 @@
 <script setup lang="ts">
-	import axios, {
-		AxiosError,
-		type AxiosRequestConfig,
-		type AxiosResponse,
-	} from "axios";
 	import { type IUser } from "~/utils/interfaces/IUser";
 
 	const user = userData().data;
@@ -40,30 +35,18 @@
 			return errorAlert("Please upload an image");
 		}
 
-		const config = {
-			url: `${CONFIG.BE_API}/users/${user.value.id}`,
-			method: "PUT",
-			data: form.value,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
+		loading.value = true;
 
-		loading.value = true; 
-
-		axios
-			.request(config)
-			.then((res) => {
+		userService
+			.update(user.value.id, form.value)
+			.then(() => {
 				userData().admins.value.forEach((admin) => {
 					notify(admin);
 				});
 				successAlert("Success");
 				user.value.idUrl = form.value.idUrl;
 			})
-			.catch((e) => {
-				console.log(e);
-				errorAlert("Failed!");
-			})
+			.catch(() => errorAlert("Failed!"))
 			.finally(() => (loading.value = false));
 	};
 
@@ -76,49 +59,19 @@
 		}
 		// console.log(form.value);
 
-		const formData = new FormData();
-		formData.append("file", file);
-		formData.append("upload_preset", "ml_default");
-
 		loading.value = true;
 
-		axios
-			.request({
-				method: "post",
-				url:
-					"https://api.cloudinary.com/v1_1/" +
-					CONFIG.CLOUD_NAME +
-					"/image/upload",
-				data: formData,
-				headers: {
-					"Content-Type": "multipart/form-data",
-				},
+		uploadService
+			.image(file)
+			.then((url) => {
+				form.value.idUrl = url;
+				successAlert("Upload success");
+				newImage.value = false;
+				updateUser();
 			})
-			.then((response) => {
-				if (response.data && response.data.secure_url) {
-					const imageUrl = response.data.secure_url;
-					console.log("Image uploaded successfully:", imageUrl);
-					form.value.idUrl = imageUrl;
-					// saveCollection();
-					successAlert("Upload success");
-					newImage.value = false;
-					updateUser();
-					return imageUrl;
-				} else {
-					loading.value = false;
-					errorAlert("Error uploading ID");
-					console.error("Failed to upload image:", response.data);
-					return null;
-				}
-			})
-			.catch((error) => {
-				console.error("Error uploading image:", error);
+			.catch(() => {
 				loading.value = false;
-				errorAlert("Failed to create collection");
-				return null;
-			})
-			.finally(() => {
-				loading.value = false;
+				errorAlert("Error uploading ID");
 			});
 	};
 
@@ -154,32 +107,8 @@
 			status: "unread",
 		};
 
-		const axiosConfig: AxiosRequestConfig = {
-			method: "post",
-			data: notification,
-			url: `${CONFIG.BE_API}/notifications`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		// return;
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<IUser, any>) => {
-				console.log("Yes ", response.data);
-				// successAlert("Sent!");
-			})
-			.catch((err: AxiosError<any, any>) => {
-				const errRes = err.response;
-				console.log("Status: ", errRes?.status);
-				// errorAlert("Failed!");
-				console.log(errRes);
-			})
-			.finally(() => {
-				// submitButton.value.removeAttribute("data-kt-indicator");
-			});
+		// best effort: a failed notification must not break the upgrade request
+		notificationService.send(notification).catch(() => {});
 	};
 </script>
 

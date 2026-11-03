@@ -1,7 +1,5 @@
 <script setup lang="ts">
-	import axios from "axios";
 
-	const appConfig = useRuntimeConfig();
 	const submitButton = ref();
 
 	const form = ref({
@@ -17,35 +15,16 @@
 			return;
 		}
 
-		const bal = {
-			email: form.value.email,
-			amount: Number(form.value.amount),
-		};
-
-		const axiosConfig = {
-			method: "post",
-			data: bal,
-			url: `${appConfig.public.BE_API}/account`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
 		submitButton.value.setAttribute("data-kt-indicator", "on");
 
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data;
-				console.log(data);
-				successAlert("Saved! New balance: " + data.amount);
+		accountService
+			.topUp(form.value.email, Number(form.value.amount))
+			.then((account) => {
+				successAlert("Saved! New balance: " + account.amount);
 				userData().fetchBalance();
 				userData().getUsers();
 			})
-			.catch((error) => {
-				errorAlert("Unable to update balance");
-				console.log(error);
-			})
+			.catch((e: ApiError) => errorAlert(e.message || "Unable to update balance"))
 			.finally(() => {
 				submitButton.value.removeAttribute("data-kt-indicator");
 			});

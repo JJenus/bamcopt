@@ -1,4 +1,3 @@
-import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 import { type Account, AccountStatus } from "~/utils/interfaces/Account";
 import { type IUser } from "~/utils/interfaces/IUser";
 import {
@@ -61,170 +60,51 @@ export const userData = () => {
 	const active = useState<IUser | null>("active-user");
 	const admins = useState<IUser[]>("admin", () => []);
 
+	const byNewest = (a: IUser, b: IUser) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
 	const getUsers = () => {
 		if (!useAuth().userData.value?.user) {
 			navigateTo("/sign-in");
+			return;
 		}
-		const axiosConfig: AxiosRequestConfig = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/users`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		console.log("TOKEN ", useAuth().userData.value?.token);
-
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<IUser[], any>) => {
-				users.value = response.data
-					.filter((e) => {
-						return e.userType !== "admin";
-					})
-					.sort(
-						(a, b) =>
-							new Date(b.createdAt).getTime() -
-							new Date(a.createdAt).getTime()
-					);
-
-				admins.value = response.data
-					.filter((e) => {
-						return e.userType === "admin";
-					})
-					.sort(
-						(a, b) =>
-							new Date(b.createdAt).getTime() -
-							new Date(a.createdAt).getTime()
-					);
-
-				// console.log(users.value);
+		userService
+			.list()
+			.then((all) => {
+				users.value = all.filter((u) => u.userType !== "admin").sort(byNewest);
+				admins.value = all.filter((u) => u.userType === "admin").sort(byNewest);
 			})
-			.catch((error) => {
-				// console.log(error);
-				const data = error.response.data;
-				if (
-					data.message.includes("Access denied") ||
-					error.response.status === 401
-				) {
-					// console.log("Access denied");
-				}
-			});
+			.catch(() => {});
 	};
 
 	const reloadUser = () => {
-		
-		const axiosConfig: AxiosRequestConfig = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/users/${data.value.id}`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<IUser, any>) => {
-				data.value = response.data;
-
-				// console.log(response.data, data.value.account);
-			})
-			.catch((error) => {
-				// console.log(error);
-				const data = error.response.data;
-				if (
-					data.message.includes("Access denied") ||
-					error.response.status === 401
-				) {
-					// console.log("Access denied");
-				}
-			});
+		userService
+			.get(data.value.id)
+			.then((user) => (data.value = user))
+			.catch(() => {});
 	};
 
 	const fetchBalance = () => {
-		const axiosConfig = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/account/${data.value.id}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data;
-				account.value = data;
-			})
-			.catch((error) => {
-				// console.log(error);
-			});
+		accountService
+			.get(data.value.id)
+			.then((acc) => (account.value = acc))
+			.catch(() => {});
 	};
 
 	const showNotifications = () => {
-		if (!isNewNotification.value) {
-			return;
-		}
-		const axiosConfig = {
-			method: "put",
-			data: notifications.value,
-			url: `${useRuntimeConfig().public.BE_API}/notifications/all`,
-			timeout: 25000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<INotification[], any>) => {})
-			.catch((error) => {
-				console.log(error);
-			});
+		if (!isNewNotification.value) return;
+		notificationService.markAllRead().catch(() => {});
 	};
 
 	const getNotifications = () => {
-		const axiosConfig = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/notifications/${
-				data.value.id
-			}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<INotification[], any>) => {
-				notifications.value = response.data.sort(
-					(a, b) =>
-						new Date(b.createdAt).getTime() -
-						new Date(a.createdAt).getTime()
-				);
-
-				const xx = notifications.value.filter((notice) => {
-					if (notice.status === NotificationStatus.UNREAD) {
-						isNewNotification.value = true;
-						return true;
-					}
-					return false;
-				});
-
-				if (
-					isNewNotification.value &&
-					notifications.value.length == 0
-				) {
-					newNotifications.value = xx;
-				}
+		notificationService
+			.listForUser(data.value.id)
+			.then((list) => {
+				notifications.value = list;
+				const unread = list.filter((n) => n.status === NotificationStatus.UNREAD);
+				if (unread.length) isNewNotification.value = true;
+				if (isNewNotification.value && list.length == 0) newNotifications.value = unread;
 			})
-			.catch((error) => {
-				// console.log(error);
-			});
+			.catch(() => {});
 	};
 
 	return {

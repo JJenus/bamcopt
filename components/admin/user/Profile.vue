@@ -1,9 +1,4 @@
 <script setup lang="ts">
-	import axios, {
-		AxiosError,
-		type AxiosRequestConfig,
-		type AxiosResponse,
-	} from "axios";
 
 	import { type IUser } from "~/utils/interfaces/IUser";
 	// import { type UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
@@ -20,7 +15,6 @@
 	const iUser = props.user;
 	const tiers = useAppSettings().accountLevels;
 
-	const appConfig = useRuntimeConfig();
 	const loadingVerify = ref(false);
 	const newLevel = ref({ newLevel: props.user.account.accountLevel });
 	const loading = ref(false);
@@ -57,32 +51,15 @@
 		return newObj;
 	}
 
-	const save = (data: any, url: string, loader: any) => {
-		const axiosConfig: AxiosRequestConfig = {
-			method: "put",
-			data: data,
-			url: `${appConfig.public.BE_API}/${url}`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
+	/** Runs an update request with a loading flag + success/error alerts. */
+	const save = (request: Promise<unknown>, loader: any) => {
 		loader.value = true;
-		// return;
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<IUser, any>) => {
-				console.log("Yes ", response.data);
+		request
+			.then(() => {
 				successAlert("Success!");
 				userData();
 			})
-			.catch((err: AxiosError<any, any>) => {
-				const errRes = err.response;
-				console.log("Status: ", errRes?.status);
-				errorAlert("failed!");
-				console.log(errRes);
-			})
+			.catch(() => errorAlert("failed!"))
 			.finally(() => {
 				loader.value = false;
 			});
@@ -94,7 +71,7 @@
 		const data = getObject(props.user);
 		data.verified = true;
 		// console.log(user);
-		save(data, `users/${data.id}`, loadingVerify);
+		save(userService.update(data.id, data), loadingVerify);
 	};
 
 	const upgradeLevel = () => {
@@ -102,43 +79,24 @@
 		const data = { ...user.account };
 		data.accountLevel = newLevel.value.newLevel;
 		// console.log(user);
-		save(data, "account", loading);
+		save(accountService.updateSettings(data), loading);
 	};
 
 	const fetchTransactions = () => {
-		const axiosConfig = {
-			method: "get",
-			url: `${appConfig.public.BE_API}/transactions/${props.user.id}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data.sort(
-					(a: any, b: any) =>
-						new Date(b.createdAt).getTime() -
-						new Date(a.createdAt).getTime()
-				);
-				transactions.value = data;
-				console.log(data);
-			})
-			.catch((error) => {
-				console.log(error);
-			});
+		transactionService
+			.listForUser(props.user.id)
+			.then((list) => (transactions.value = list))
+			.catch(() => {});
 	};
 
 	const updateCodes = () => {
 		const data = copyNonEmptyProperties(iUser);
-		save(data, `users/${iUser.id}`, loading);
+		save(userService.update(iUser.id, data), loading);
 	};
 
 	const updateAccountStatus = () => {
 		const data = copyNonEmptyProperties(iUser);
-		save(data, `users/${iUser.id}`, loadingAStatus);
+		save(userService.update(iUser.id, data), loadingAStatus);
 	};
 
 	const autoGenCodes = () => {

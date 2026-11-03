@@ -1,42 +1,19 @@
 <script setup lang="ts">
-	import axios, { type AxiosRequestConfig } from "axios";
-
 	definePageMeta({
 		layout: "auth",
 	});
-	const appConfig = useRuntimeConfig();
 
-	const id = useRoute().query["id"];
-	console.log(id);
+	const token = useRoute().query["token"] as string | undefined;
 	const verified = ref(false);
 	const loading = ref(false);
 
 	const verifyEmail = () => {
-		const axiosConfig: AxiosRequestConfig = {
-			method: "post",
-			data: {
-				id: id,
-			},
-			url: `${appConfig.public.BE_API}/auth/verify-email`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data;
-				console.log(data);
-			})
-			.catch((error) => {
-				console.log(error);
-				const data = error.response.data;
-			})
-			.finally(() => {
-				loading.value = false;
-			});
+		if (!token) return;
+		authService
+			.verifyEmail(token)
+			.then(() => (verified.value = true))
+			.catch(() => {})
+			.finally(() => (loading.value = false));
 	};
 	verifyEmail();
 </script>

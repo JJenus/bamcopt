@@ -1,7 +1,18 @@
-import { ComputedRef, Ref } from 'vue'
-export type LayoutKey = "adminlayout" | "app" | "auth" | "default"
-declare module "/home/jjenus/workbench/app/bancopt/bamcopt/node_modules/nuxt/dist/pages/runtime/composables" {
+import type { ComputedRef, MaybeRef } from 'vue'
+
+type ComponentProps<T> = T extends new(...args: any) => { $props: infer P } ? NonNullable<P>
+  : T extends (props: infer P, ...args: any) => any ? P
+  : {}
+
+declare module 'nuxt/app' {
+  interface NuxtLayouts {
+    adminlayout: ComponentProps<typeof import("/home/claude/bamcopt/layouts/adminlayout.vue").default>,
+    app: ComponentProps<typeof import("/home/claude/bamcopt/layouts/app.vue").default>,
+    auth: ComponentProps<typeof import("/home/claude/bamcopt/layouts/auth.vue").default>,
+    default: ComponentProps<typeof import("/home/claude/bamcopt/layouts/default.vue").default>,
+}
+  export type LayoutKey = keyof NuxtLayouts extends never ? string : keyof NuxtLayouts
   interface PageMeta {
-    layout?: false | LayoutKey | Ref<LayoutKey> | ComputedRef<LayoutKey>
+    layout?: MaybeRef<LayoutKey | false> | ComputedRef<LayoutKey | false>
   }
 }

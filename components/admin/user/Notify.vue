@@ -1,10 +1,5 @@
 <script setup lang="ts">
 	import { type IUser } from "~/utils/interfaces/IUser";
-	import axios, {
-		AxiosError,
-		type AxiosRequestConfig,
-		type AxiosResponse,
-	} from "axios";
 
 	const props = defineProps<{ user: IUser }>();
 	const form = ref({
@@ -15,42 +10,19 @@
 		status: "unread",
 	});
 
-	const appConfig = useRuntimeConfig();
 	const submitButton = ref();
 
 	const notify = () => {
-		const user = props.user;
-		// console.log(user);
-		console.log(form.value);
 		if (!form.value.title || !form.value.message) {
 			errorAlert("Fill form correctly");
 			return;
 		}
 
-		const axiosConfig: AxiosRequestConfig = {
-			method: "post",
-			data: form.value,
-			url: `${appConfig.public.BE_API}/notifications`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
 		submitButton.value.setAttribute("data-kt-indicator", "on");
-		// return;
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<IUser, any>) => {
-				console.log("Yes ", response.data);
-				successAlert("Sent!");
-			})
-			.catch((err: AxiosError<any, any>) => {
-				const errRes = err.response;
-				console.log("Status: ", errRes?.status);
-				errorAlert("Failed!");
-				console.log(errRes);
-			})
+		notificationService
+			.send(form.value)
+			.then(() => successAlert("Sent!"))
+			.catch(() => errorAlert("Failed!"))
 			.finally(() => {
 				submitButton.value.removeAttribute("data-kt-indicator");
 			});
