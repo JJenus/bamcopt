@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
-import { User, NotificationType } from "../models";
+import { User, NotificationType, SecurityLog, SecurityLogAction } from "../models";
 import { sequelize } from "../utils/db";
 import { signOtpChallenge, signPurposeToken, signSession, verifyOtpChallenge, verifyPurposeToken } from "../utils/auth";
 import { env } from "../utils/env";
@@ -10,6 +10,15 @@ import { createAccount } from "./accounts";
 import { getAppSettings } from "./catalog";
 import { notifySafe } from "./notifications";
 import { createUser, getUser, normalizeEmail, withAccount } from "./users";
+
+export type RequestInfo = { ip: string; device: string };
+
+/** Best effort: a failing audit row must never block a login. */
+const logAccess = async (userId: string, action: SecurityLogAction, info?: RequestInfo, reason = "") => {
+	try {
+		await SecurityLog.create({ userId, action, ip: info?.ip || "unknown", deviceInfo: (info?.device || "unknown").slice(0, 250), reason });
+	} catch {}
+};
 
 const session = async (user: User) => ({
 	userId: user.id,
@@ -40,13 +49,16 @@ export const register = async (input: Parameters<typeof createUser>[0]) => {
 const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", 10);
 
 /** Step 1: password. Returns an OTP challenge, NOT a session. */
-export const login = async (email: string, password: string) => {
+export const login = async (email: string, password: string, info?: RequestInfo) => {
 	const user = await User.findOne({ where: { email: normalizeEmail(email) } });
 	const valid = await bcrypt.compare(password, user?.password ?? DUMMY_HASH);
-	if (!user || !valid) throw unauthorized("Invalid credentials");
+	if (!user || !valid) {
+		if (user) await logAccess(user.id, SecurityLogAction.ATTEMPT_FAILED, info, "Wrong password");
+		throw unauthorized("Invalid credentials");
+	}
 
-  const code = String(crypto.randomInt(100000, 1000000));
-	console.log("OTP: ", code);
+	const code = String(crypto.randomInt(100000, 1000000));
+	if (!env.isProd) console.log("OTP: ", code); // never print login codes in production logs
 	sendOtpEmail(user, code);
 	return {
 		challenge: signOtpChallenge(user.id, code),
@@ -57,8 +69,11 @@ export const login = async (email: string, password: string) => {
 };
 
 /** Step 2: the code from the e-mail. Returns the session. */
-export const verifyOtp = async (challenge: string, code: string) =>
-	session(await getUser(verifyOtpChallenge(challenge, code)));
+export const verifyOtp = async (challenge: string, code: string, info?: RequestInfo) => {
+	const user = await getUser(verifyOtpChallenge(challenge, code));
+	await logAccess(user.id, SecurityLogAction.LOGIN, info);
+	return session(user);
+};
 
 export const verifyEmail = async (token: string) => {
 	const user = await getUser(verifyPurposeToken(token, "verify-email"));

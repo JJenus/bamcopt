@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
-import { H3Event } from "h3";
+import { getHeader, H3Event } from "h3";
 import { env } from "./env";
 import { forbidden, unauthorized } from "./errors";
 
@@ -93,3 +93,9 @@ export const verifyOtpChallenge = (challenge: string, code: string): string => {
 	state.used = true;
 	return p.sub as string;
 };
+
+/** Where a request came from (for the login history). */
+export const requestInfo = (event: H3Event) => ({
+	ip: (getHeader(event, "x-forwarded-for")?.split(",")[0] || event.node.req.socket?.remoteAddress || "unknown").trim(),
+	device: getHeader(event, "user-agent") || "unknown",
+});

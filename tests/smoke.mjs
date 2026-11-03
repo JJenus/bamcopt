@@ -320,6 +320,10 @@ async function main() {
 	const st = await call("GET", "/api/admin/stats", { token: admin.token });
 	check("admin stats", st.status === 200 && st.data.users.total >= 2 && st.data.balances.funding === fundBefore + 10 && st.data.recentTransactions.length > 0, JSON.stringify(st.data).slice(0, 200));
 
+	const logs = await call("GET", `/api/security-logs/${alice.id}`, { token: alice.token });
+	check("login history is recorded", logs.status === 200 && logs.data.some((l) => l.action === "login"), JSON.stringify(logs.data).slice(0, 150));
+	check("cannot read someone else's login history", (await call("GET", `/api/security-logs/${alice.id}`, { token: bob.token })).status === 403);
+
 	console.log("\nhousekeeping");
 	check("mark all notifications read", (await call("PUT", "/api/notifications/all", { token: alice.token })).data.every((n) => n.status === "read"));
 	check("unknown route -> 404 json", (await call("GET", "/api/nope", { token: alice.token })).status === 404);
