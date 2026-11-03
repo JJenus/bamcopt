@@ -138,9 +138,10 @@ async function main() {
 	check("read own account", (await call("GET", `/api/account/${alice.id}`, { token: alice.token })).status === 200);
 	check("read other's account -> 403", (await call("GET", `/api/account/${alice.id}`, { token: bob.token })).status === 403);
 	check("read other's transactions -> 403", (await call("GET", `/api/transactions/${alice.id}`, { token: bob.token })).status === 403);
-	check("admin lists users", (await call("GET", "/api/users", { token: admin.token })).data.length === 3);
+	const allUsers = (await call("GET", "/api/users", { token: admin.token })).data;
+	check("admin lists users (a default admin may be seeded too)", [alice.id, bob.id, admin.id].every((id) => allUsers.some((u) => u.id === id)));
 	const contacts = await call("GET", "/api/users", { token: alice.token });
-	check("non-admin only sees admin contacts (name only)", contacts.status === 200 && contacts.data.length === 1 && contacts.data[0].userType === "admin" && contacts.data[0].email === undefined);
+	check("non-admin only sees admin contacts (name only)", contacts.status === 200 && contacts.data.length >= 1 && contacts.data.some((c) => c.id === admin.id) && contacts.data.every((c) => c.userType === "admin" && c.email === undefined));
 	const pub = await call("GET", `/api/users/${alice.id}`, { token: bob.token });
 	check("other users only get a public profile", pub.status === 200 && pub.data.email === undefined && pub.data.cot === undefined && pub.data.name === "alice");
 	const upd = await call("PUT", `/api/users/${alice.id}`, { token: alice.token, body: { name: "Alice A", verified: true, status: "VIP", cot: "1" } });
