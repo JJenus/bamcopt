@@ -1,114 +1,20 @@
-<script setup>
-	const config = useRuntimeConfig().public;
+<script setup lang="ts">
+	const { config, contact } = usePublicSite();
+	const year = new Date().getFullYear();
+	const groups = [
+		{ title: 'Explore', links: [{ label: 'Banking', to: '/banking' }, { label: 'Transfers', to: '/transfers' }, { label: 'Investment enquiries', to: '/investment' }, { label: 'Security', to: '/security' }] },
+		{ title: 'Here to help', links: [{ label: 'About us', to: '/resources/about-us' }, { label: 'Guides & updates', to: '/news' }, { label: 'Common questions', to: '/resources/faq' }, { label: 'Track a transaction', to: '/track/transaction' }, { label: 'Contact us', to: '/resources/contact-us' }] },
+	];
 </script>
 
 <template>
-	<div
-		style="border-radius: 0"
-		class="app-containeri container-fluidi fs-5 pt-10 mt-10 py-3"
-	>
-		<div class="card bg-body border-0 w-100 m-0 p-0 rounded-0">
-			<div class="card-body mx-0">
-				<div class="row row-cols-md-2 justify-content-between">
-					<!--begin::Copyright-->
-					<div class="col-md-4 order-2w p-0 m-0 order-md-1w pb-8">
-						<div
-							class="d-flex flex-column align-itemis-center mb-6"
-						>
-							<div
-								class="d-flex flex-row align-items-center justify-content-center m-0 mb-3"
-							>
-								<NFTexLogo :classes="'h-50px'" />
-							</div>
-						</div>
-						<p class="text-center p-4">
-							Our business and philanthropy are helping build more
-							sustainable, diverse and equitable communities
-							around the world.
-						</p>
-						<!--end::Page title-->
-					</div>
-					<!--end::Copyright-->
-					<div class="col-md-5">
-						<h2 class="fs-2qx text-danger mb-2">Stay informed</h2>
-						<p class="d-flex flex-column">
-							<span>Reach us on</span>
-							<span class="text-lowercase"
-								>support@{{ $config.public.APP }}</span
-							>
-							<span>
-								{{ $config.public.MOBILE }}
-								<span class="badge bg-success ms-2 badge-sm"
-									>WhatsApp</span
-								>
-							</span>
-						</p>
-						<p class="mb-5">
-							Don’t miss, to subscribe to our new feeds, kindly
-							fill the form below.
-						</p>
-						<div class="d-flex align-items-center">
-							<div
-								class="position-relative my-1 me-3"
-								bis_skin_checked="1"
-							>
-								<i
-									class="ki-outline ki-sms fs-3 position-absolute top-50 translate-middle-y ms-4"
-								></i>
-								<input
-									type="text"
-									data-kt-table-widget-4="search"
-									class="form-control w-200px w-lg-300px ps-12"
-									placeholder="Email"
-								/>
-							</div>
-							<button class="btn btn-light-danger">
-								Subscribe
-							</button>
-						</div>
-					</div>
-				</div>
-
-				<div
-					class="d-flex flex-column flex-md-row mt-9 align-items-center justify-content-between"
-				>
-					<div class="px-md-2 fs-6">
-						<span
-							>Copyright © 2023 {{ config.APP }}. all rights
-							reserved.</span
-						>
-					</div>
-					<!--begin::Menu-->
-					<ul
-						class="menu menu-gray-600 menu-hover-primary fw-semibold order-1w"
-					>
-						<li class="menu-item">
-							<NuxtLink
-								to="/resources/about-us"
-								target="_blank"
-								class="menu-link px-2"
-								>About</NuxtLink
-							>
-						</li>
-
-						<li class="menu-item">
-							<NuxtLink
-								to="/resources/contact-us"
-								class="menu-link px-2"
-							>
-								Contact Us
-							</NuxtLink>
-						</li>
-
-						<li class="menu-item">
-							<a target="_blank" class="menu-link px-2"
-								>Term and conditions</a
-							>
-						</li>
-					</ul>
-					<!--end::Menu-->
-				</div>
+	<footer class="border-top bg-body">
+		<div class="container pt-12 pb-7">
+			<div class="row g-9 pb-10">
+				<div class="col-lg-5 pe-lg-15"><MarketingBrand /><p class="text-gray-600 fs-6 lh-lg mt-6 mb-6">A clearer way to manage your money.<br />Your account. Your transfers. In one place.</p><a v-if="contact.email" :href="contact.email" class="fw-semibold d-block mb-3">{{ config.SUPPORT_EMAIL }}</a><a v-if="contact.phone" :href="contact.phone" class="text-gray-700 d-block">{{ config.MOBILE }}</a></div>
+				<div v-for="group in groups" :key="group.title" class="col-6 col-lg-3"><h2 class="fs-6 fw-bold mb-5">{{ group.title }}</h2><ul class="list-unstyled m-0"><li v-for="link in group.links" :key="link.to" class="mb-4"><NuxtLink :to="link.to" class="text-gray-600 text-hover-primary">{{ link.label }}</NuxtLink></li></ul></div>
 			</div>
+			<div class="border-top pt-7 d-flex flex-column flex-md-row justify-content-between gap-5 fs-7 text-gray-600"><span>© {{ year }} {{ config.LEGAL_ENTITY || config.APP }}. All rights reserved.</span><nav class="d-flex flex-wrap gap-6" aria-label="Legal"><NuxtLink to="/legal/privacy" class="text-gray-600 text-hover-primary">Privacy policy</NuxtLink><NuxtLink to="/legal/terms" class="text-gray-600 text-hover-primary">Terms of service</NuxtLink></nav></div>
 		</div>
-	</div>
+	</footer>
 </template>

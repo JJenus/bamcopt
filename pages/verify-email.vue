@@ -1,103 +1,22 @@
 <script setup lang="ts">
-	definePageMeta({
-		layout: "auth",
-	});
-
-	const token = useRoute().query["token"] as string | undefined;
-	const verified = ref(false);
-	const loading = ref(false);
-
-	const verifyEmail = () => {
+	definePageMeta({ layout: 'auth', key: route => route.fullPath });
+	usePublicSeo('Verify email', 'Confirm your email address using the verification link sent to you.', true);
+	const route = useRoute();
+	const token = typeof route.query.token === 'string' ? route.query.token : '';
+	const state = ref<'loading' | 'success' | 'error' | 'missing'>(token ? 'loading' : 'missing');
+	const verify = async () => {
 		if (!token) return;
-		authService
-			.verifyEmail(token)
-			.then(() => (verified.value = true))
-			.catch(() => {})
-			.finally(() => (loading.value = false));
+		state.value = 'loading';
+		try { await authService.verifyEmail(token); state.value = 'success'; }
+		catch { state.value = 'error'; }
 	};
-	verifyEmail();
+	onMounted(verify);
 </script>
 
 <template>
-	<div class="d-flex flex-column flex-root" id="kt_app_root">
-		<!--begin::Authentication - Signup Welcome Message -->
-		<div class="d-flex flex-column flex-center flex-column-fluid">
-			<!--begin::Content-->
-			<div class="d-flex flex-column flex-center text-center p-10">
-				<!--begin::Wrapper-->
-				<div class="card card-flush w-lg-650px py-5">
-					<div class="card-body py-15 py-lg-20">
-						<!--begin::Logo-->
-						<div class="mb-14 text-center d-flex justify-content-center">
-							<NFTexLogo :classes="'h-30px'" />
-						</div>
-						<!--end::Logo-->
-
-						<!--begin::Title-->
-						<h1 v-if="!loading" class="fw-bolder text-success mb-5">
-							Verification Complete
-						</h1>
-						<h1 v-else class="fw-bolder text-muted mb-5">
-							Verifying...
-						</h1>
-						<!--end::Title-->
-
-						<!--begin::Action-->
-						<div v-if="!loading" class="fs-6 mb-8">
-							<span class="fw-semibold text-gray-500"
-								>Email verified, proceed to sign in.
-							</span>
-						</div>
-						<!--end::Action-->
-
-						<!--begin::Link-->
-						<div class="mb-11">
-							<NuxtLink
-								v-if="!loading"
-								to="/sign-in"
-								class="btn btn-sm btn-primary"
-							>
-								Sign in
-							</NuxtLink>
-							<span
-								v-else
-								class="spinner-border spinner-border-lg text-muted"
-							></span>
-						</div>
-						<!--end::Link-->
-
-						<!--begin::Illustration-->
-						<div class="mb-0">
-							<img
-								v-if="!loading"
-								src="/assets/media/illustrations/sigma-1/17-dark.png"
-								class="mw-100 mh-300px"
-								alt=""
-							/>
-							<img
-								v-else
-								src="/assets/media/auth/verify-email.png"
-								class="mw-100 mh-300px"
-								alt=""
-							/>
-						</div>
-						<!--end::Illustration-->
-					</div>
-				</div>
-				<!--end::Wrapper-->
-			</div>
-			<!--end::Content-->
-		</div>
-		<!--end::Authentication - Signup Welcome Message-->
-	</div>
+	<MarketingAuthFrame eyebrow="Email confirmation" title="Let's confirm it's you." description="Your verification link helps confirm the email address associated with your account.">
+		<div v-if="state === 'loading'" role="status" class="text-center py-7"><span class="spinner-border text-primary mb-5" aria-hidden="true"></span><p class="mb-0">Verifying your email…</p></div>
+		<div v-else-if="state === 'success'"><p role="status" class="alert alert-success">Verification complete. Your email has been confirmed.</p><NuxtLink to="/sign-in" class="btn btn-primary w-100">Continue to sign in</NuxtLink></div>
+		<div v-else><p role="alert" class="alert alert-warning">{{ state === 'missing' ? 'No verification link was provided. Open the link in your email to continue.' : 'We could not verify this link. It may have expired or already been used.' }}</p><button v-if="state === 'error'" type="button" class="btn btn-light-primary w-100 mb-4" @click="verify">Try again</button><NuxtLink to="/resources/contact-us" class="btn btn-primary w-100">Contact support</NuxtLink><NuxtLink to="/sign-in" class="btn btn-link w-100 mt-4">Back to sign in</NuxtLink></div>
+	</MarketingAuthFrame>
 </template>
-
-<style scoped>
-	body {
-		background-image: url("/assets/media/auth/bg16.jpg");
-	}
-
-	[data-bs-theme="dark"] body {
-		background-image: url("/assets/media/auth/bg16-dark.jpg");
-	}
-</style>

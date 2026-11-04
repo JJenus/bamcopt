@@ -1,0 +1,45 @@
+/* Public-site enhancements only. Bootstrap/Metronic remains the design system. */
+.marketing-site { --bs-text-gray-600: var(--bs-gray-700); color: var(--bs-body-color); background: var(--bs-body-bg); min-height: 100vh; }
+[data-bs-theme="dark"] .marketing-site { --bs-text-primary: var(--bs-primary-text-emphasis); }
+.marketing-site .btn-light-primary { color: var(--bs-text-primary); }
+.marketing-site .btn-light { color: var(--bs-gray-800); }
+.marketing-site a:not(.btn):not(.marketing-nav-link) { color: var(--bs-text-primary); }
+.marketing-site .container { max-width: 1200px; }
+.marketing-site .marketing-section { padding: 88px 0; }
+.marketing-site .marketing-hero { padding-top: 76px; }
+.marketing-site .marketing-title { font-size: clamp(2.6rem, 4.9vw, 4.8rem); line-height: 1.08; font-weight: 700; letter-spacing: -.045em; text-wrap: balance; }
+.marketing-site .marketing-heading { font-size: clamp(2rem, 3vw, 3.1rem); line-height: 1.18; font-weight: 700; letter-spacing: -.035em; text-wrap: balance; }
+.marketing-site .marketing-copy { max-width: 590px; }
+.marketing-site .marketing-rule { width: 28px; height: 2px; }
+.marketing-site .marketing-nav-link { color: var(--bs-gray-700); font-weight: 600; padding: 12px 10px; display: inline-block; }
+.marketing-site .marketing-nav-link:hover, .marketing-site .marketing-nav-link.router-link-active { color: var(--bs-text-primary); }
+.marketing-site .marketing-preview-wrap { position: relative; padding: 20px 28px; }
+.marketing-site .marketing-preview-accent { position: absolute; inset: 6% 0; }
+.marketing-site .marketing-preview { position: relative; transform: rotate(-2deg); max-width: 440px; margin-inline: auto !important; }
+.marketing-site .marketing-feature { transition: border-color .15s ease, transform .15s ease; }
+.marketing-site .marketing-feature:hover { border-color: var(--bs-primary) !important; transform: translateY(-3px); }
+.marketing-site .marketing-faq summary { cursor: pointer; list-style: none; }
+.marketing-site .marketing-faq summary::-webkit-details-marker { display: none; }
+.marketing-site .marketing-faq details[open] summary > span { transform: rotate(45deg); }
+.marketing-site .marketing-prose { max-width: 800px; }
+.marketing-site .marketing-prose p, .marketing-site .marketing-prose li { font-size: 1.1rem; line-height: 1.9; color: var(--bs-gray-700); }
+.marketing-site .marketing-prose h2 { margin-top: 2.5rem; margin-bottom: 1rem; }
+.marketing-site .marketing-prose h3 { margin-top: 2rem; }
+.marketing-site .marketing-photo { width: 100%; height: 380px; object-fit: cover; }
+.marketing-site .marketing-step { font-size: 3.5rem; line-height: 1; letter-spacing: -.06em; }
+.marketing-site a, .marketing-site button, .marketing-site summary, .marketing-site input { scroll-margin-top: 100px; }
+.marketing-site :focus-visible { outline: 3px solid var(--bs-text-primary); outline-offset: 4px; }
+.marketing-site .skip-link { position: absolute; left: 16px; top: -80px; z-index: 1100; }
+.marketing-site .skip-link:focus { top: 12px; }
+.marketing-site .marketing-auth-panel { max-width: 540px; width: 100%; }
+.marketing-site .marketing-auth-main { padding: 60px 24px; min-height: 70vh; }
+@media (max-width: 991.98px) {
+	.marketing-site .row { --bs-gutter-x: 1.5rem; }
+	.marketing-site .marketing-section { padding: 56px 0; }
+	.marketing-site .marketing-hero { padding-top: 42px; }
+	.marketing-site .marketing-preview-wrap { padding: 16px; max-width: 480px; margin-inline: auto; }
+	.marketing-site .marketing-preview { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.marketing-site *, .marketing-site *::before, .marketing-site *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

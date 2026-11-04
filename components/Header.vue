@@ -1,194 +1,26 @@
 <script setup lang="ts">
+	import { publicNavigation } from '~/utils/public-content';
+	const { auth, accountPath } = usePublicSite();
 	const route = useRoute();
-	import currency from "currency.js";
-
-	const config = useRuntimeConfig().public;
-	const auth = useAuth();
-	const user = userData().data;
-
-	const active = ref("all");
-
-	const amount = () => {
-		const a: any = user.value.account.amount;
-		return currency(a, {
-			symbol: "",
-		}).format();
-	};
-
-	const navs = [
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "About",
-			path: "/resources/about-us",
-		},
-		{
-			name: "Contact-Us",
-			path: "/resources/contact-us",
-		},
-	];
-
-	const setActive = (data: string, theme: string) => {
-		const a = active.value.toLocaleLowerCase() === data.toLocaleLowerCase();
-		const color =
-			theme === "light"
-				? "active border-bottom border-info"
-				: "active border-bottom border-info";
-
-		return a ? color : "";
-	};
-
-	onMounted(() => {
-		const paths = route.path.split("/");
-		if (paths[2]) {
-			active.value = paths[2];
-		} else if (!paths[1]) {
-			active.value = "home";
-		}
-	});
+	const mobileOpen = ref(false);
+	const toggle = ref<HTMLButtonElement>();
+	watch(() => route.path, () => { mobileOpen.value = false; });
+	const closeMenu = () => { mobileOpen.value = false; toggle.value?.focus(); };
 </script>
 
 <template>
-	<div
-		id="kt_app_header"
-		class="app-header d-flex border-0 bg-transparent"
-		:data-kt-sticky="true"
-		data-kt-sticky-name="app-header-sticky"
-		data-kt-sticky-offset="{default: 'false', lg: '300px'}"
-	>
-		<!--begin::Header container-->
-		<div
-			class="app-container container-fluid d-flex align-items-stretch justify-content-between"
-			id="kt_app_header_container"
-		>
-			<!--begin::Logo-->
-			<div class="d-flex d-lg-none align-items-center me-auto">
-				<NFTexLogo :classes="'h-40px ms-n3'" />
+	<header class="border-bottom bg-body position-relative" @keydown.esc="closeMenu">
+		<div class="container d-flex align-items-center justify-content-between gap-5 py-5">
+			<MarketingBrand />
+			<nav class="d-none d-lg-flex align-items-center gap-1" aria-label="Main navigation">
+				<NuxtLink v-for="link in publicNavigation" :key="link.to" :to="link.to" class="marketing-nav-link">{{ link.label }}</NuxtLink>
+			</nav>
+			<div class="d-none d-lg-flex align-items-center gap-3">
+				<template v-if="!auth.isAuthenticated.value"><NuxtLink to="/sign-in" class="btn btn-light btn-sm">Sign in</NuxtLink><NuxtLink to="/sign-up" class="btn btn-primary btn-sm">Create account <span aria-hidden="true">↗</span></NuxtLink></template>
+				<NuxtLink v-else :to="accountPath" class="btn btn-primary btn-sm">Your account <span aria-hidden="true">↗</span></NuxtLink>
 			</div>
-
-			<div class="d-none d-lg-flex align-items-center">
-				<NFTexLogo :classes="'h-60px'" />
-			</div>
-			<!--end::Logo-->
-
-			<!--begin::Navbar-->
-			<div class="app-navbar flex-shrink-0" id="kt_app_aside_navbar">
-				<div class="d-none d-lg-flex align-items-center">
-					<ul
-						class="nav nav-tabs nav-pills d-flex flex-nowrap border-0 fs-6"
-					>
-						<li
-							v-for="nav in navs"
-							class="nav-item me-08 mb-md-2i"
-							@click="active = nav.name"
-						>
-							<NuxtLink
-								class="nav-link theme-dark-show w-100 bg-transparent btn btn-color-white btn-active-color-white btn-active-light btn-sm"
-								:class="setActive(nav.name, 'dark')"
-								:to="nav.path"
-							>
-								<span
-									class="d-flex flex-column align-items-start"
-								>
-									<span class="fs-4 fw-bold">{{
-										nav.name
-									}}</span>
-								</span>
-							</NuxtLink>
-
-							<NuxtLink
-								class="nav-link theme-light-show w-100 bg-transparent btn btn-color-info btn-active-color-primary btn-active-light btn-sm"
-								:class="setActive(nav.name, 'light')"
-								:to="nav.path"
-							>
-								<span
-									class="d-flex flex-column align-items-start"
-								>
-									<span class="fs-4 fw-bold">{{
-										nav.name
-									}}</span>
-								</span>
-							</NuxtLink>
-						</li>
-					</ul>
-				</div>
-
-				<!--begin::User menu-->
-				<div
-					class="app-navbar-item mx-3 ms-lg-1"
-					id="kt_header_user_menu_toggle"
-				>
-					<!--begin::Menu wrapper-->
-
-					<a
-						href="/app"
-						class="cursor-pointer d-nonei d-lg-block symbol symbol-circle ms-2 symbol-35px symbol-lg-50px ms-0 ms-lg-3"
-						v-if="auth.isAuthenticated.value"
-					>
-						<!--begin::Drawer toggle-->
-						<img
-							:src="
-								user.imgUrl
-									? user.imgUrl
-									: $config.public.DEFAULT_DP
-							"
-							alt="user"
-							class=""
-						/>
-						<!--end::Drawer toggle-->
-					</a>
-
-					<!--end::Menu wrapper-->
-				</div>
-				<!--end::User menu-->
-
-				<!--begin::Cart-->
-				<div
-					class="app-navbar-item d-none d-lg-flexi justify-content-end flex-grow-1 ms-1 ms-lg-3"
-				>
-					<!--begin::Drawer toggle-->
-					<div
-						class="btn btn-secondary btn-custom fw-bold btn-active-light btn-active-color-white btn-color-white btn-icon w-40px h-40px"
-						id="kt_activities_toggle"
-					>
-						<i class="ki-outline ki-handcart fs-2x"></i>
-					</div>
-					<!--end::Drawer toggle-->
-				</div>
-				<!--end::Cart-->
-
-				<!--end::Quick links-->
-			</div>
-			<!--end::Navbar-->
-
-			<!--begin::Sidebar toggle-->
-			<div
-				class="d-flex d-lg-none align-items-center me-n1 ms-3"
-				title="Show sidebar menu"
-			>
-				<button
-					class="btn btn-icon w-35px h-35px"
-					id="kt_app_sidebar_mobile_toggle"
-				>
-					<i class="ki-solid ki-burger-menu-5 fs-3x"></i>
-				</button>
-			</div>
-			<!--end::Sidebar toggle-->
+			<button ref="toggle" type="button" class="btn btn-light btn-sm d-lg-none" :aria-expanded="mobileOpen" aria-controls="public-mobile-nav" @click="mobileOpen = !mobileOpen">{{ mobileOpen ? 'Close menu' : 'Menu' }} <i :class="['ki-outline ms-2', mobileOpen ? 'ki-cross' : 'ki-burger-menu-5']" aria-hidden="true"></i></button>
 		</div>
-		<!--end::Header container-->
-	</div>
+		<MainMobileNav v-if="mobileOpen" id="public-mobile-nav" class="d-lg-none" />
+	</header>
 </template>
-
-<style>
-	.glass-container {
-		background: rgba(
-			255,
-			255,
-			255,
-			0.2
-		); /* Adjust the alpha value for transparency */
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.9); /* Optional: Add a subtle shadow */
-	}
-</style>

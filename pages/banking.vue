@@ -1,160 +1,19 @@
-<script setup>
-	const config = useRuntimeConfig().public;
-	const currentPage = "Our Banking";
-	useSeoMeta({
-		title: `${currentPage} - ${config.APP}`,
-	});
+<script setup lang="ts">
+	usePublicSeo('Everyday digital banking', 'Explore account balances, funding instructions, transfers, and transaction history in one digital banking account.');
+	const features = [
+		{ icon: 'ki-wallet', title: 'An account overview that makes sense', description: 'Check your available balance and recent activity when you sign in. Find your account information without digging through paperwork.' },
+		{ icon: 'ki-plus', title: 'Funding, with clear instructions', description: 'Use Add funds to see available funding accounts and instructions. Verify the details and keep your payment reference until funds are confirmed.' },
+		{ icon: 'ki-send', title: 'Transfers you can follow', description: 'Review recipient details before sending, then keep the transaction reference to check its status.', to: '/transfers', linkLabel: 'How transfers work' },
+		{ icon: 'ki-document', title: 'Your activity, organized', description: 'Review your transaction history, amounts, dates, and statuses. Have the relevant details at hand if you need help.' },
+	];
 </script>
 
 <template>
-	<div id="kt_app_content" class="app-content flex-column-fluid">
-		<!--begin::Content container-->
-		<div
-			id="kt_app_content_container"
-			class="app-container container-fluid"
-		>
-			<!--begin::Page title-->
-			<div
-				class="page-title d-flex flex-column justify-content-center me-3 mb-10"
-			>
-				<!--begin::Title-->
-				<h1
-					class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0"
-				>
-					Banking With Ease
-				</h1>
-				<!--end::Title-->
-
-				<!--begin::Breadcrumb-->
-				<ul
-					class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 my-0 pt-1"
-				>
-					<!--begin::Item-->
-					<li class="breadcrumb-item text-muted">
-						<a href="/" class="text-muted text-hover-primary">
-							Home
-						</a>
-					</li>
-					<!--end::Item-->
-					<!--begin::Item-->
-					<li class="breadcrumb-item">
-						<span class="bullet bg-gray-400 w-5px h-2px"></span>
-					</li>
-					<!--end::Item-->
-
-					<!--begin::Item-->
-					<li class="breadcrumb-item text-muted">
-						Corporate Banking
-					</li>
-					<!--end::Item-->
-					<!--begin::Item-->
-					<li class="breadcrumb-item">
-						<span class="bullet bg-gray-400 w-5px h-2px"></span>
-					</li>
-					<!--end::Item-->
-
-					<!--begin::Item-->
-					<li class="breadcrumb-item text-muted">
-						Corporate Banking
-					</li>
-					<!--end::Item-->
-				</ul>
-				<!--end::Breadcrumb-->
-			</div>
-			<!--end::Page title-->
-
-			<!--begin::Sitemap main-->
-			<div class="d-flex flex-column flex-xl-row">
-				<!--begin::Content-->
-				<div class="card bg-body flex-row-fluid mb-9 mb-xl-0 me-xl-9">
-					<div class="card-body">
-						<!--begin::Form-->
-						<form
-							action="#"
-							class="form mb-15"
-							method="post"
-							id="kt_contact_form"
-						>
-							<!--begin::Title-->
-							<div class="d-flex flex-column mb-9 fv-row">
-								<h1 class="fw-bold text-dark mb-7">
-									Personal Banking
-								</h1>
-								<div class="d-flex flex-stack mb-5">
-									<span class="text-gray-400 fs-4 fw-bold"
-										>Accessible To All</span
-									>
-								</div>
-								<span
-									class="fs-4 fw-semibold text-gray-600 d-block"
-								>
-									We are constantly
-									thinking about you! We create accounts
-									tailored to suit your individual needs as a
-									valued customer and are constantly
-									innovating, bringing new products and
-									services to help make banking and life
-									easier for you.
-								</span>
-							</div>
-							<!--end::Title-->
-						</form>
-						<!--end::Form-->
-					</div>
-				</div>
-				<!--end::Content-->
-
-				<!--begin::Sidebar-->
-				<div class="flex-column flex-lg-row-auto w-100 w-xl-350px">
-					<!--begin::Support-->
-					<div class="card card-flush bg-body mb-9">
-						<!--begin::Card header-->
-						<div class="card-header">
-							<h2 class="card-title fs-2 fw-bold text-dark">
-								Corporate Banking
-							</h2>
-
-							<div class="card-toolbar">
-								<button
-									type="button"
-									class="btn btn-sm btn-icon btn-color-primary"
-								>
-									<i class="ki-outline ki-phone fs-1"></i>
-								</button>
-							</div>
-						</div>
-						<!--end::Card header-->
-
-						<!--begin::Card body-->
-						<div class="card-body pt-2">
-							<div class="d-flex flex-stack mb-5">
-								<span class="text-gray-400 fs-4 fw-bold"
-									>Helping Businesses</span
-								>
-							</div>
-
-							<!--begin::Text-->
-							<span
-								class="text-gray-800 fs-6 fw-semibold d-block mb-9"
-							>
-								At Federal Credit Reserve , we are committed to
-								the development of the real sectors of the
-								economy. We offer a comprehensive portfolio of
-								corporate and commercial banking services in the
-								Energy, Manufacturing, FMCGs, Export & Import,
-								Telecommunications, Agriculture and Public
-								Sectors of the economy amongst others.
-							</span>
-							<!--end::Text-->
-						</div>
-						<!--end::Card body-->
-					</div>
-					<!--end::Support-->
-				</div>
-				<!--end::Sidebar-->
-			</div>
-			<!--end::Sitemap main-->
-		</div>
-		<!--end::Content container-->
+	<div>
+		<MarketingHero eyebrow="Everyday banking" title="Your day moves fast. Keep your money in view." description="Check your balance, follow funding instructions, and manage transfers from a single account overview."><NuxtLink to="/sign-up" class="btn btn-primary btn-lg">Create account <span aria-hidden="true">↗</span></NuxtLink><NuxtLink to="/resources/faq" class="btn btn-light btn-lg">Your questions, answered</NuxtLink><template #visual><MarketingAccountPreview /></template></MarketingHero>
+		<section class="marketing-section pt-0"><div class="container"><h2 class="marketing-heading mb-10">The essentials. Working together.</h2><div class="row g-6"><div v-for="feature in features" :key="feature.title" class="col-md-6"><MarketingFeatureCard v-bind="feature" /></div></div></div></section>
+		<section class="marketing-section bg-light"><div class="container"><div class="row g-10"><div class="col-lg-5"><span class="text-primary fw-bold text-uppercase fs-7 ls-1">Before you begin</span><h2 class="marketing-heading mt-4">A few details.<br />A better start.</h2></div><div class="col-lg-7"><div class="bg-body rounded-3 border p-8"><h3 class="fs-2 mb-5">Have your information ready</h3><ul class="text-gray-600 fs-5 lh-lg ps-6 mb-6"><li>Your full name and contact details</li><li>An email address you can access for sign-in codes</li><li>Your address, city, and country</li><li>A unique password you do not use elsewhere</li></ul><p class="text-gray-600 fs-6 mb-0">Feature availability, account limits, and any additional checks depend on your account. Confirm charges and eligibility with support before making a commitment.</p></div></div></div></div></section>
+		<section class="marketing-section"><div class="container"><div class="row g-10"><div class="col-lg-5"><h2 class="marketing-heading">Know what comes next.</h2><p class="text-gray-600 fs-5">Practical answers before your first transaction.</p></div><div class="col-lg-7"><MarketingFaq :limit="6" /></div></div></div></section>
+		<MarketingCta />
 	</div>
 </template>

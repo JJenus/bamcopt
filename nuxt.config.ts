@@ -6,8 +6,11 @@ export default defineNuxtConfig({
 	compatibilityDate: "2024-09-01",
 	devtools: { enabled: false },
 	ssr: true,
+	// Optional isolation for verification while a developer's server is running.
+	buildDir: process.env.NUXT_BUILD_DIR || ".nuxt",
 	routeRules: {
-		// "/": { redirect: "/about-us" },
+		"/about-us": { redirect: { to: "/resources/about-us", statusCode: 301 } },
+		"/contact-us": { redirect: { to: "/resources/contact-us", statusCode: 301 } },
 	},
 	image: {
 		format: ["webp", "avif", "jpeg", "jpg", "png", "gif"],
@@ -28,6 +31,13 @@ export default defineNuxtConfig({
 			API_BASE: "/api",
 			APP: "Bancopt",
 			MOBILE: "+49 (178) 793 1942",
+			SUPPORT_EMAIL: "support@bancopt.com",
+			SUPPORT_HOURS: "Contact us by email for account and product enquiries.",
+			SITE_URL: "https://www.bancopt.com",
+			LOGO_URL: "/assets/media/logos/logo-ban.png",
+			LEGAL_ENTITY: "Bancopt",
+			BUSINESS_ADDRESS: "",
+			LEGAL_UPDATED: "2026-11-04",
 			CLOUD_NAME: "dpangnog4", // unsigned upload preset: no secret needed in the browser
 			DEFAULT_DP: "/assets/media/svg/avatars/blank.svg",
 		},
@@ -50,41 +60,6 @@ export default defineNuxtConfig({
 				{
 					name: "viewport",
 					content: "width=device-width, initial-scale=1",
-				},
-				{
-					name: "twitter:card",
-					content:
-						"Top international financial services provided to be accessible to all",
-				},
-				{
-					name: "twitter:title",
-					content: "Bancopt",
-				},
-				{
-					name: "twitter:description",
-					content:
-						"Top international financial services provided to be accessible to all",
-				},
-				{
-					name: "twitter:image",
-					content: "https://www.bancopt.com/assets/media/logos/logo-ban.png",
-				},
-				{
-					property: "og:title",
-					content: "Bancopt",
-				},
-				{
-					property: "og:description",
-					content:
-						"Top international financial services provided to be accessible to all",
-				},
-				{
-					property: "og:image",
-					content: "https://www.bancopt.com/assets/media/logos/logo-ban.png",
-				},
-				{
-					property: "og:url",
-					content: "https://www.bancopt.com",
 				},
 			],
 			script: [

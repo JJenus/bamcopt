@@ -16,19 +16,19 @@
 	<a href="/" class="d-flex text-darki align-items-center ps-3 gap-2">
 		<img
 			alt="Logo"
-			src="/assets/media/logos/logo-ban.png"
+			:src="String(config.LOGO_URL)"
 			:class="classes"
 			class="theme-dark-showi"
 		/>
 		<span
 			:class="appClass"
 			class="fw-bold fs-3x truculenta-ero text-danger theme-dark-show"
-			>Bancopt</span
+			>{{ config.APP }}</span
 		>
 		<span
 			:class="appClass"
 			class="fw-bold fs-3x truculenta-ero theme-light-show text-warning"
-			>Bancopt</span
+			>{{ config.APP }}</span
 		>
 	</a>
 </template>

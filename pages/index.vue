@@ -1,405 +1,260 @@
-<script setup>
-	const CONFIG = useRuntimeConfig().public;
-
-	useSeoMeta({
-		title: `${CONFIG.APP}`,
-	});
+<script setup lang="ts">
+usePublicSeo(
+    "Banking, with a clearer view",
+    "Manage your account, follow your transfers, and keep your financial activity in view. Explore a simpler digital banking experience.",
+);
+const { auth, accountPath } = usePublicSite();
+const features = [
+    {
+        icon: "ki-wallet",
+        title: "Know where you stand",
+        description:
+            "See your account balance and recent activity together. Less searching, more clarity.",
+        to: "/banking",
+        linkLabel: "Explore banking",
+    },
+    {
+        icon: "ki-send",
+        title: "Move money with purpose",
+        description:
+            "Review recipient details, send a transfer, and keep a reference for what comes next.",
+        to: "/transfers",
+        linkLabel: "Discover transfers",
+    },
+    {
+        icon: "ki-time",
+        title: "Keep the full picture",
+        description:
+            "Find your transaction history and check the progress of a payment when you need it.",
+        to: "/track/transaction",
+        linkLabel: "Track a transaction",
+    },
+];
+const steps = [
+    {
+        title: "Make it yours",
+        description:
+            "Create your account with your contact details and a unique password.",
+    },
+    {
+        title: "Find your way around",
+        description:
+            "Review your account information and follow the available funding instructions.",
+    },
+    {
+        title: "Take the next step",
+        description:
+            "Manage transfers, check your balance, and stay on top of your activity.",
+    },
+];
 </script>
 
 <template>
-	<div class="container-fluid">
-		<div class="card border-0 bg-transparent">
-			<div class="card-body p-0">
-				<div
-					class="row row-cols-1 row-cols-lg-2 justify-content-between align-items-center mb-5"
-				>
-					<div class="col">
-						<div class="mw-450px ms-md-4i ms-xl-1">
-							<h1 class="display-4">
-								Banking made simple, secure, and seamless.
-								That's the
-								<span class="text-danger">{{
-									CONFIG.APP
-								}}</span>
-								promise.
-							</h1>
-							<h6 class="text-muted mb-10">
-								Secure, Seamless, and Smart Banking Solutions
-								Await You!
-							</h6>
-						</div>
-					</div>
-					<div class="col">
-						<div class="mx-n16 rounded me-lg-0">
-							<SwiperMainSlide />
-						</div>
-					</div>
-				</div>
-
-				<!-- WHAT TO EXPECT -->
-
-				<div
-					class="card border-transparent my-12"
-					data-bs-theme="light"
-					style="background-color: #1c325e"
-				>
-					<!--begin::Body-->
-					<div class="card-body d-flex ps-xl-15">
-						<!--begin::Wrapper-->
-						<div class="m-0">
-							<!--begin::Title-->
-							<div
-								class="position-relative mb-5 fs-1 z-index-2 fw-bold text-white mb-7"
-							>
-								<span class="me-2">
-									We here for
-									<span
-										class="position-relative d-inline-block text-success"
-									>
-										<a
-											role="button"
-											class="text-success opacity-75-hover"
-										>
-											you </a
-										>!
-
-										<!--begin::Separator-->
-										<span
-											class="position-absolute opacity-50 bottom-0 start-0 border-4 border-success border-bottom w-100"
-										></span>
-										<!--end::Separator-->
-									</span>
-								</span>
-								<br />
-
-								<span class="fs-3x"> What to expect </span>
-							</div>
-							<!--end::Title-->
-
-							<!--begin::Action-->
-							<div
-								class="mb-3 position-relative mt-8"
-								style="z-index: 2"
-							>
-								<a
-									role="button"
-									class="btn btn-success fw-semibold me-2"
-									data-bs-toggle="modal"
-									data-bs-target="#kt_modal_login"
-									@click="useAuth().openAuthModal('register')"
-								>
-									Created Account
-								</a>
-
-								<a
-									data-bs-toggle="modal"
-									data-bs-target="#kt_modal_login"
-									@click="useAuth().openAuthModal('login')"
-									role="button"
-									class="btn btn-color-white bg-white bg-opacity-15 bg-hover-opacity-25 fw-semibold"
-								>
-									Sign in
-								</a>
-							</div>
-							<!--begin::Action-->
-						</div>
-						<!--begin::Wrapper-->
-
-						<!--begin::Illustration-->
-						<img
-							src="/assets/media/illustrations/sigma-1/17-dark.png"
-							class="position-absolute me-3 bottom-0 end-0 h-200px"
-							style="z-index: 1"
-							alt=""
-						/>
-						<!--end::Illustration-->
-					</div>
-					<!--end::Body-->
-				</div>
-
-				<!-- SEAMLESS TRANSACTIONS -->
-				<div class="card card-flush h-xl-100 mb-5">
-					<!--begin::Body-->
-					<div class="card-body py-9">
-						<!--begin::Row-->
-						<div class="row gx-9 h-100">
-							<!--begin::Col-->
-							<div class="col-sm-6 mb-10 mb-sm-0">
-								<!--begin::Overlay-->
-								<div class="overlay h-100" role="button">
-									<!--begin::Image-->
-									<div
-										class="overlay-wrapper bgi-no-repeat bgi-position-center bgi-size-cover card-rounded min-h-200px h-100"
-										style="
-											background-image: url('https://t3.ftcdn.net/jpg/03/30/78/08/240_F_330780882_gUmEzkzPLQebQJclnvXxa0Bt1qE83acZ.jpg');
-										"
-									></div>
-									<!--end::Image-->
-
-									<!--begin::Action-->
-									<div
-										class="overlay-layer card-rounded bg-dark bg-opacity-25"
-									>
-										<NFTexLogo :classes="'h-30px'" />
-									</div>
-									<!--end::Action-->
-								</div>
-								<!--end::Overlay-->
-							</div>
-							<!--end::Col-->
-
-							<!--begin::Col-->
-							<div class="col-sm-6 card border-0">
-								<!--begin::Wrapper-->
-								<div
-									class="card-body d-flex flex-column justify-content-center h-lg-400px align-items-center"
-								>
-									<!--begin::Header-->
-									<div class="mb-0">
-										<!--begin::Title-->
-										<div class="text-centeri mb-7 mb-lg-10">
-											<i
-												class="ki-duotone d-md-none ki-send text-success fs-2 order-1o me-2"
-											>
-												<span class="path1"></span>
-												<span class="path2"></span>
-											</i>
-											<a
-												role="button"
-												class="text-gray-800 text-hover-primary fs-3 fs-md-2x fw-bold"
-												>Seamless Transactions</a
-											>
-										</div>
-										<!--end::Title-->
-									</div>
-									<!--end::Header-->
-
-									<div
-										class="d-flex flex-column flex-md-row justify-content-between align-items-center"
-									>
-										<i
-											class="ki-duotone d-none d-md-block ki-send text-success fs-5x order-1o me-5"
-										>
-											<span class="path1"></span>
-											<span class="path2"></span>
-										</i>
-										<div>
-											<span
-												class="fw-bold text-gray-600i fs-4 pb-5"
-												>{{ CONFIG.APP }} ensures that
-												your transactions are smooth and
-												effortless. With our intuitive
-												interface and streamlined
-												processes, sending money, paying
-												bills, and managing your
-												finances is quick and
-												easy.4</span
-											>
-										</div>
-									</div>
-								</div>
-								<!--end::Wrapper-->
-							</div>
-							<!--end::Col-->
-						</div>
-						<!--end::Row-->
-					</div>
-					<!--end::Body-->
-				</div>
-
-				<!-- Robost security -->
-
-				<div class="card card-flush h-xl-100 mb-5">
-					<!--begin::Body-->
-					<div class="card-body py-9">
-						<!--begin::Row-->
-						<div class="row gx-9 h-100">
-							<!--begin::Col-->
-							<div
-								class="col-sm-6 mb-10 mb-sm-0 order-1 order-lg-2"
-							>
-								<!--begin::Overlay-->
-								<div class="overlay h-100" role="button">
-									<!--begin::Image-->
-									<div
-										class="overlay-wrapper bgi-no-repeat bgi-position-center bgi-size-cover card-rounded min-h-200px h-100"
-										style="
-											background-image: url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.rockwellautomation.com%2Fcontent%2Fdam%2Frockwell-automation%2Fsites%2Fimages%2Fsimple-content%2Fblogs%2FTailor-cybersecurity-to-OT-environments.jpg&f=1&nofb=1&ipt=303a1f2385dfc3986e20aa3cfc0e1edcfb19f54e9df0ec6d9b801458dc80f68f&ipo=images');
-										"
-									></div>
-									<!--end::Image-->
-
-									<!--begin::Action-->
-									<div
-										class="overlay-layer card-rounded bg-dark bg-opacity-25"
-									>
-										<NFTexLogo :classes="'h-30px'" />
-									</div>
-									<!--end::Action-->
-								</div>
-								<!--end::Overlay-->
-							</div>
-							<!--end::Col-->
-
-							<!--begin::Col-->
-							<div
-								class="col-sm-6 card border-0 order-2 order-lg-1"
-							>
-								<!--begin::Wrapper-->
-								<div
-									class="card-body d-flex flex-column justify-content-center h-lg-400px align-items-center"
-								>
-									<!--begin::Header-->
-									<div class="mb-0">
-										<!--begin::Title-->
-										<div class="text-centeri mb-7 mb-lg-10">
-											<i
-												class="ki-solid d-md-none ki-lock-3 fs-2 text-danger me-2"
-											>
-											</i>
-
-											<a
-												role="button"
-												class="text-gray-800 text-hover-primary fs-3 fs-md-2x fw-bold"
-												>Robust Security Measures</a
-											>
-										</div>
-										<!--end::Title-->
-									</div>
-									<!--end::Header-->
-
-									<div
-										class="d-flex flex-column flex-md-row justify-content-between align-items-center"
-									>
-										<i
-											class="ki-duotone ki-lock-3 fs-5x text-danger me-5"
-										>
-											<span class="path1"></span>
-											<span class="path2"></span>
-											<span class="path3"></span>
-										</i>
-										<div>
-											<span
-												class="fw-bold text-gray-600i fs-4 pb-5"
-												>our security is our top
-												priority.
-												{{ CONFIG.APP }} employs
-												state-of-the-art encryption
-												techniques and multi-factor
-												authentication to safeguard your
-												account and personal
-												information. Rest assured, your
-												data is protected against
-												unauthorized access and cyber
-												threats.
-											</span>
-										</div>
-									</div>
-								</div>
-								<!--end::Wrapper-->
-							</div>
-							<!--end::Col-->
-						</div>
-						<!--end::Row-->
-					</div>
-					<!--end::Body-->
-				</div>
-
-				<!-- Hassle-Free Banking Experiences: -->
-				<div class="card card-flush h-xl-100 mb-5">
-					<!--begin::Body-->
-					<div class="card-body py-9">
-						<!--begin::Row-->
-						<div class="row gx-9 h-100">
-							<!--begin::Col-->
-							<div class="col-sm-6 mb-10 mb-sm-0">
-								<!--begin::Overlay-->
-								<div
-									class="d-block overlay h-100"
-									role="button"
-								>
-									<!--begin::Image-->
-									<div
-										class="overlay-wrapper bgi-no-repeat bgi-position-center bgi-size-cover card-rounded min-h-200px h-100"
-										style="
-											background-image: url('/assets/media/banking/All-Web-Banner-Banking-2426953948.jpg');
-										"
-									></div>
-									<!--end::Image-->
-
-									<!--begin::Action-->
-									<div
-										class="overlay-layer card-rounded bg-dark bg-opacity-25"
-									>
-										<NFTexLogo :classes="'h-30px'" />
-									</div>
-									<!--end::Action-->
-								</div>
-								<!--end::Overlay-->
-							</div>
-							<!--end::Col-->
-
-							<!--begin::Col-->
-							<div class="col-sm-6 card border-0">
-								<!--begin::Wrapper-->
-								<div
-									class="card-body d-flex flex-column justify-content-center h-lg-300px align-items-center"
-								>
-									<!--begin::Header-->
-									<div class="mb-0">
-										<!--begin::Title-->
-										<div class="text-centeri mb-7 mb-lg-10">
-											<i
-												class="ki-duotone ki-monitor-mobile fs-1 text-warning me-2 d-md-none"
-											>
-												<span class="path1"></span>
-												<span class="path2"></span>
-											</i>
-											<a
-												role="button"
-												class="text-gray-800 text-hover-primary fs-3 fs-md-2x fw-bold"
-												>Hassle-Free Banking
-											</a>
-										</div>
-										<!--end::Title-->
-									</div>
-									<!--end::Header-->
-
-									<div
-										class="d-flex flex-column flex-md-row justify-content-between align-items-center"
-									>
-										<i
-											class="ki-duotone ki-monitor-mobile fs-5x text-warning me-5 d-none d-md-block"
-										>
-											<span class="path1"></span>
-											<span class="path2"></span>
-										</i>
-										<div>
-											<span
-												class="fw-bold text-gray-600i fs-4 pb-5"
-												>{{ CONFIG.APP }} ensures that
-												your transactions are smooth and
-												effortless. With our intuitive
-												interface and streamlined
-												processes, sending money, paying
-												bills, and managing your
-												finances is quick and
-												easy.4</span
-											>
-										</div>
-									</div>
-								</div>
-								<!--end::Wrapper-->
-							</div>
-							<!--end::Col-->
-						</div>
-						<!--end::Row-->
-					</div>
-					<!--end::Body-->
-				</div>
-			</div>
-			<!--end::Card body-->
-		</div>
-		<!--end::Card-->
-	</div>
+    <div>
+        <MarketingHero
+            eyebrow="Your money. A clearer picture."
+            title="Banking that fits into your life."
+            description="A simple place to manage your account, move money, and follow every transfer. Less complexity. More confidence in your next step."
+        >
+            <NuxtLink
+                :to="auth.isAuthenticated.value ? accountPath : '/sign-up'"
+                class="btn btn-primary btn-lg"
+                >{{
+                    auth.isAuthenticated.value
+                        ? "Go to your account"
+                        : "Create account"
+                }}
+                <span class="ms-3" aria-hidden="true">↗</span></NuxtLink
+            >
+            <NuxtLink to="/banking" class="btn btn-light btn-lg"
+                >Explore banking</NuxtLink
+            >
+            <template #visual><MarketingAccountPreview /></template>
+        </MarketingHero>
+        <div class="container">
+            <div
+                class="row g-5 border-top border-bottom py-7 text-gray-700 fs-6 fw-semibold"
+            >
+                <div class="col-md-4">
+                    <i
+                        class="ki-outline ki-monitor-mobile fs-2 text-primary me-3"
+                        aria-hidden="true"
+                    ></i
+                    >Access through your browser
+                </div>
+                <div class="col-md-4">
+                    <i
+                        class="ki-outline ki-sms fs-2 text-primary me-3"
+                        aria-hidden="true"
+                    ></i
+                    >Email-code sign-in
+                </div>
+                <div class="col-md-4">
+                    <i
+                        class="ki-outline ki-document fs-2 text-primary me-3"
+                        aria-hidden="true"
+                    ></i
+                    >Transaction history in one place
+                </div>
+            </div>
+        </div>
+        <section class="marketing-section">
+            <div class="container">
+                <div class="row align-items-end mb-10 g-5">
+                    <div class="col-lg-7">
+                        <span
+                            class="text-primary text-uppercase fw-bold fs-7 ls-1"
+                            >Built around the everyday</span
+                        >
+                        <h2 class="marketing-heading mt-4 mb-0">
+                            Your finances. Without the extra friction.
+                        </h2>
+                    </div>
+                    <div class="col-lg-5">
+                        <p class="text-gray-600 fs-5 lh-lg mb-0">
+                            Useful tools for the things you need to do, with a
+                            clear view of what is happening.
+                        </p>
+                    </div>
+                </div>
+                <div class="row g-6">
+                    <div
+                        v-for="feature in features"
+                        :key="feature.title"
+                        class="col-md-4"
+                    >
+                        <MarketingFeatureCard v-bind="feature" />
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="marketing-section bg-light">
+            <div class="container">
+                <div class="row align-items-center g-10">
+                    <div class="col-lg-5">
+                        <span
+                            class="text-primary text-uppercase fw-bold fs-7 ls-1"
+                            >Getting started</span
+                        >
+                        <h2 class="marketing-heading mt-4 mb-6">
+                            A little setup.<br />A lot more clarity.
+                        </h2>
+                        <NuxtLink
+                            to="/resources/guides/getting-started"
+                            class="fw-bold fs-5"
+                            >Read the getting started guide
+                            <span aria-hidden="true">↗</span></NuxtLink
+                        >
+                    </div>
+                    <div class="col-lg-7">
+                        <div
+                            v-for="(step, i) in steps"
+                            :key="step.title"
+                            class="d-flex gap-7 py-6"
+                            :class="{ 'border-bottom': i < 2 }"
+                        >
+                            <span
+                                class="marketing-step text-primary opacity-50 fw-bold"
+                                >0{{ i + 1 }}</span
+                            >
+                            <div>
+                                <h3 class="fs-3 fw-bold mb-3">
+                                    {{ step.title }}
+                                </h3>
+                                <p class="text-gray-600 fs-6 lh-lg mb-0">
+                                    {{ step.description }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="marketing-section">
+            <div class="container">
+                <div class="row g-10 align-items-center">
+                    <div class="col-lg-6">
+                        <img
+                            src="/assets/media/banking/flat-lay-business-concept_53876-24738.jpg"
+                            alt="A workspace for reviewing financial plans"
+                            class="marketing-photo rounded-4"
+                            width="600"
+                            height="380"
+                            loading="lazy"
+                        />
+                    </div>
+                    <div class="col-lg-6 ps-lg-12">
+                        <span
+                            class="text-primary text-uppercase fw-bold fs-7 ls-1"
+                            >Stay in the know</span
+                        >
+                        <h2 class="marketing-heading mt-4 mb-6">
+                            Sent it? See where it stands.
+                        </h2>
+                        <p class="fs-5 text-gray-600 lh-lg mb-7">
+                            A transfer should not leave you guessing. Keep your
+                            transaction reference and check the current receipt
+                            status, or review your activity after signing in.
+                        </p>
+                        <NuxtLink
+                            to="/track/transaction"
+                            class="btn btn-primary"
+                            >Track a transaction
+                            <span aria-hidden="true">↗</span></NuxtLink
+                        >
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="marketing-section pt-0">
+            <div class="container">
+                <div
+                    class="border rounded-4 p-8 p-lg-12 row g-6 m-0 align-items-center"
+                >
+                    <div class="col-lg-2 text-lg-center">
+                        <i
+                            class="ki-outline ki-shield-tick text-primary fs-5x"
+                            aria-hidden="true"
+                        ></i>
+                    </div>
+                    <div class="col-lg-7">
+                        <h2 class="fs-2x fw-bold mb-4">
+                            Good banking starts with good habits.
+                        </h2>
+                        <p class="text-gray-600 fs-5 lh-lg mb-0">
+                            Email-code sign-in adds a step to account access.
+                            Protect your email, keep codes private, and learn
+                            how to spot suspicious requests.
+                        </p>
+                    </div>
+                    <div class="col-lg-3 text-lg-end">
+                        <NuxtLink to="/security" class="btn btn-light-primary"
+                            >Explore account safety</NuxtLink
+                        >
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="marketing-section pt-0">
+            <div class="container">
+                <div class="row g-10">
+                    <div class="col-lg-5">
+                        <span
+                            class="text-primary text-uppercase fw-bold fs-7 ls-1"
+                            >A few things to know</span
+                        >
+                        <h2 class="marketing-heading mt-4 mb-6">
+                            Questions?<br />Start here.
+                        </h2>
+                        <NuxtLink to="/resources/faq" class="fw-bold fs-5"
+                            >All common questions
+                            <span aria-hidden="true">↗</span></NuxtLink
+                        >
+                    </div>
+                    <div class="col-lg-7"><MarketingFaq :limit="4" /></div>
+                </div>
+            </div>
+        </section>
+        <MarketingCta />
+    </div>
 </template>
