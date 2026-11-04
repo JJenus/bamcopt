@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { defineNuxtConfig } from "nuxt/config";
+import { resolve } from "node:path";
 
 export default defineNuxtConfig({
 	modules: ["nuxt-swiper", "@nuxt/image"],
@@ -8,6 +9,11 @@ export default defineNuxtConfig({
 	ssr: true,
 	// Optional isolation for verification while a developer's server is running.
 	buildDir: process.env.NUXT_BUILD_DIR || ".nuxt",
+	// Nuxt otherwise shares node_modules/.cache/vite across dev/test servers,
+	// invalidating the developer's optimized dependency URLs during smoke checks.
+	vite: process.env.NUXT_BUILD_DIR
+		? { cacheDir: resolve(process.env.NUXT_BUILD_DIR, "vite-cache") }
+		: {},
 	routeRules: {
 		"/about-us": { redirect: { to: "/resources/about-us", statusCode: 301 } },
 		"/contact-us": { redirect: { to: "/resources/contact-us", statusCode: 301 } },

@@ -5,7 +5,7 @@
 	const props = defineProps<{ base: "/app" | "/admin" }>();
 
 	const notifications = useNotifications();
-	const { unread, latest, loadingLatest } = notifications;
+	const { unread, latest, loadingLatest, latestError, actionError, marking } = notifications;
 
 	const open = ref(false);
 	const button = ref<HTMLElement | null>(null);
@@ -46,7 +46,10 @@
 		style.value = s;
 	};
 
-	const close = () => (open.value = false);
+	const close = () => {
+		if (panel.value?.contains(document.activeElement)) button.value?.focus();
+		open.value = false;
+	};
 
 	const toggle = async () => {
 		open.value = !open.value;
@@ -116,13 +119,15 @@
 							<span class="fw-bold fs-4 text-gray-900">Notifications</span>
 							<span v-if="unread > 0" class="badge badge-light-primary">{{ unread }} new</span>
 						</div>
-						<button type="button" class="btn btn-sm btn-link p-0" :disabled="unread === 0" @click="notifications.markAllRead()">
+						<button type="button" class="btn btn-sm btn-link p-0" :disabled="unread === 0 || marking" @click="notifications.markAllRead()">
 							Mark all as read
 						</button>
 					</div>
 
 					<div class="notif-scroll">
-						<div v-if="loadingLatest && !latest.length" class="p-8 text-center text-muted">Loading…</div>
+						<p v-if="actionError" role="alert" class="text-danger px-5 pt-4">{{ actionError }}</p>
+						<div v-if="latestError" role="alert" class="p-6"><p class="text-gray-700">{{ latestError }}</p><button type="button" class="btn btn-sm btn-light-primary" @click="notifications.loadLatest()">Try again</button></div>
+						<div v-else-if="loadingLatest && !latest.length" class="p-8 text-center text-muted">Loading…</div>
 						<div v-else-if="!latest.length" class="p-10 text-center text-muted">
 							<i class="ki-outline ki-notification-bing fs-3x d-block mb-3"></i>
 							You're all caught up

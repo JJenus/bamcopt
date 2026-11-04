@@ -16,7 +16,7 @@ export const userData = () => {
 		id: "",
 		name: "",
 		email: "",
-		imgUrl: "/assets/media/svg/avatars/blank.svg",
+		imgUrl: "",
 		phone: "",
 		address: "",
 		city: "",
@@ -71,10 +71,15 @@ export const userData = () => {
 
 	const reloadUser = () => {
 		if (!data.value.id) return;
+		const id = data.value.id;
 
 		userService
 			.get(data.value.id)
-			.then((user) => (data.value = user))
+			.then((user) => {
+				if (data.value.id !== id) return;
+				data.value = user;
+				if (user.account) account.value = user.account;
+			})
 			.catch(() => {});
 	};
 
@@ -88,6 +93,14 @@ export const userData = () => {
 	};
 
 	return {
+		reset: () => {
+			data.value = initUser;
+			account.value = initAcc;
+			transactions.value = [];
+			users.value = [];
+			admins.value = [];
+			active.value = null;
+		},
 		account,
 		data,
 		users,

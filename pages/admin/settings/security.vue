@@ -1,3 +1,1 @@
-<template>
-	<AppSettingsLoginSessions />
-</template>
+<template><AppSettingsLoginSessions base="/admin" /></template>

@@ -1,268 +1,30 @@
 <script setup lang="ts">
-	import { type IUser } from "~/utils/interfaces/IUser";
-
-	const user = userData().data;
-	user.value.account = userData().account.value;
-	const accountLevel = userData().account.value.accountLevel;
-	const accountLevels = useAppSettings().accountLevels;
-
-	if (userData().users.value.length === 0) {
-		userData().getUsers();
-	}
-	// const tiers = accountLevels.value.filter(
-	// 	(e) => e.accountLevel < accountLevel
-	// );
-
-	const tiers = accountLevels.value;
-
-	console.log(user.value.account);
-
-	const newImage = ref(true);
-	const CONFIG = useRuntimeConfig().public;
-
-	useSeoMeta({
-		title: `${CONFIG.APP} - Deploy Collection`,
-	});
-
-	const loading = ref(false);
-	const inputSelect = ref();
-	const imageUrl = ref();
-
-	const form = ref({ ...user.value });
-
-	const updateUser = () => {
-		if (!user.value.idUrl && !imageUrl.value) {
-			return errorAlert("Please upload an image");
-		}
-
-		loading.value = true;
-
-		userService
-			.update(user.value.id, form.value)
-			.then(() => {
-				userData().admins.value.forEach((admin) => {
-					notify(admin);
-				});
-				successAlert("Success");
-				user.value.idUrl = form.value.idUrl;
-			})
-			.catch(() => errorAlert("Failed!"))
-			.finally(() => (loading.value = false));
-	};
-
-	const saveFile = () => {
-		const file = imageUrl.value;
-		if (!file) {
-			return errorAlert("Select an image");
-		} else if (!newImage.value) {
-			return updateUser();
-		}
-		// console.log(form.value);
-
-		loading.value = true;
-
-		uploadService
-			.image(file)
-			.then((url) => {
-				form.value.idUrl = url;
-				successAlert("Upload success");
-				newImage.value = false;
-				updateUser();
-			})
-			.catch(() => {
-				loading.value = false;
-				errorAlert("Error uploading ID");
-			});
-	};
-
-	const previewImage = (event: any) => {
-		const file = event.target.files[0];
-
-		if (!file) {
-			// errorAlert("Select an image");
-			return;
-		}
-		const maxSize = 5 * 1024 * 1024; // 5 MB
-		if (file.size > maxSize) {
-			return errorAlert("The file size must be less than 5 MB.");
-			// Prevent form submission
-		}
-
-		const reader = new FileReader();
-		reader.onload = (e: any) => {
-			imageUrl.value = e.target.result;
-			newImage.value = true;
-		};
-		reader.readAsDataURL(file);
-	};
-
-	const notify = (admin: IUser) => {
-		// console.log(user);
-		console.log(form.value);
-		const notification = {
-			userId: admin.id,
-			title: "Account Upgrade",
-			message: `${user.value.name} (${user.value.email}) requests upgrade to level ${form.value.account.accountLevel}.`,
-			type: "info",
-			entityType: "user" as const, // lets the admin open it from the notification
-			entityId: user.value.id,
-		};
-
-		// best effort: a failed notification must not break the upgrade request
-		notificationService.send(notification).catch(() => {});
+	const { user, account } = useAccountWorkspace();
+	const tiers = useAppSettings().accountLevels;
+	const higher = computed(() => tiers.value.filter(tier => tier.accountLevel > account.value.accountLevel));
+	const selected = ref('');
+	const busy = ref(false);
+	const error = ref('');
+	const fieldError = ref('');
+	const sent = ref(false);
+	const submit = async () => {
+		if (busy.value) return;
+		error.value = ''; fieldError.value = '';
+		const tier = higher.value.find(item => String(item.accountLevel) === selected.value);
+		if (!tier) { fieldError.value = 'Choose an available account level.'; return; }
+		busy.value = true;
+		try {
+			const contacts = (await userService.list()).filter(item => item.userType === 'admin');
+			if (!contacts.length) { error.value = 'No support recipient is available. Please use Help & support.'; return; }
+			const results = await Promise.allSettled(contacts.map(contact => notificationService.send({ userId: contact.id, title: 'Account level enquiry', message: `${user.value.name} (${user.value.email}) asks about ${tier.title} (level ${tier.accountLevel}). Current level: ${account.value.accountLevel}. No account changes have been made.`, type: 'info', entityType: 'user', entityId: user.value.id })));
+			if (!results.some(result => result.status === 'fulfilled')) { error.value = 'We could not send your enquiry. Please try again or contact support.'; return; }
+			sent.value = true;
+			successAlert('Your account-level enquiry was sent to support.');
+		} catch { error.value = 'Unable to send your enquiry. Please contact support.'; }
+		finally { busy.value = false; }
 	};
 </script>
 
 <template>
-	<div
-		class="modal fade"
-		id="upgrade-account"
-		tabindex="-1"
-		aria-labelledby="upgrade-account"
-		aria-hidden="true"
-	>
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-				<div class="modal-body position-relative">
-					<div class="position-absolute end-0 top-0 m-3">
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-
-					<div v-if="!user.idUrl" class="">
-						<h1 class="mb-5 text-center">Verify Identity</h1>
-						<form @submit.prevent="saveFile()">
-							<label for="" class="form-label">Upload ID</label>
-							<!--begin::Dropzone-->
-							<div
-								@click="inputSelect.click()"
-								class="dropzone overflow-hidden w-100 min-h-200px d-flex align-items-center justify-content-center"
-								id="kt_dropzonejs_nft_collection_studio"
-							>
-								<input
-									ref="inputSelect"
-									type="file"
-									class="d-none"
-									accept="image/*"
-									@change="previewImage($event)"
-								/>
-								<img
-									v-if="imageUrl"
-									class="w-100"
-									:src="imageUrl"
-									alt=""
-									srcset=""
-								/>
-								<!--begin::Message-->
-								<div
-									class="dz-message needsclick position-absolute"
-								>
-									<i
-										class="ki-duotone ki-file-up fs-3x text-primary"
-										><span class="path1"></span
-										><span class="path2"></span
-									></i>
-
-									<!--begin::Info-->
-									<div class="ms-4">
-										<h3
-											class="fs-5 fw-bold text-gray-900 mb-1"
-										>
-											Click to upload.
-										</h3>
-										<span
-											class="fs-7 fw-semibold text-gray-500"
-											>Max size: 5mb</span
-										>
-									</div>
-									<!--end::Info-->
-								</div>
-							</div>
-							<!--end::Dropzone-->
-							<button class="btn btn-primary mt-5 w-100">
-								<span v-if="!loading">Submit</span>
-								<span
-									v-else
-									class="spinner-border spinner-border-sm"
-								></span>
-							</button>
-						</form>
-					</div>
-					<div v-else class="text-center">
-						<h1 class="mb-10 text-center">Upgrade Account</h1>
-						<div
-							v-if="form.account"
-							class="row row-cpls-1 row-cols-md-2 mb-5"
-						>
-							<div v-for="tier in tiers" class="col t-parent">
-								<input
-									:disabled="
-										tier.accountLevel <= accountLevel
-									"
-									type="radio"
-									class="btn-check"
-									name="tier"
-									:id="'radio_buttons_' + tier.id"
-									:value="tier.accountLevel"
-									v-model="form.account.accountLevel"
-								/>
-								<label
-									class="btn btn-outline btn-outline-dashed btn-active-light-primary p-7 d-flex align-items-center"
-									:for="'radio_buttons_' + tier.id"
-								>
-									<i
-										class="ki-solid ki-medal-star fs-4x me-4"
-									>
-									</i>
-
-									<span
-										class="d-block fw-semibold text-start"
-									>
-										<span
-											class="text-gray-900 fw-bold d-block fs-3"
-											>{{ tier.title }}</span
-										>
-										<span
-											v-if="
-												tier.accountLevel <=
-												accountLevel
-											"
-											class="text-warning fw-semibold fs-6 t-not"
-										>
-											Not allowed
-										</span>
-									</span>
-								</label>
-							</div>
-						</div>
-						<button
-							@click="updateUser()"
-							class="btn btn-primary fw-bold"
-						>
-							<span v-if="!loading" class=""
-								>Request upgrade</span
-							>
-							<span
-								v-else
-								class="spinner-border spinner-border-sm"
-							></span>
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+	<section class="card border"><div class="card-body p-7"><h2 class="fs-3 mb-4">Considering a different account level?</h2><p class="text-gray-600 lh-lg mb-6">Send an enquiry to support about eligibility and requirements. Sending a message does not change your account level or confirm approval.</p><p v-if="error" role="alert" class="alert alert-danger">{{ error }}</p><div v-if="sent" role="status" class="alert alert-success mb-0">Your enquiry was sent. Your current account level is unchanged. Contact support for updates.</div><form v-else-if="higher.length" class="row g-4 align-items-end" novalidate :aria-busy="busy" @submit.prevent="submit"><div class="col-md-8"><label for="account-level-enquiry" class="form-label">Account level</label><select id="account-level-enquiry" v-model="selected" class="form-select" :class="{ 'is-invalid': fieldError }" :aria-invalid="!!fieldError" aria-describedby="level-feedback" :disabled="busy" @change="fieldError = ''"><option value="">Choose a level</option><option v-for="tier in higher" :key="tier.accountLevel" :value="String(tier.accountLevel)">{{ tier.title }}</option></select><div id="level-feedback" class="invalid-feedback">{{ fieldError }}</div></div><div class="col-md-4"><button type="submit" class="btn btn-light-primary w-100" :disabled="busy">{{ busy ? 'Sending…' : 'Send enquiry' }}</button></div></form><NuxtLink v-else to="/app/help" class="btn btn-light-primary">Ask support about your account</NuxtLink><p class="text-gray-600 fs-8 lh-lg mt-6 mb-0">Do not upload or email identity documents here. Ask support about an approved secure verification process if additional checks are required.</p></div></section>
 </template>
-
-<style scoped>
-	.t-not {
-		display: none;
-	}
-	.t-parent:hover .t-not {
-		display: inline;
-	}
-</style>

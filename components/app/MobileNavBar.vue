@@ -1,24 +1,12 @@
 <script setup lang="ts">
 	const route = useRoute();
+	const links = [
+		{ label: 'Overview', to: '/app', icon: 'ki-element-11' },
+		{ label: 'Transfer', to: '/app/transfer', icon: 'ki-send' },
+		{ label: 'Activity', to: '/app/transactions', icon: 'ki-arrows-loop' },
+		{ label: 'Settings', to: '/app/settings', icon: 'ki-setting-2' },
+	];
+	const active = (to: string) => to === '/app/settings' ? ['/app/settings', '/app/profile', '/app/account-info', '/app/help'].some(prefix => route.path.startsWith(prefix)) : isNavActive(to, route.path);
 </script>
-<template>
-	<div
-		style="z-index: 1049; padding-bottom: env(safe-area-inset-bottom)"
-		class="position-fixed bg-light bottom-0 start-0 w-100 d-lg-none border-top"
-	>
-		<div @click="closeDrawer()" data-kt-drawer-dismiss="true" class="w-100 d-flex align-items-stretch">
-			<NuxtLink
-				v-for="nav in navs"
-				:key="nav.dir"
-				:to="nav.dir"
-				:class="isNavActive(nav.dir, route.path) ? 'text-primary' : 'text-gray-600'"
-				class="flex-fill d-flex flex-column align-items-center justify-content-center py-2"
-			>
-				<i :class="nav.icon" class="fs-1">
-					<i v-for="path in nav.paths" :key="path" :class="path"></i>
-				</i>
-				<span class="fs-9 fw-semibold mt-1" :class="isNavActive(nav.dir, route.path) ? 'fw-bold' : ''">{{ nav.name }}</span>
-			</NuxtLink>
-		</div>
-	</div>
-</template>
+
+<template><nav class="account-mobile-nav border-top d-lg-none d-flex" aria-label="Mobile account navigation"><NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="flex-fill d-flex flex-column justify-content-center align-items-center gap-2" :class="{ active: active(link.to) }" :aria-current="active(link.to) ? 'page' : undefined"><i :class="['ki-outline fs-2', link.icon]" aria-hidden="true"></i><span class="fs-8 fw-semibold">{{ link.label }}</span></NuxtLink></nav></template>

@@ -1,122 +1,20 @@
-<script setup>
-	// if (process.client) {
-	// 	$crisp.push([
-	// 		"on",
-	// 		"chat:closed",
-	// 		(event) => {
-	// 			// infoAlert("Chat closed");
-	// 			$crisp.push(["do", "chat:hide"]);
-	// 		},
-	// 	]);
-	// }
-	const startChat = () => {
-		const chat = useLiveChat();
-		chat.openChat();
-	};
+<script setup lang="ts">
+	const config = useRuntimeConfig().public;
+	const route = useRoute();
+	const links = [
+		{ label: 'Overview', to: '/app', icon: 'ki-element-11' },
+		{ label: 'Transfer', to: '/app/transfer', icon: 'ki-send' },
+		{ label: 'Activity', to: '/app/transactions', icon: 'ki-arrows-loop' },
+		{ label: 'Settings', to: '/app/settings', icon: 'ki-setting-2' },
+	];
+	const active = (path: string) => path === '/app/settings' ? ['/app/settings', '/app/profile', '/app/account-info'].some(prefix => route.path.startsWith(prefix)) : isNavActive(path, route.path);
 </script>
 
 <template>
-	<div
-		id="kt_app_sidebar"
-		class="app-sidebar d-none d-lg-flex flex-column"
-		data-kt-drawer="true"
-		data-kt-drawer-name="app-sidebar"
-		data-kt-drawer-activate="{default: true, lg: false}"
-		data-kt-drawer-overlay="true"
-		data-kt-drawer-width="250px"
-		data-kt-drawer-direction="start"
-		data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle"
-	>
-		<!--begin::Logo-->
-		<div
-			class="app-sidebar-logo d-none mx-auto pt-7 pt-xl-18 mb-xl-9 d-lg-flex align-items-center"
-			id="kt_app_sidebar_logo"
-		>
-			<!--begin::Logo image-->
-			<div class="d-flex align-items-center me-auto position-relative">
-				<NFTexLogo :classes="'h-30px'" />
-			</div>
-			<!--end::Logo image-->
-		</div>
-		<!--end::Logo-->
-		<!--begin::sidebar menu-->
-		<div class="app-sidebar-menu overflow-hidden flex-column-fluid">
-			<!--begin::Menu wrapper-->
-			<div
-				id="kt_app_sidebar_menu_wrapper"
-				class="app-sidebar-wrapper hover-scroll-y my-5 mx-3 mx-xl-11"
-				data-kt-scroll="true"
-				data-kt-scroll-activate="true"
-				data-kt-scroll-height="auto"
-				data-kt-scroll-dependencies="#kt_app_sidebar_logo, #kt_app_sidebar_footer"
-				data-kt-scroll-wrappers="#kt_app_sidebar_menu"
-				data-kt-scroll-offset="5px"
-			>
-				<!--begin::Menu-->
-				<div
-					class="menu menu-column menu-rounded menu-sub-indention menu-active-bg menu- px-3"
-					id="#kt_app_sidebar_menu"
-					data-kt-menu="true"
-					data-kt-menu-expand="false"
-				>
-					<!--begin:Menu item-->
-					<NuxtLink
-						v-for="nav in navs"
-						:to="nav.dir"
-						:class="nav.name == 'Scan' ? 'd-none' : ''"
-						data-kt-menu-trigger="click"
-						class="menu-item"
-					>
-						<!--begin:Menu link-->
-						<span class="menu-link">
-							<span class="menu-icon">
-								<i :class="nav.icon" class="fs-2x">
-									<i
-										v-for="path in nav.paths"
-										:class="path"
-									></i>
-								</i>
-							</span>
-							<span class="menu-title">{{ nav.name }}</span>
-						</span>
-					</NuxtLink>
-					<!--end:Menu item--><!--begin:Menu item-->
-				</div>
-				<!--end::Menu-->
-			</div>
-			<!--end::Menu wrapper-->
-		</div>
-		<!--end::sidebar menu-->
-		<!--begin::Footer-->
-		<div
-			class="app-sidebar-footer flex-column-auto m-9"
-			id="kt_app_sidebar_footer"
-		>
-			<!--begin::Card-->
-			<div class="card card-custom-2 bg-light-success border-0">
-				<!--begin::Body-->
-				<div class="card-body text-center">
-					<!--begin::Title-->
-					<h4 class="text-gray-800 text-center fw-bold mb-9">
-						Create a ticket <br />
-						enjoy awesome support
-					</h4>
-					<!--end::Title-->
-
-					<!--begin::Action-->
-					<a
-						role="button"
-						class="btn btn-sm btn-primary btn"
-						@click="startChat()"
-					>
-						Chat
-					</a>
-					<!--begin::Action-->
-				</div>
-				<!--end::Body-->
-			</div>
-			<!--end::Card-->
-		</div>
-		<!--end::Footer-->
-	</div>
+	<aside class="account-sidebar border-end d-flex flex-column">
+		<NuxtLink to="/app" class="d-flex align-items-center gap-3 px-8 py-8" :aria-label="`${config.APP} overview`"><img :src="String(config.LOGO_URL)" width="36" height="36" alt="" class="object-fit-contain" /><span class="text-gray-900 fs-2 fw-bold">{{ config.APP }}<span class="text-primary">.</span></span></NuxtLink>
+		<div class="px-7 pt-8 pb-4 text-gray-600 fs-8 fw-bold text-uppercase ls-1">Your workspace</div>
+		<nav class="px-5 d-grid gap-3" aria-label="Account navigation"><NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="account-nav-link" :class="{ active: active(link.to) }" :aria-current="active(link.to) ? 'page' : undefined"><i :class="['ki-outline fs-2', link.icon]" aria-hidden="true"></i>{{ link.label }}</NuxtLink></nav>
+		<div class="mt-auto p-6"><div class="border rounded-3 p-6"><i class="ki-outline ki-message-text-2 text-primary fs-2x mb-4 d-block" aria-hidden="true"></i><h2 class="fs-5 mb-3">A little help?</h2><p class="text-gray-600 fs-7 lh-lg mb-5">Find answers or get in touch with support.</p><NuxtLink to="/app/help" class="btn btn-light-primary btn-sm w-100">Help & support</NuxtLink></div><NuxtLink to="/" class="d-block text-center fs-7 text-gray-600 mt-6">Visit website <span aria-hidden="true">↗</span></NuxtLink></div>
+	</aside>
 </template>

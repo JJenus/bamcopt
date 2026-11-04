@@ -1,15 +1,5 @@
 <script setup lang="ts">
 	const auth = useAuth();
-	const items = [
-		{ title: "App defaults", text: "Currency, symbol and language", icon: "ki-outline ki-setting-2", to: "/admin/settings/defaults" },
-		{ title: "Account tiers", text: "Daily limits and maximum balances", icon: "ki-outline ki-medal-star", to: "/admin/settings/tiers" },
-		{ title: "Funding accounts", text: "Deposit accounts and their balances", icon: "ki-outline ki-bank", to: "/admin/funding" },
-		{ title: "Security", text: "Recent sign-ins on your account", icon: "ki-outline ki-shield-tick", to: "/admin/settings/security" },
-		{ title: "My profile", text: "Your admin profile", icon: "ki-outline ki-user", to: "/admin/profile" },
-		{ title: "Sign out", text: "Leave this device", icon: "ki-outline ki-exit-right", action: () => auth.logout() },
-	];
+	const links = [{ to: '/admin/settings/defaults', title: 'App defaults', text: 'Currency display and language preferences', icon: 'ki-setting-2' }, { to: '/admin/settings/tiers', title: 'Account tiers', text: 'Daily transfer and maximum balance limits', icon: 'ki-medal-star' }, { to: '/admin/funding', title: 'Funding accounts', text: 'Deposit instructions and tracked funding balances', icon: 'ki-bank' }, { to: '/admin/settings/security', title: 'Security', text: 'Recorded sign-in events for your administrator account', icon: 'ki-shield-tick' }, { to: '/admin/profile', title: 'My profile', text: 'Your operator identity and contact details', icon: 'ki-user' }];
 </script>
-
-<template>
-	<SettingsLinks :items="items" />
-</template>
+<template><div><AppPageHeader title="Workspace settings" description="Manage operational defaults and your administrator account." /><nav class="card border" aria-label="Workspace settings"><NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="account-setting-link"><i :class="['ki-outline fs-2x text-primary', link.icon]" aria-hidden="true"></i><span class="flex-grow-1"><strong class="d-block text-gray-900 fs-5 mb-2">{{ link.title }}</strong><span class="text-gray-600 fs-7">{{ link.text }}</span></span><i class="ki-outline ki-right" aria-hidden="true"></i></NuxtLink></nav><button type="button" class="btn btn-light-danger mt-7" @click="auth.logout()">Sign out</button></div></template>

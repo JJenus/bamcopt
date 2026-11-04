@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	useSeoMeta({ title: `Notifications - ${useRuntimeConfig().public.APP}` });
+	useAccountPage('Notifications');
 </script>
 
 <template>

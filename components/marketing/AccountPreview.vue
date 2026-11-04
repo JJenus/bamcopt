@@ -20,8 +20,8 @@
 				<h2 class="fs-6 fw-bold mb-5">Recent activity</h2>
 				<div class="d-flex align-items-center gap-4 py-4 border-bottom"><span class="symbol symbol-40px"><span class="symbol-label bg-light-success"><i class="ki-outline ki-arrow-down text-success fs-2" aria-hidden="true"></i></span></span><div class="flex-grow-1"><span class="d-block fw-bold">Account funding</span><span class="text-gray-600 fs-8">Confirmed</span></div><span class="fw-bold">+$1,250.00</span></div>
 				<div class="d-flex align-items-center gap-4 py-4"><span class="symbol symbol-40px"><span class="symbol-label bg-light-primary"><i class="ki-outline ki-arrow-up-right text-primary fs-2" aria-hidden="true"></i></span></span><div class="flex-grow-1"><span class="d-block fw-bold">Money transfer</span><span class="text-gray-600 fs-8">Completed</span></div><span class="fw-bold">−$240.00</span></div>
-				<figcaption class="text-gray-600 fs-8 mt-5">Illustrative amounts only. Not a live account or an offer.</figcaption>
 			</div>
+			<figcaption class="text-gray-600 fs-8 px-7 px-md-9 pb-7 pb-md-9">Illustrative amounts only. Not a live account or an offer.</figcaption>
 		</figure>
 	</div>
 </template>

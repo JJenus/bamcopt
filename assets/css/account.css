@@ -1,0 +1,48 @@
+.account-shell { --bs-text-gray-600: var(--bs-gray-700); min-height: 100vh; color: var(--bs-body-color); background: var(--bs-gray-100); }
+[data-bs-theme="dark"] .account-shell { --bs-text-primary: var(--bs-primary-text-emphasis); }
+.account-shell a:not(.btn) { color: var(--bs-text-primary); }
+.account-shell .btn-light-primary { color: var(--bs-text-primary); }
+.account-shell .btn-light { color: var(--bs-gray-800); }
+.account-shell .badge-light-success { color: var(--bs-success-text-emphasis); }
+.account-shell .badge-light-warning { color: var(--bs-warning-text-emphasis); }
+.account-shell .badge-light-danger { color: var(--bs-danger-text-emphasis); }
+.account-shell :focus-visible { outline: 3px solid var(--bs-text-primary); outline-offset: 3px; }
+.account-shell .account-sidebar { position: fixed; inset: 0 auto 0 0; width: 248px; z-index: 1010; background: var(--bs-body-bg); overflow-y: auto; }
+.account-shell .account-main { margin-left: 248px; min-width: 0; }
+.account-shell .account-topbar { min-height: 84px; position: sticky; top: 0; z-index: 1005; background: var(--bs-body-bg); }
+.account-shell .account-content { max-width: 1280px; margin-inline: auto; padding: 36px 40px 56px; }
+.account-shell .account-nav-link { color: var(--bs-gray-700) !important; display: flex; gap: 14px; align-items: center; padding: 14px 18px; border-radius: 9px; font-weight: 600; }
+.account-shell .account-nav-link.active { background: var(--bs-primary-light); color: var(--bs-text-primary) !important; }
+.account-shell .account-page-title { font-size: clamp(1.9rem, 3vw, 2.6rem); font-weight: 700; letter-spacing: -.035em; }
+.account-shell .account-balance { font-size: clamp(2.5rem, 4vw, 3.5rem); font-weight: 700; letter-spacing: -.04em; line-height: 1.2; }
+.account-shell .account-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.account-shell .account-status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.account-shell .account-activity-row { width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--bs-border-color); padding: 20px 0; color: inherit; }
+.account-shell .account-activity-row:hover { background: var(--bs-gray-100); }
+.account-shell .account-mobile-nav { position: fixed; inset: auto 0 0; padding-bottom: env(safe-area-inset-bottom); background: var(--bs-body-bg); z-index: 1008; }
+.account-shell .account-mobile-nav a { min-height: 68px; color: var(--bs-gray-700); }
+.account-shell .account-mobile-nav a.active { color: var(--bs-text-primary); background: var(--bs-primary-light); }
+.account-shell .account-panel-backdrop { position: fixed; inset: 0; background: #0008; z-index: 1055; }
+.account-shell .account-details-panel { position: fixed; inset: 0 0 0 auto; width: min(500px, 100%); background: var(--bs-body-bg); z-index: 1060; overflow-y: auto; padding: 32px; }
+.account-shell dialog.account-details-panel { margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; max-width: 100vw; color: var(--bs-body-color); }
+.account-shell dialog::backdrop { background: #0008; }
+.account-shell .account-step { width: 30px; height: 30px; display: inline-grid; place-items: center; border: 1px solid var(--bs-border-color); border-radius: 50%; }
+.account-shell .account-step.active { background: var(--bs-primary); color: #fff; border-color: var(--bs-primary); }
+.account-shell .account-loading-bar { height: 26px; width: 130px; background: var(--bs-gray-200); border-radius: 6px; }
+.account-shell .account-setting-link { display: flex; align-items: center; gap: 20px; padding: 24px; border-bottom: 1px solid var(--bs-border-color); }
+.account-shell .account-setting-link:last-child { border-bottom: 0; }
+.account-shell .account-setting-link:hover { background: var(--bs-gray-100); }
+.account-shell .skip-link { position: fixed; top: -80px; left: 16px; z-index: 1100; }
+.account-shell .skip-link:focus { top: 16px; }
+.account-shell .account-avatar { object-fit: cover; }
+@media (max-width: 1199.98px) { .account-shell .account-content { padding-inline: 24px; } }
+@media (max-width: 991.98px) {
+	.account-shell .account-sidebar { display: none !important; }
+	.account-shell .account-main { margin-left: 0; }
+	.account-shell .account-content { padding: 24px 18px calc(96px + env(safe-area-inset-bottom)); }
+	.account-shell .account-topbar { min-height: 72px; }
+	.account-shell .row { --bs-gutter-x: 1.5rem; }
+	.account-shell .account-summary-grid { gap: 12px; }
+}
+@media (max-width: 575.98px) { .account-shell .account-summary-grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .account-shell *, .account-shell *::before { transition: none !important; animation: none !important; } }

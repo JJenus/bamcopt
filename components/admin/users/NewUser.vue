@@ -17,11 +17,7 @@
 	>
 		<!--begin::Symbol-->
 		<div class="symbol symbol-30px symbol-circle me-3" bis_skin_checked="1">
-			<img
-				:src="user.imgUrl || `/assets/media/svg/avatars/blank.svg`"
-				class=""
-				alt=""
-			/>
+			<AppAvatar :src="user.imgUrl" :name="user.name || ''" :email="user.email || ''" :size="30" />
 		</div>
 		<!--end::Symbol-->
 

@@ -1,131 +1,39 @@
 <script setup lang="ts">
-	import type { FundingAccount } from "~/utils/interfaces/Funding";
-
-	useSeoMeta({ title: `Funding - ${useRuntimeConfig().public.APP}` });
-
-	const { accounts, loading, load } = useFunding();
-	const money = useAppSettings().formatMoney;
-	const symbol = useAppSettings().settings.value.currencySymbol;
-
+	import type { FundingAccount } from '~/utils/interfaces/Funding';
+	import { fundingTotals, adminMoney } from '~/utils/admin-ui';
+	import { parseTransferAmount } from '~/utils/account-ui';
+	const accounts = ref<FundingAccount[]>([]); const loading = ref(true); const error = ref('');
+	const busy = ref(false); const errors = ref<Record<string, string>>({}); const saveError = ref(''); const uncertain = ref(false);
+	const editing = ref<string | null>(null); const adjusting = ref<FundingAccount | null>(null); const adjustment = ref(''); const reviewed = ref(false);
+	const blank = () => ({ label: '', type: 'bank' as FundingAccount['type'], bankName: '', accountName: '', accountNumber: '', currency: '', instructions: '' });
+	const draft = reactive(blank());
+	const pending = ref<{ id: string; body: Record<string, unknown>; label: string } | null>(null);
+	const totals = computed(() => fundingTotals(accounts.value));
+	const load = async () => { loading.value = true; error.value = ''; try { accounts.value = await fundingService.list(); } catch { error.value = 'Unable to load funding accounts.'; } finally { loading.value = false; } };
 	onMounted(load);
-
-	const total = computed(() => accounts.value.filter((a) => a.active).reduce((sum, a) => sum + (a.balance || 0), 0));
-
-	const blank = () => ({ label: "", type: "bank", bankName: "", accountName: "", accountNumber: "", currency: "", instructions: "" });
-	const editing = ref<string | null>(null); // account id, or "new"
-	const form = ref<Record<string, any>>(blank());
-	const saving = ref(false);
-
-	const openNew = () => {
-		form.value = blank();
-		editing.value = "new";
-	};
-	const openEdit = (a: FundingAccount) => {
-		form.value = { ...blank(), ...a };
-		editing.value = a.id;
-	};
-
+	const close = () => { editing.value = null; adjusting.value = null; pending.value = null; reviewed.value = false; errors.value = {}; saveError.value = ''; uncertain.value = false; };
+	const edit = (account?: FundingAccount) => { close(); Object.assign(draft, blank(), account ? Object.fromEntries(Object.keys(blank()).map(key => [key, (account as any)[key] || ''])) : {}); editing.value = account?.id || 'new'; };
+	const adjust = (account: FundingAccount) => { close(); adjusting.value = account; adjustment.value = ''; };
 	const save = async () => {
-		const { label, type, bankName, accountName, accountNumber, currency, instructions } = form.value;
-		const body = { label, type, bankName, accountName, accountNumber, currency, instructions };
-		saving.value = true;
+		if (busy.value || uncertain.value) return;
+		errors.value = {}; saveError.value = '';
+		if (adjusting.value) {
+			if (!/^-?\d+(\.\d{1,2})?$/.test(adjustment.value) || !parseTransferAmount(adjustment.value.replace(/^-/, ''))) errors.value.adjustment = 'Enter a non-zero signed amount with up to two decimal places.';
+			if (Object.keys(errors.value).length) return;
+			if (!reviewed.value) { reviewed.value = true; return; }
+		} else if (editing.value) {
+			if (draft.label.trim().length < 2) errors.value.label = 'Enter at least two characters.';
+			if (!draft.accountNumber.trim()) errors.value.accountNumber = 'Enter an account number or destination.';
+			if (Object.keys(errors.value).length) return;
+		} else if (!pending.value) return;
+		busy.value = true;
 		try {
-			if (editing.value === "new") await fundingService.create(body as any);
-			else await fundingService.update(editing.value!, body as any);
-			editing.value = null;
-			await load();
-		} catch (e: any) {
-			errorAlert(e.message);
-		} finally {
-			saving.value = false;
-		}
-	};
-
-	const toggle = async (a: FundingAccount) => {
-		try {
-			await fundingService.update(a.id, { active: !a.active });
-			await load();
-		} catch (e: any) {
-			errorAlert(e.message);
-		}
-	};
-
-	const adjust = async (a: FundingAccount) => {
-		const input = prompt(`Adjust "${a.label}" balance by (use - to subtract):`, "");
-		if (input === null || input.trim() === "") return;
-		const amount = Number(input);
-		if (!Number.isFinite(amount) || amount === 0) return errorAlert("Enter a valid amount");
-		try {
-			await fundingService.update(a.id, { adjustment: amount });
-			await load();
-		} catch (e: any) {
-			errorAlert(e.message);
-		}
+			if (adjusting.value) await fundingService.update(adjusting.value.id, { adjustment: Number(adjustment.value) });
+			else if (pending.value) await fundingService.update(pending.value.id, pending.value.body);
+			else { const body = { ...draft, label: draft.label.trim(), currency: draft.currency.trim().toUpperCase() }; if (editing.value === 'new') await fundingService.create(body); else await fundingService.update(editing.value!, body); }
+			close(); successAlert('Funding account saved.'); await load();
+		} catch (e: any) { uncertain.value = !e.status || e.status >= 500; saveError.value = uncertain.value ? 'Outcome unknown. Refresh funding balances before making another change.' : e.message; }
+		finally { busy.value = false; }
 	};
 </script>
-
-<template>
-	<div>
-		<div class="card card-custom bg-light-success border-0 mb-5">
-			<div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
-				<div>
-					<div class="text-muted fw-semibold">Total funding balance</div>
-					<div class="fs-2hx fw-bold">{{ symbol }}{{ money(total, false) }}</div>
-					<div class="text-muted">{{ accounts.filter((a) => a.active).length }} active account(s)</div>
-				</div>
-				<button class="btn btn-primary" @click="openNew()">
-					<i class="ki-outline ki-plus fs-2"></i> Add account
-				</button>
-			</div>
-		</div>
-
-		<form v-if="editing" class="card mb-5" @submit.prevent="save()">
-			<div class="card-header"><h3 class="card-title">{{ editing === "new" ? "New" : "Edit" }} funding account</h3></div>
-			<div class="card-body row g-4">
-				<div class="col-md-6"><label class="form-label required">Label</label><input v-model="form.label" class="form-control" required minlength="2" placeholder="e.g. Main bank (USD)" /></div>
-				<div class="col-md-6">
-					<label class="form-label">Type</label>
-					<select v-model="form.type" class="form-select"><option value="bank">Bank</option><option value="crypto">Crypto</option><option value="other">Other</option></select>
-				</div>
-				<div class="col-md-6"><label class="form-label">Bank / network</label><input v-model="form.bankName" class="form-control" /></div>
-				<div class="col-md-6"><label class="form-label">Account name</label><input v-model="form.accountName" class="form-control" /></div>
-				<div class="col-md-6"><label class="form-label required">Account number / address</label><input v-model="form.accountNumber" class="form-control" required /></div>
-				<div class="col-md-6"><label class="form-label">Currency</label><input v-model="form.currency" class="form-control" placeholder="USD" /></div>
-				<div class="col-12"><label class="form-label">Instructions shown to users</label><textarea v-model="form.instructions" rows="3" class="form-control"></textarea></div>
-			</div>
-			<div class="card-footer d-flex justify-content-end gap-3">
-				<button type="button" class="btn btn-light" @click="editing = null">Cancel</button>
-				<button class="btn btn-primary" :disabled="saving">{{ saving ? "Saving..." : "Save" }}</button>
-			</div>
-		</form>
-
-		<div v-if="loading && !accounts.length" class="text-center py-10"><span class="spinner-border text-muted"></span></div>
-		<div v-else-if="!accounts.length" class="card"><div class="card-body text-center text-muted">No funding accounts yet. Add the bank or wallet your users deposit into.</div></div>
-
-		<div v-for="a in accounts" :key="a.id" class="card mb-4" :class="{ 'opacity-50': !a.active }">
-			<div class="card-body">
-				<div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-					<div>
-						<div class="fw-bold fs-4">
-							{{ a.label }}
-							<span class="badge badge-light-primary ms-2 text-uppercase">{{ a.type }}</span>
-							<span v-if="!a.active" class="badge badge-light-danger ms-1">hidden</span>
-						</div>
-						<div class="text-muted">
-							{{ [a.bankName, a.accountName, a.accountNumber, a.currency].filter(Boolean).join(" · ") }}
-						</div>
-					</div>
-					<div class="text-end">
-						<div class="text-muted fs-7">Balance</div>
-						<div class="fw-bold fs-2">{{ symbol }}{{ money(a.balance || 0, false) }}</div>
-					</div>
-				</div>
-				<div class="d-flex flex-wrap gap-2 mt-4">
-					<button class="btn btn-sm btn-light-primary" @click="adjust(a)">Adjust balance</button>
-					<button class="btn btn-sm btn-light" @click="openEdit(a)">Edit</button>
-					<button class="btn btn-sm btn-light-warning" @click="toggle(a)">{{ a.active ? "Hide from users" : "Show to users" }}</button>
-				</div>
-			</div>
-		</div>
-	</div>
-</template>
+<template><div><AppPageHeader title="Funding accounts" description="Manage customer deposit instructions and tracked funding balances."><button type="button" class="btn btn-light" :disabled="loading || busy" @click="load">Refresh</button><button type="button" class="btn btn-primary" :disabled="busy" @click="edit()">Add account</button></AppPageHeader><div class="d-flex flex-wrap gap-4 mb-7"><section v-for="[code, amount] in totals" :key="code" class="card border flex-grow-1"><div class="card-body p-6"><h2 class="text-gray-600 fs-7 mb-3">Active funding · {{ code }}</h2><strong class="fs-2">{{ adminMoney(amount) }}</strong></div></section></div><section v-if="editing || adjusting || pending" class="card border mb-7"><form class="card-body" novalidate @submit.prevent="save"><h2 class="fs-3 mb-5">{{ adjusting ? 'Adjust tracked balance' : pending ? 'Change customer visibility' : editing === 'new' ? 'New funding account' : 'Edit funding instructions' }}</h2><p v-if="saveError" role="alert" class="alert alert-danger">{{ saveError }}</p><template v-if="adjusting"><p class="text-gray-600">{{ adjusting.label }} · {{ adjusting.currency || 'Currency unspecified' }} · Current balance {{ adminMoney(adjusting.balance) }}</p><label for="funding-adjustment" class="form-label">Signed adjustment</label><input id="funding-adjustment" v-model="adjustment" class="form-control" :class="{ 'is-invalid': errors.adjustment }" inputmode="decimal" :disabled="busy || reviewed" placeholder="For example: -25.00 or 25.00" /><div class="invalid-feedback">{{ errors.adjustment }}</div><p v-if="reviewed" class="alert alert-warning mt-5">Apply {{ adminMoney(adjustment) }} {{ adjusting.currency }} to this tracked balance? Estimated result: {{ adminMoney(Number(adjusting.balance || 0) + Number(adjustment)) }}. This does not change customer balances. The server checks the latest balance and rejects negative results.</p></template><p v-else-if="pending" class="alert alert-warning">{{ pending.label }}</p><div v-else class="row g-5"><div class="col-md-6"><label for="funding-label" class="form-label">Label</label><input id="funding-label" v-model="draft.label" class="form-control" :class="{ 'is-invalid': errors.label }" :disabled="busy" /><div class="invalid-feedback">{{ errors.label }}</div></div><div class="col-md-6"><label for="funding-type" class="form-label">Type</label><select id="funding-type" v-model="draft.type" class="form-select" :disabled="busy"><option value="bank">Bank</option><option value="crypto">Crypto</option><option value="other">Other</option></select></div><div v-for="field in (['bankName', 'accountName', 'accountNumber', 'currency'] as const)" :key="field" class="col-md-6"><label :for="`funding-${field}`" class="form-label">{{ { bankName: 'Bank / network', accountName: 'Account name', accountNumber: 'Account number / destination', currency: 'Currency code' }[field] }}</label><input :id="`funding-${field}`" v-model="draft[field]" class="form-control" :class="{ 'is-invalid': errors[field] }" :disabled="busy" /><div class="invalid-feedback">{{ errors[field] }}</div></div><div class="col-12"><label for="funding-instructions" class="form-label">Customer instructions</label><textarea id="funding-instructions" v-model="draft.instructions" rows="4" class="form-control" :disabled="busy"></textarea></div></div><div class="d-flex flex-wrap gap-4 mt-6"><button type="submit" class="btn btn-primary" :disabled="busy || uncertain">{{ busy ? 'Saving…' : adjusting && !reviewed ? 'Review adjustment' : 'Confirm and save' }}</button><button type="button" class="btn btn-light" :disabled="busy" @click="close(); load()">{{ uncertain ? 'Close and refresh' : 'Cancel' }}</button><button v-if="reviewed && !uncertain" type="button" class="btn btn-light" :disabled="busy" @click="reviewed = false">Back to edit</button></div></form></section><AppLoadState :loading="loading" :error="error" :empty="!accounts.length" title="No funding accounts" description="Add an account to publish customer deposit instructions." @retry="load"><div class="row g-6"><div v-for="account in accounts" :key="account.id" class="col-xl-6"><section class="card border h-100"><div class="card-body"><div class="d-flex justify-content-between gap-4 mb-5"><h2 class="fs-3 mb-0 text-break">{{ account.label }}</h2><span class="badge h-25px" :class="account.active ? 'badge-light-success' : 'badge-light-warning'">{{ account.active ? 'Visible' : 'Hidden' }}</span></div><p class="text-gray-600 text-break">{{ account.bankName || account.type }} · {{ account.currency || 'Currency unspecified' }}</p><p class="text-break fw-semibold">{{ account.accountName }}<br />{{ account.accountNumber }}</p><p class="text-gray-600 text-break" style="white-space: pre-wrap">{{ account.instructions }}</p><p class="fs-3 fw-bold border-top pt-5">{{ adminMoney(account.balance, account.currency || '') }}</p><div class="d-flex flex-wrap gap-3"><button type="button" class="btn btn-sm btn-light-primary" :disabled="busy" @click="edit(account)">Edit</button><button type="button" class="btn btn-sm btn-light" :disabled="busy" @click="adjust(account)">Adjust balance</button><button type="button" class="btn btn-sm btn-light" :disabled="busy" @click="close(); pending = { id: account.id, body: { active: !account.active }, label: `${account.active ? 'Hide' : 'Show'} ${account.label} in customer deposit instructions? This does not move money.` }">{{ account.active ? 'Hide from customers' : 'Show to customers' }}</button></div></div></section></div></div></AppLoadState></div></template>

@@ -22,6 +22,7 @@ export const notificationMeta = (type: NotificationType | string): Meta => {
 export const notificationTarget = (n: INotification, base: string): { to: string; label: string } | null => {
 	if (!n.entityId) return null;
 	if (n.entityType === "transaction" && base === "/app") return { to: `/app/transaction/${n.entityId}`, label: "View transaction" };
-	if (n.entityType === "user" && base === "/admin") return { to: "/admin/users", label: "Open users" };
+	if (n.entityType === "user" && base === "/admin") return { to: `/admin/users/${encodeURIComponent(n.entityId)}`, label: "Open user" };
+	if (n.entityType === "transaction" && base === "/admin") return { to: `/admin/transaction/${encodeURIComponent(n.entityId)}`, label: "View transaction" };
 	return null;
 };

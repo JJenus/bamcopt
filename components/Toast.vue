@@ -1,89 +1,43 @@
 <script setup lang="ts">
-	import { formatMessageTime } from "~/utils/date";
-	import type { INotification } from "~/utils/interfaces/Notification";
-	import { notificationMeta } from "~/utils/notification";
-
-	/** Polls the unread count and pops a toast for new notifications. Click opens the notification. */
+	import { notificationMeta } from '~/utils/notification';
+	const { messages, dismiss, push } = useToasts();
 	const notifications = useNotifications();
-	const base = computed(() => (userData().data.value.userType === "admin" ? "/admin" : "/app"));
-
-	const MAX_VISIBLE = 3;
-	const VISIBLE_MS = 7000;
-	const toasts = ref<INotification[]>([]);
-	const timers = new Map<string, ReturnType<typeof setTimeout>>();
-
-	const dismiss = (id: string) => {
-		clearTimeout(timers.get(id));
-		timers.delete(id);
-		toasts.value = toasts.value.filter((t: INotification) => t.id !== id);
-	};
-
-	const open = async (n: INotification) => {
-		dismiss(n.id);
-		notifications.markRead(n);
-		await navigateTo(`${base.value}/notifications/${n.id}`);
-	};
-
-	watch(notifications.incoming, (list: INotification[]) => {
-		if (!list.length) return;
-		for (const n of list) {
-			toasts.value = [...toasts.value.filter((t: INotification) => t.id !== n.id), n].slice(-MAX_VISIBLE);
-			timers.set(n.id, setTimeout(() => dismiss(n.id), VISIBLE_MS));
-		}
-		notifications.incoming.value = [];
-	});
-
+	const user = userData().data;
+	const auth = useAuth();
+	const timers = new Map<number, ReturnType<typeof setTimeout>>();
+	const stop = (id: number) => { clearTimeout(timers.get(id)); timers.delete(id); };
+	const schedule = (id: number) => { stop(id); timers.set(id, setTimeout(() => dismiss(id), 6500)); };
 	let poll: ReturnType<typeof setInterval> | undefined;
-	const onVisible = () => document.visibilityState === "visible" && useAuth().isAuthenticated.value && notifications.refresh();
-
+	const refresh = () => { if (document.visibilityState === 'visible' && auth.isAuthenticated.value) void notifications.refresh(); };
 	onMounted(() => {
-		notifications.refresh();
-		poll = setInterval(() => {
-			if (useAuth().isAuthenticated.value) notifications.refresh();
-			else clearInterval(poll);
-		}, 15000);
-		document.addEventListener("visibilitychange", onVisible);
+		watch(messages, list => {
+			for (const id of timers.keys()) if (!list.some(item => item.id === id)) stop(id);
+			for (const item of list) if (!timers.has(item.id)) schedule(item.id);
+		}, { immediate: true });
+		watch(() => user.value.id, () => { messages.value = []; refresh(); }, { immediate: true });
+		watch(notifications.incoming, list => {
+			for (const item of list) {
+				const color = notificationMeta(item.type).color;
+				const tone = color === 'success' ? 'success' : color === 'danger' ? 'danger' : color === 'warning' ? 'warning' : 'info';
+				push(item.message, tone, { title: item.title, to: `${user.value.userType === 'admin' ? '/admin' : '/app'}/notifications/${item.id}` });
+			}
+			if (list.length) notifications.incoming.value = [];
+		});
+		poll = setInterval(refresh, 15000);
+		document.addEventListener('visibilitychange', refresh);
 	});
-
-	onUnmounted(() => {
-		if (poll) clearInterval(poll);
-		document.removeEventListener("visibilitychange", onVisible);
-		timers.forEach(clearTimeout);
-	});
+	onUnmounted(() => { timers.forEach(clearTimeout); timers.clear(); clearInterval(poll); document.removeEventListener('visibilitychange', refresh); });
 </script>
 
 <template>
-	<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090">
-		<TransitionGroup name="toast-slide">
-			<div
-				v-for="t in toasts"
-				:key="t.id"
-				class="toast show mb-3"
-				role="alert"
-				aria-live="assertive"
-				style="cursor: pointer"
-				@click="open(t)"
-			>
-				<div class="toast-header">
-					<i class="ki-outline fs-2 me-3" :class="[notificationMeta(t.type).icon, `text-${notificationMeta(t.type).color}`]"></i>
-					<strong class="me-auto">{{ t.title }}</strong>
-					<small>{{ formatMessageTime(t.createdAt) }}</small>
-					<button type="button" class="btn-close ms-2" aria-label="Close" @click.stop="dismiss(t.id)"></button>
-				</div>
-				<div class="toast-body">{{ t.message }}</div>
-			</div>
-		</TransitionGroup>
-	</div>
+	<div class="ui-toast-stack" aria-live="polite" aria-relevant="additions"><TransitionGroup name="ui-toast"><div v-for="item in messages" :key="item.id" class="ui-toast card shadow border" :role="item.tone === 'danger' ? 'alert' : 'status'" @mouseenter="stop(item.id)" @mouseleave="schedule(item.id)" @focusin="stop(item.id)" @focusout="schedule(item.id)"><div class="card-body d-flex align-items-start gap-4 p-5"><i :class="['ki-outline fs-2 mt-1', `text-${item.tone}`, item.tone === 'success' ? 'ki-check-circle' : item.tone === 'danger' ? 'ki-cross-circle' : 'ki-information-5']" aria-hidden="true"></i><div class="flex-grow-1" style="min-width: 0"><strong v-if="item.title" class="text-gray-900 d-block mb-2">{{ item.title }}</strong><p class="mb-0 text-gray-900 lh-lg text-break">{{ item.message }}</p><NuxtLink v-if="item.to" :to="item.to" class="fw-bold d-inline-block mt-3" @click="dismiss(item.id)">View notification <span aria-hidden="true">↗</span></NuxtLink></div><button type="button" class="btn btn-sm btn-icon btn-light flex-shrink-0" aria-label="Dismiss notification" @click="dismiss(item.id)"><i class="ki-outline ki-cross fs-3" aria-hidden="true"></i></button></div></div></TransitionGroup></div>
 </template>
 
 <style scoped>
-	.toast-slide-enter-active,
-	.toast-slide-leave-active {
-		transition: all 0.25s ease;
-	}
-	.toast-slide-enter-from,
-	.toast-slide-leave-to {
-		opacity: 0;
-		transform: translateX(24px);
-	}
+.ui-toast-stack { position: fixed; right: 24px; bottom: 24px; z-index: 1100; display: grid; gap: 12px; width: min(420px, calc(100vw - 32px)); pointer-events: none; }
+.ui-toast { pointer-events: auto; background: var(--bs-body-bg); }
+.ui-toast-enter-active, .ui-toast-leave-active { transition: opacity .18s, transform .18s; }
+.ui-toast-enter-from, .ui-toast-leave-to { opacity: 0; transform: translateY(12px); }
+@media (max-width: 991.98px) { .ui-toast-stack { right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion: reduce) { .ui-toast-enter-active, .ui-toast-leave-active { transition: none; } }
 </style>

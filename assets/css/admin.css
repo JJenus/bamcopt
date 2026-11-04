@@ -1,0 +1,12 @@
+.admin-shell .account-content { max-width: 1480px; }
+.admin-shell .admin-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.admin-shell .admin-table th { color: var(--bs-gray-600); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.admin-shell .admin-table td, .admin-shell .admin-table th { padding: 18px 16px; vertical-align: middle; }
+.admin-shell .admin-table td { border-bottom: 1px solid var(--bs-border-color); }
+.admin-shell .admin-row:hover { background: var(--bs-gray-100); }
+.admin-shell .admin-identity { min-width: 0; }
+.admin-shell .admin-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
+.admin-shell .card, .admin-shell input, .admin-shell select, .admin-shell textarea { min-width: 0; }
+.admin-shell .menu { z-index: 1020; }
+@media (max-width: 1199.98px) { .admin-shell .admin-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .admin-shell .admin-grid { grid-template-columns: 1fr; } }
+@media (max-width: 575.98px) { .admin-shell .admin-metrics { gap: 12px; } .admin-shell .admin-table td, .admin-shell .admin-table th { padding: 14px 10px; } }

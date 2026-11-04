@@ -11,13 +11,11 @@
 </script>
 
 <template>
-	<div
-		role="button"
-		tabindex="0"
-		class="notif-item d-flex align-items-start gap-4 px-5 py-4"
+	<button
+		type="button"
+		class="notif-item d-flex align-items-start gap-4 px-5 py-4 w-100 text-start border-0"
 		:class="isUnread ? 'bg-light-primary' : ''"
 		@click="$emit('open', notification)"
-		@keydown.enter="$emit('open', notification)"
 	>
 		<span class="symbol symbol-40px flex-shrink-0">
 			<span class="symbol-label" :class="`bg-light-${meta.color}`">
@@ -32,18 +30,19 @@
 			<div class="text-gray-700 fs-7 notif-clamp">{{ notification.message }}</div>
 		</div>
 		<span v-if="isUnread" class="bullet bullet-dot bg-primary h-8px w-8px mt-3 flex-shrink-0" title="Unread"></span>
-	</div>
+	</button>
 </template>
 
 <style scoped>
 	.notif-item {
 		cursor: pointer;
+		background: var(--bs-body-bg);
 		border-bottom: 1px solid var(--bs-border-color, rgba(128, 128, 128, 0.2));
 	}
 	.notif-item:hover,
 	.notif-item:focus-visible {
 		background-color: var(--bs-gray-100, rgba(128, 128, 128, 0.08));
-		outline: none;
+		outline: 2px solid var(--bs-primary);
 	}
 	.notif-clamp {
 		display: -webkit-box;

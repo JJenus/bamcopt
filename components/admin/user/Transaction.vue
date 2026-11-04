@@ -1,158 +1,19 @@
 <script setup lang="ts">
-	import type { Transaction } from "~/utils/interfaces/Transaction";
-	import "animate.css";
-	import currency from "currency.js";
-	import { formatLongDateTime } from "~/utils/date";
-
-	const config = useRuntimeConfig().public;
-
+	import type { Transaction } from '~/utils/interfaces/Transaction';
+	import { adminMoney, transactionStatuses } from '~/utils/admin-ui';
 	const props = defineProps<{ transaction: Transaction }>();
-	const isActive = (status: string, level: string) => {
-		if (status === "completed") {
-			return true; // Color the element if status is completed
-		} else if (
-			status === "awaiting" &&
-			(level === "processing" || level === "awaiting")
-		) {
-			return true; // Color the element if status is awaiting and level is processing
-		} else if (
-			status === "processing" &&
-			(level === "awaiting" || level === "completed")
-		) {
-			return false; // Do not color the element if status is processing and level is awaiting or completed
-		} else {
-			return false; // Do not color the element for any other combinations
-		}
-	};
-
-	const trans = ref<Transaction>({ ...props.transaction });
-	console.log("Trans", trans.value);
-	const edit = ref(false);
-	const loading = ref(false);
-
-	const money = (amount: string | number) => {
-		return currency(amount, { symbol: "" });
-	};
-
-	const save = () => {
-		loading.value = true;
-		transactionService
-			.update({ id: trans.value.id, status: trans.value.status, notes: trans.value.notes })
-			.then(() => {
-				successAlert("Saved!");
-				userData().fetchBalance(); // a failed transfer is refunded
-			})
-			.catch((e: ApiError) => errorAlert(e.message || "Failed to update"))
-			.finally(() => {
-				loading.value = false;
-			});
+	const emit = defineEmits<{ saved: [] }>();
+	const status = ref(''); const notes = ref(''); const review = ref(false); const busy = ref(false); const error = ref(''); const uncertain = ref(false);
+	watch(() => props.transaction, tx => { status.value = tx.status || ''; notes.value = tx.notes || ''; review.value = false; uncertain.value = false; }, { immediate: true });
+	const options = computed(() => transactionStatuses(props.transaction));
+	const refund = computed(() => status.value === 'failed' && props.transaction.status !== 'failed');
+	const save = async () => {
+		if (busy.value || uncertain.value || !props.transaction.id) return;
+		if (!review.value) { review.value = true; return; }
+		busy.value = true; error.value = '';
+		try { await transactionService.update({ id: props.transaction.id, ...(status.value !== props.transaction.status ? { status: status.value } : {}), ...(notes.value !== (props.transaction.notes || '') ? { notes: notes.value } : {}) }); review.value = false; successAlert('Transaction updated.'); emit('saved'); }
+		catch (e: any) { uncertain.value = !e.status || e.status >= 500; error.value = uncertain.value ? 'Outcome unknown. Reload this transaction and the sender’s balance before making another change.' : e.message; }
+		finally { busy.value = false; }
 	};
 </script>
-
-<template>
-	<div class="card transaction">
-		<div
-			class="card-body d-flex flex-column align-items-center justify-content-center"
-		>
-			<div class="fs-2">
-				To {{ transaction.beneficiary!.name }}
-				<button
-					@click="edit = !edit"
-					class="ms-3 btn btn-light-danger p-2"
-				>
-					<i v-if="edit" class="ki-solid ki-cross fs-2 pe-0"></i>
-					<i v-else class="ki-solid ki-pencil fs-2 pe-0"></i>
-				</button>
-			</div>
-			<div class="fs-3x fw-bold mb-5">
-				${{ money(transaction.amount) }}
-			</div>
-
-			<div class="mb-5 fs-2">Status: {{ trans.status }}</div>
-
-			<!-- Other data -->
-			<div class="card bg-gray-100 mb-4">
-				<div class="card-body pb-4 fw-bold">
-					<div v-if="edit">
-						<form @submit.prevent="save()">
-							<div class="mb-4">
-								<select
-									v-model="trans.status"
-									class="form-control"
-								>
-									<option value="processing">
-										Processing
-									</option>
-									<option value="awaiting">Awaiting</option>
-									<option value="awaiting">Completed</option>
-								</select>
-							</div>
-							<textarea
-								class="form-control mb-4"
-								cols="30"
-								rows="10"
-								v-model="trans.notes"
-							></textarea>
-							<button v-if="edit" class="btn btn-primary w-100">
-								<span
-									v-if="loading"
-									class="spinner-border spinner-border-sm"
-								></span>
-								<span v-else>Save</span>
-							</button>
-						</form>
-					</div>
-
-					<p v-else>
-						{{ transaction.notes }}
-					</p>
-				</div>
-			</div>
-
-			<div v-if="!edit" class="table-responsive">
-				<table class="table table-borderless">
-					<tbody>
-						<tr>
-							<td class="fw-bold text-muted">Recipient Name</td>
-							<td class="fw-bold text-end">
-								{{ trans.beneficiary!.name }}
-							</td>
-						</tr>
-						<tr>
-							<td class="fw-bold text-muted">Bank</td>
-							<td class="fw-bold text-end">
-								{{ trans.beneficiary!.bank }}
-							</td>
-						</tr>
-						<tr>
-							<td class="fw-bold text-muted">Account ID</td>
-							<td class="fw-bold text-end">
-								{{ trans.beneficiary!.destinationAccount }}
-							</td>
-						</tr>
-						<tr>
-							<td class="fw-bold text-muted">Transaction ID</td>
-							<td class="fw-bold text-end">
-								{{ trans.transactionId }}
-							</td>
-						</tr>
-						<tr>
-							<td colspan="2" class="text-center">
-								{{ formatLongDateTime(trans.createdAt) }}
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-
-			<div v-if="!edit" class="w-100">
-				<a
-					:href="`/track/transaction?id=${transaction.transactionId}`"
-					class="btn btn-primary w-100"
-					target="_blank"
-					>Track</a
-				>
-			</div>
-		</div>
-	</div>
-</template>
+<template><div class="admin-grid"><section class="card border"><div class="card-body"><h2 class="fs-3 mb-6">Recorded transaction</h2><strong class="fs-2x d-block mb-2">{{ adminMoney(transaction.amount) }}</strong><p class="text-gray-600 fs-8 mb-6">Account units · {{ transaction.type }}</p><dl><div v-for="[label, value] in [['Reference', transaction.transactionId || transaction.id], ['Status', transaction.status], ['Date', transaction.createdAt ? new Date(transaction.createdAt).toLocaleString() : 'Not recorded'], ['Beneficiary', transaction.beneficiary?.name || 'Not applicable'], ['Destination', transaction.beneficiary?.destinationAccount || 'Not applicable'], ['Bank', transaction.beneficiary?.bank || 'Not applicable'], ['Notes', transaction.notes || 'None']]" :key="String(label)" class="row g-3 py-4 border-bottom"><dt class="col-sm-4 text-gray-600 fw-normal">{{ label }}</dt><dd class="col-sm-8 mb-0 text-break" style="white-space: pre-wrap">{{ value }}</dd></div></dl></div></section><form class="card border" @submit.prevent="save"><div class="card-body"><h2 class="fs-4 mb-5">Update status / notes</h2><p v-if="error" role="alert" class="alert alert-danger">{{ error }}</p><label for="transaction-status" class="form-label">Status</label><select id="transaction-status" v-model="status" class="form-select mb-5" :disabled="busy || review || options.length === 1"><option v-if="!options.includes(status)" :value="status">{{ status }}</option><option v-for="option in options" :key="option" :value="option">{{ option }}</option></select><p v-if="options.length === 1" class="text-gray-600 fs-8">Status is locked by the financial rules. Notes can still be edited.</p><label for="transaction-notes" class="form-label">Notes</label><textarea id="transaction-notes" v-model="notes" rows="5" maxlength="5000" class="form-control" :disabled="busy || review"></textarea><div v-if="review" class="alert mt-6 lh-lg" :class="refund ? 'alert-danger' : 'alert-warning'"><strong class="d-block mb-2">{{ refund ? 'Refund confirmation' : 'Review transaction change' }}</strong>{{ refund ? 'Marking this external transfer as failed refunds the sender once. A failed transaction cannot be reopened.' : 'Confirm the new status and notes above. This updates the record; it does not initiate a new bank transfer.' }}</div><div class="d-flex flex-wrap gap-3 mt-6"><button type="submit" class="btn btn-primary" :disabled="busy || uncertain || (status === transaction.status && notes === (transaction.notes || ''))">{{ busy ? 'Saving…' : review ? 'Confirm update' : 'Review update' }}</button><button v-if="review && !uncertain" type="button" class="btn btn-light" :disabled="busy" @click="review = false">Back to edit</button><button v-if="uncertain" type="button" class="btn btn-light" @click="emit('saved')">Reload record</button></div></div></form></div></template>

@@ -53,15 +53,7 @@
 							class="symbol symbol-125px symbol-lg-150px symbol-fixed position-relative mt-n3"
 							bis_skin_checked="1"
 						>
-							<img
-								:src="
-									user?.imgUrl ||
-									'/assets/media/svg/avatars/blank.svg'
-								"
-								alt="image"
-								class="border border-white border-4"
-								style="border-radius: 20px"
-							/>
+							<AppAvatar :src="user?.imgUrl" :name="user?.name || ''" :email="user?.email || ''" :size="125" />
 							<div
 								class="position-absolute translate-middle bottom-0 start-100 ms-n1 mb-9 bg-success rounded-circle h-15px w-15px"
 								bis_skin_checked="1"

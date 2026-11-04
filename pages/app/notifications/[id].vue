@@ -1,8 +1,9 @@
 <script setup lang="ts">
-	useSeoMeta({ title: `Notification - ${useRuntimeConfig().public.APP}` });
+	definePageMeta({ key: route => route.fullPath });
+	useAccountPage('Notification');
 	const id = String(useRoute().params.id);
 </script>
 
 <template>
-	<NotificationsDetail base="/app" :id="id" />
+	<div><AppPageHeader title="Notification" description="Read the update and open its related account activity." /><NotificationsDetail base="/app" :id="id" /></div>
 </template>

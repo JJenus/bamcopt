@@ -1,183 +1,19 @@
 <script setup lang="ts">
-	import { type IUser } from "~/utils/interfaces/IUser";
-
+	import type { IUser } from '~/utils/interfaces/IUser';
 	const props = defineProps<{ user: IUser }>();
-	const form = ref({
-		title: "",
-		userId: props.user.id,
-		message: "",
-		type: "info",
-		status: "unread",
-	});
-
-	const submitButton = ref();
-
-	const notify = () => {
-		if (!form.value.title || !form.value.message) {
-			errorAlert("Fill form correctly");
-			return;
-		}
-
-		submitButton.value.setAttribute("data-kt-indicator", "on");
-		notificationService
-			.send(form.value)
-			.then(() => successAlert("Sent!"))
-			.catch(() => errorAlert("Failed!"))
-			.finally(() => {
-				submitButton.value.removeAttribute("data-kt-indicator");
-			});
+	const title = ref(''); const message = ref(''); const busy = ref(false); const review = ref(false);
+	const error = ref(''); const errors = ref<Record<string, string>>({});
+	const submit = async () => {
+		if (busy.value) return;
+		errors.value = {}; error.value = '';
+		if (!title.value.trim()) errors.value.title = 'Enter a title.';
+		if (message.value.trim().length < 3) errors.value.message = 'Enter at least three characters.';
+		if (Object.keys(errors.value).length) return;
+		if (!review.value) { review.value = true; return; }
+		busy.value = true;
+		try { await notificationService.send({ userId: props.user.id, title: title.value.trim(), message: message.value.trim(), type: 'info' }); title.value = ''; message.value = ''; review.value = false; successAlert('Notification sent.'); }
+		catch { error.value = 'Unable to confirm delivery. Check before sending the message again.'; }
+		finally { busy.value = false; }
 	};
 </script>
-
-<template>
-	<div class="card mb-5 mb-xl-10" bis_skin_checked="1">
-		<!--begin::Card header-->
-		<div
-			class="card-header border-0 cursor-pointer"
-			role="button"
-			data-bs-toggle="collapse"
-			data-bs-target="#kt_account_profile_details"
-			aria-expanded="true"
-			aria-controls="kt_account_profile_details"
-			bis_skin_checked="1"
-		>
-			<!--begin::Card title-->
-			<div class="card-title m-0" bis_skin_checked="1">
-				<h3 class="fw-bold m-0">Send Notification</h3>
-			</div>
-			<!--end::Card title-->
-		</div>
-		<!--begin::Card header-->
-
-		<!--begin::Content-->
-		<div
-			id="kt_account_settings_profile_details"
-			class="collapse show"
-			bis_skin_checked="1"
-		>
-			<!--begin::Form-->
-			<form
-				@submit.prevent="notify()"
-				class="form fv-plugins-bootstrap5 fv-plugins-framework"
-				novalidate
-			>
-				<!--begin::Card body-->
-				<div class="card-body border-top p-9" bis_skin_checked="1">
-					<!--begin::Input group-->
-					<div class="row mb-6" bis_skin_checked="1">
-						<!--begin::Label-->
-						<label
-							class="col-lg-4 col-form-label required fw-semibold fs-6"
-							>Title</label
-						>
-						<!--end::Label-->
-
-						<!--begin::Col-->
-						<div
-							class="col-lg-8 fv-row fv-plugins-icon-container"
-							bis_skin_checked="1"
-						>
-							<input
-								type="text"
-								name="title"
-								class="form-control form-control-lg form-control-solid"
-								placeholder="Title"
-								required
-								v-model="form.title"
-							/>
-							<div
-								class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"
-								bis_skin_checked="1"
-							></div>
-						</div>
-						<!--end::Col-->
-					</div>
-					<!--end::Input group-->
-
-					<!--begin::Input group-->
-					<div class="row mb-6" bis_skin_checked="1">
-						<!--begin::Label-->
-						<label class="col-lg-4 col-form-label fw-semibold fs-6">
-							<span class="required">Message</span>
-
-							<span
-								class="ms-1"
-								data-bs-toggle="tooltip"
-								aria-label="message is required"
-								data-bs-original-title="message is required"
-								data-kt-initialized="1"
-							>
-								<i
-									class="ki-outline ki-information-5 text-gray-500 fs-6"
-								></i
-							></span>
-						</label>
-						<!--end::Label-->
-
-						<!--begin::Col-->
-						<div
-							class="col-lg-8 fv-row fv-plugins-icon-container"
-							bis_skin_checked="1"
-						>
-							<textarea
-								class="form-control form-control-lg form-control-solid"
-								rows="4"
-								placeholder="Type a message"
-								required
-								v-model="form.message"
-							>
-							</textarea>
-							<div
-								class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"
-								bis_skin_checked="1"
-							></div>
-						</div>
-						<!--end::Col-->
-					</div>
-					<!--end::Input group-->
-				</div>
-				<!--end::Card body-->
-
-				<!--begin::Actions-->
-				<div
-					class="card-footer d-flex justify-content-end py-6 px-9"
-					bis_skin_checked="1"
-				>
-					<button
-						type="reset"
-						class="btn btn-light btn-active-light-primary me-2"
-					>
-						Discard
-					</button>
-					<button
-						type="submit"
-						ref="submitButton"
-						class="btn btn-primary"
-					>
-						<span class="indicator-label">
-							<i class="ki-duotone ki-user-tick fs-3">
-								<span class="path1"></span>
-								<span class="path2"></span>
-								<span class="path3"></span>
-							</i>
-							Send
-						</span>
-						<!--end::Indicator label-->
-
-						<!--begin::Indicator progress-->
-						<span class="indicator-progress">
-							Please wait...
-							<span
-								class="spinner-border spinner-border-sm align-middle ms-2"
-							></span>
-						</span>
-					</button>
-				</div>
-				<!--end::Actions-->
-				<input type="hidden" />
-			</form>
-			<!--end::Form-->
-		</div>
-		<!--end::Content-->
-	</div>
-</template>
+<template><form class="card border" novalidate @submit.prevent="submit"><div class="card-body"><h2 class="fs-3 mb-3">Send account notification</h2><p class="text-gray-600 mb-6">An in-app message to {{ user.email }}. This does not send an email or change the account.</p><p v-if="error" role="alert" class="alert alert-danger">{{ error }}</p><label for="notify-title" class="form-label">Title</label><input id="notify-title" v-model="title" class="form-control" :class="{ 'is-invalid': errors.title }" :disabled="busy || review" maxlength="200" /><div class="invalid-feedback">{{ errors.title }}</div><label for="notify-message" class="form-label mt-5">Message</label><textarea id="notify-message" v-model="message" class="form-control" :class="{ 'is-invalid': errors.message }" :disabled="busy || review" rows="5" maxlength="5000"></textarea><div class="invalid-feedback">{{ errors.message }}</div><p v-if="review" class="alert alert-warning mt-6">Review the recipient and message above. Confirm to send.</p><div class="d-flex gap-4 mt-6"><button type="submit" class="btn btn-primary" :disabled="busy">{{ busy ? 'Sending…' : review ? 'Confirm and send' : 'Review notification' }}</button><button v-if="review" type="button" class="btn btn-light" :disabled="busy" @click="review = false">Back to edit</button></div></div></form></template>

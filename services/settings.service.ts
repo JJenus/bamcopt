@@ -9,4 +9,5 @@ export const settingsService = {
 			: apiRequest<AppSettings>("/app-settings", { method: "POST", body: settings }),
 	listLevels: () => apiRequest<AccountLevel[]>("/account-levels"),
 	createLevel: (level: Partial<AccountLevel>) => apiRequest<AccountLevel>("/account-levels", { method: "POST", body: level }),
+	updateLevel: (level: Partial<AccountLevel> & { id: string }) => apiRequest<AccountLevel>("/account-levels", { method: "PUT", body: level }),
 };

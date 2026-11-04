@@ -2,10 +2,11 @@
 	import { formatLongDateTime } from "~/utils/date";
 
 	const id = String(useRoute().params.id);
+	definePageMeta({ key: route => route.fullPath });
 	const money = useAppSettings().formatMoney;
 	const me = computed(() => userData().data.value.id);
 
-	useSeoMeta({ title: `Transaction - ${useRuntimeConfig().public.APP}` });
+	useAccountPage('Transaction details');
 
 	const tx = ref<Awaited<ReturnType<typeof transactionService.get>> | null>(null);
 	const loading = ref(true);
@@ -44,7 +45,7 @@
 </script>
 
 <template>
-	<div class="card card-custom border-0 min-h-500px mb-5 mb-lg-10">
+	<div><AppPageHeader title="Transaction details" description="Review the transaction linked to your notification." /><div class="card border mb-7">
 		<div class="card-header border-0 pt-6">
 			<NuxtLink to="/app/transactions" class="btn btn-sm btn-light">
 				<i class="ki-outline ki-arrow-left fs-4"></i> All transactions
@@ -96,5 +97,6 @@
 				</dl>
 			</div>
 		</div>
+	</div>
 	</div>
 </template>

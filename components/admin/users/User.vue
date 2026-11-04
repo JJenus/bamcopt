@@ -25,10 +25,7 @@
 				class="symbol symbol-65px symbol-circle mb-5"
 				bis_skin_checked="1"
 			>
-				<img
-					:src="user.imgUrl || '/assets/media/svg/avatars/blank.svg'"
-					alt="image"
-				/>
+				<AppAvatar :src="user.imgUrl" :name="user.name || ''" :email="user.email || ''" :size="65" />
 				<div
 					class="bg-success position-absolute rounded-circle translate-middle start-100 top-100 border border-4 border-body h-15px w-15px ms-n3 mt-n3"
 					bis_skin_checked="1"

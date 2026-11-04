@@ -1,96 +1,10 @@
 <script setup lang="ts">
-	import currency from "currency.js";
-
-	const user = userData().data;
-	const accountLevel = userData().account.value.accountLevel;
-	const tiers = useAppSettings().accountLevels;
-
-	const money = (amount: string | number) => {
-		return currency(amount, { symbol: "" }).format();
-	};
+	useAccountPage('Account & limits');
+	const { state, account, load } = useAccountWorkspace();
+	const { accountLevels, load: loadSettings } = useAppSettings();
+	const { money, currencyCode } = useAccountMoney();
+	const currentTier = computed(() => accountLevels.value.find(item => item.accountLevel === account.value.accountLevel));
+	const limit = (value: number) => Number(value) > 0 ? money(value) : 'No configured limit';
 </script>
-<template>
-	<div>
-		<SettingsBack hub="/app/settings" :titles="{ '/app/account-info': 'Account & limits' }" />
-		<!--begin::Engage widget 12-->
-		<div class="card card-custom border-0 h-md-100 mb-5 mb-lg-10">
-			<div
-				class="card-header border-0 text-center d-flex flex-column fs-6 justify-content-center p-4"
-			>
-				<h1 class="text-center h2 pt-4 fw-bold">Account Information</h1>
-				<div class="text-muted">View your transaction limits</div>
-				<div
-					class="d-flex align-items-center justify-content-center mt-5"
-				>
-					<button
-						class="btn btn-primary"
-						data-bs-toggle="modal"
-						data-bs-target="#upgrade-account"
-					>
-						Upgrade account
-					</button>
-				</div>
-			</div>
-			<!--begin::Body-->
-			<div class="card-body ps-xl-15 min-h-400px">
-				<div class="row g-5 row-cols-1">
-					<div v-for="tier in tiers" class="col">
-						<div
-							:class="
-								accountLevel === tier.accountLevel
-									? 'card-custom bg-light-primary'
-									: ''
-							"
-							class="card"
-						>
-							<div class="card-header py-0 m-0">
-								<div class="d-flex align-items-center m-0">
-									<i
-										:class="
-											accountLevel === tier.accountLevel
-												? 'text-success'
-												: 'text-info'
-										"
-										class="ki-solid ki-medal-star fs-3x me-2"
-									>
-									</i>
-									<h3 class="h3 p-0 m-0">{{ tier.title }}</h3>
-									<span
-										v-if="
-											accountLevel === tier.accountLevel
-										"
-										class="badge bg-success ms-3"
-										>active</span
-									>
-								</div>
-							</div>
-							<div class="card-body m-0">
-								<div
-									class="mb-4 d-flex justify-content-between"
-								>
-									<div class="text-muted">
-										Daily Transaction Limit
-									</div>
-									<div class="fw-bold ms-auto text-end">
-										{{ money(tier.dailyLimit) }}
-									</div>
-								</div>
-								<div class="d-flex justify-content-between">
-									<div class="text-muted">
-										Maximum Account Balance
-									</div>
-									<div class="fw-bold ms-auto text-end">
-										{{ money(tier.maxBalanceLimit) }}
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-			<!--end::Body-->
-		</div>
-		<!--end::Engage widget 12-->
-		<AppUpgradeAccount />
-	</div>
-</template>
+
+<template><div><NuxtLink to="/app/settings" class="d-inline-block fw-semibold fs-7 mb-6">← Settings</NuxtLink><AppPageHeader title="Account & limits" description="Understand your account level and the limits that apply." /><AppLoadState :loading="state.loading && !state.ready" :error="!state.ready ? state.error : ''" @retry="load"><div class="row g-6 mb-8"><div class="col-lg-6"><section class="card border h-100"><div class="card-body p-7"><span class="badge badge-light-primary mb-6">Current account</span><h2 class="fs-2 mb-6">{{ currentTier?.title || `Level ${account.accountLevel}` }}</h2><dl class="mb-0"><dt class="text-gray-600 fw-normal mb-2">Account number</dt><dd class="d-flex align-items-center gap-4 fw-bold text-break mb-5">{{ account.accountNumber || 'Not assigned' }}<AppCopyButton v-if="account.accountNumber" :value="String(account.accountNumber)" label="account number" /></dd><dt class="text-gray-600 fw-normal mb-2">Account status</dt><dd class="fw-bold text-capitalize mb-5">{{ account.status }}</dd><dt class="text-gray-600 fw-normal mb-2">Configured display currency</dt><dd class="fw-bold mb-0">{{ currencyCode || 'Not available' }}</dd></dl></div></section></div><div class="col-lg-6"><section class="card border h-100"><div class="card-body p-7"><h2 class="fs-3 mb-7">Your current limits</h2><template v-if="currentTier"><dl class="mb-0"><dt class="text-gray-600 fw-normal mb-3">Daily transfer limit</dt><dd class="fs-2 fw-bold mb-7">{{ limit(currentTier.dailyLimit) }}</dd><dt class="text-gray-600 fw-normal mb-3">Maximum account balance</dt><dd class="fs-2 fw-bold mb-0">{{ limit(currentTier.maxBalanceLimit) }}</dd></dl><p class="text-gray-600 fs-7 lh-lg mt-7 mb-0">Transfers are also subject to your available balance, account status, and required checks. Limits are enforced by the server.</p></template><div v-else><p class="text-gray-600">Limit information is unavailable. Do not assume that your account has no limits.</p><button type="button" class="btn btn-light btn-sm" @click="loadSettings(true)">Refresh limit information</button></div></div></section></div></div><AppUpgradeAccount /></AppLoadState></div></template>

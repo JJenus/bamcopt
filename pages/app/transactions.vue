@@ -1,34 +1,25 @@
 <script setup lang="ts">
-	const transactions = userData().transactions;
-	const { stats, load } = useUserStats();
-	const money = useAppSettings().formatMoney;
-	const symbol = computed(() => useAppSettings().settings.value.currencySymbol);
-	const fmt = (n: number) => `${symbol.value}${money(n || 0, false)}`;
-
-	load();
+	import { filterActivity } from '~/utils/account-ui';
+	useAccountPage('Activity');
+	const { state, user, load } = useAccountWorkspace();
+	const search = ref('');
+	const direction = ref('all');
+	const status = ref('all');
+	const page = ref(1);
+	const pageSize = 15;
+	const filtered = computed(() => filterActivity(state.value.transactions, user.value.id, search.value, direction.value, status.value));
+	const pages = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize)));
+	const visible = computed(() => filtered.value.slice((page.value - 1) * pageSize, page.value * pageSize));
+	watch([search, direction, status], () => { page.value = 1; });
+	watch(pages, count => { if (page.value > count) page.value = count; });
+	const reset = () => { search.value = ''; direction.value = 'all'; status.value = 'all'; };
 </script>
 
 <template>
-	<div class="card card-custom border-0 min-h-500px h-md-100 mb-5 mb-lg-10">
-		<div class="card-body ps-xl-15">
-			<h1 class="text-center h1 pt-4 fw-bold mb-8">Transactions</h1>
-			<div class="row g-3 mb-8">
-				<div class="col-6 col-md-4"><StatCard label="Received" :value="fmt(stats.received)" icon="ki-duotone ki-double-left" tone="success" /></div>
-				<div class="col-6 col-md-4"><StatCard label="Sent" :value="fmt(stats.sent)" icon="ki-duotone ki-double-right" tone="danger" /></div>
-				<div class="col-6 col-md-4"><StatCard label="Net" :value="fmt(stats.net)" icon="ki-outline ki-chart-line-up" tone="info" /></div>
-				<div class="col-6 col-md-4"><StatCard label="Received this month" :value="fmt(stats.monthReceived)" icon="ki-outline ki-calendar" tone="success" /></div>
-				<div class="col-6 col-md-4"><StatCard label="Sent this month" :value="fmt(stats.monthSent)" icon="ki-outline ki-calendar" tone="danger" /></div>
-				<div class="col-6 col-md-4"><StatCard label="Pending" :value="`${stats.pending} of ${stats.count}`" icon="ki-outline ki-time" tone="warning" /></div>
-			</div>
-
-			<div class="d-nonie">
-				<AppTransactionEntry
-					:showDetails="true"
-					v-for="transact in transactions"
-					:key="transact.id || transact.transactionId || Math.random()"
-					:transaction="transact"
-				/>
-			</div>
-		</div>
+	<div><AppPageHeader title="Activity" description="Find a payment, check its status, or open a receipt."><NuxtLink to="/app/transfer" class="btn btn-primary">New transfer <span aria-hidden="true">↗</span></NuxtLink></AppPageHeader>
+		<section class="card border"><div class="card-body"><div class="row g-4 pb-7 border-bottom mb-2"><div class="col-lg-6"><label for="activity-search" class="form-label">Search activity</label><input id="activity-search" v-model="search" type="search" class="form-control" placeholder="Name, bank, account, or reference" /></div><div class="col-sm-6 col-lg-3"><label for="activity-direction" class="form-label">Direction</label><select id="activity-direction" v-model="direction" class="form-select"><option value="all">All activity</option><option value="incoming">Money in</option><option value="outgoing">Money out</option></select></div><div class="col-sm-6 col-lg-3"><label for="activity-status" class="form-label">Status</label><select id="activity-status" v-model="status" class="form-select"><option value="all">All statuses</option><option v-for="value in ['completed', 'pending', 'awaiting', 'processing', 'failed']" :key="value" :value="value">{{ value.charAt(0).toUpperCase() + value.slice(1) }}</option></select></div></div>
+			<AppLoadState :loading="state.loading && !state.ready" :error="state.activityError" :empty="!filtered.length" :title="state.transactions.length ? 'No matching transactions' : 'No activity yet'" :description="state.transactions.length ? 'Try another search or clear the filters.' : 'Your recorded funding and transfers will appear here.'" @retry="load"><AppActivityList :transactions="visible" /></AppLoadState>
+			<div class="d-flex flex-wrap justify-content-between align-items-center gap-4 mt-7"><span class="text-gray-600 fs-7" aria-live="polite">{{ filtered.length }} transactions · Page {{ page }} of {{ pages }}</span><div class="d-flex gap-3"><button v-if="search || direction !== 'all' || status !== 'all'" type="button" class="btn btn-sm btn-light" @click="reset">Clear filters</button><button type="button" class="btn btn-sm btn-light" :disabled="page === 1" @click="page--">Previous</button><button type="button" class="btn btn-sm btn-light" :disabled="page >= pages" @click="page++">Next</button></div></div>
+		</div></section>
 	</div>
 </template>

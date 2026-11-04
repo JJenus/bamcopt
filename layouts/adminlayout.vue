@@ -1,97 +1,22 @@
-<script setup>
-	
+<script setup lang="ts">
+	import '~/assets/css/account.css';
+	import '~/assets/css/admin.css';
+	const config = useRuntimeConfig().public;
+	const route = useRoute();
+	const links = [{ to: '/admin', label: 'Overview', icon: 'ki-element-11' }, { to: '/admin/users', label: 'Users', icon: 'ki-people' }, { to: '/admin/funding', label: 'Funding', icon: 'ki-bank' }, { to: '/admin/notifications', label: 'Notifications', icon: 'ki-notification-bing' }, { to: '/admin/settings', label: 'Settings', icon: 'ki-setting-2' }];
+	const active = (to: string) => to === '/admin' ? route.path === to : route.path.startsWith(to);
 </script>
 
 <template>
-	<!--begin::App-->
-	<div
-		id="kt_app_body"
-		data-kt-app-header-fixed-mobile="true"
-		data-kt-app-sidebar-enabled="true"
-		data-kt-app-sidebar-fixed="true"
-		data-kt-app-sidebar-push-header="true"
-		data-kt-app-sidebar-push-toolbar="true"
-		data-kt-app-sidebar-push-footer="true"
-		data-kt-app-aside-enabled="true"
-		data-kt-app-aside-fixed="true"
-		data-kt-app-aside-push-header="true"
-		data-kt-app-aside-push-toolbar="true"
-		data-kt-app-aside-push-footer="true"
-		data-bs-theme-mode="dark"
-		class="app-default"
-	>
-		<Toast class="mt-15 mt-lg-5" />
-		<div
-			class="d-flex flex-column flex-root app-root position-relative"
-			id="kt_app_root"
-		>
-			<!--begin::Page-->
-			<div
-				class="app-page flex-column flex-column-fluid"
-				id="kt_app_page"
-			>
-				<!--begin::Header-->
-				<AdminHeader />
-				<!--end::Header-->
-				<!--begin::Wrapper-->
-				<div
-					class="app-wrapper flex-column flex-row-fluid"
-					id="kt_app_wrapper"
-				>
-					<!--begin::Sidebar-->
-					<AdminSideBar />
-					<!--end::Sidebar-->
-
-					<!-- MAIN VIEW -->
-					<!--begin::Main-->
-					<div
-						class="app-main flex-column flex-row-fluid"
-						id="kt_app_main"
-					>
-						<!--begin::Content wrapper-->
-						<div class="d-flex flex-column flex-column-fluid">
-							<!--begin::Content-->
-							<div
-								id="kt_app_content"
-								class="app-content flex-column-fluid"
-							>
-								<!--begin::Content container-->
-								<div
-									id="kt_app_content_container"
-									class="app-container container-fluid pb-20 pb-lg-10"
-								>
-									<slot />
-								</div>
-								<!--end::Content container-->
-							</div>
-							<!--end::Content-->
-						</div>
-						<!--end::Content wrapper-->
-					</div>
-
-					<!--begin::aside-->
-					<AdminAsideBar />
-					<!--end::aside-->
-				</div>
-				<!--end::Wrapper-->
-			</div>
-			<!--end::Page-->
-			<AdminMobileNavBar />
-		</div>
-		<!--end::App-->
-
-		<!--end::Engage toolbar--><!--begin::Scrolltop-->
-		<div
-			style="margin-bottom: 40px"
-			id="kt_scrolltop"
-			class="scrolltop"
-			data-kt-scrolltop="true"
-		>
-			<i class="ki-outline ki-arrow-up"></i>
-		</div>
-		<!--end::Scrolltop-->
-
-		<!--begin::Modals-->
-		<AdminTopUpWithEmail />
+	<div class="account-shell admin-shell">
+		<a href="#admin-content" class="skip-link btn btn-primary">Skip to content</a>
+		<aside class="account-sidebar border-end p-6 d-flex flex-column" aria-label="Administration">
+			<NuxtLink to="/admin" class="d-flex align-items-center gap-3 px-3 py-5 mb-8"><img :src="String(config.LOGO_URL)" width="34" height="34" alt="" /><span class="fs-3 fw-bold text-gray-900">{{ config.APP }}</span></NuxtLink>
+			<p class="text-gray-600 text-uppercase fs-8 fw-bold px-4 mb-4">Administration</p>
+			<nav class="d-grid gap-2"><NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="account-nav-link" :class="{ active: active(link.to) }" :aria-current="active(link.to) ? 'page' : undefined"><i :class="['ki-outline fs-2', link.icon]" aria-hidden="true"></i>{{ link.label }}</NuxtLink></nav>
+			<div class="mt-auto border-top pt-6"><NuxtLink to="/admin/top-up" class="btn btn-primary w-100">Credit user account</NuxtLink><p class="text-gray-600 fs-8 mt-4 mb-0 lh-lg">Review financial changes before confirming. Server checks remain authoritative.</p></div>
+		</aside>
+		<div class="account-main"><header class="account-topbar border-bottom px-5 px-lg-9 d-flex justify-content-between align-items-center gap-4"><NuxtLink to="/admin" class="fw-bold text-gray-900 fs-4">Admin workspace</NuxtLink><div class="d-flex align-items-center gap-4"><NotificationsBell base="/admin" /><AppProfileMenu base="/admin" /></div></header><main id="admin-content" class="account-content" tabindex="-1"><slot /></main></div>
+		<nav class="account-mobile-nav d-lg-none border-top d-flex" aria-label="Admin mobile navigation"><NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="flex-fill d-flex flex-column justify-content-center align-items-center gap-2 fs-9" :class="{ active: active(link.to) }" :aria-current="active(link.to) ? 'page' : undefined"><i :class="['ki-outline fs-2', link.icon]" aria-hidden="true"></i>{{ link.label }}</NuxtLink></nav>
 	</div>
 </template>

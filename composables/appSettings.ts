@@ -19,6 +19,9 @@ export const useAppSettings = () => {
 	const loading = useState<boolean>("app-settings-loading", () => false);
 
 	const load = async (force = false) => {
+		// These requests are not awaited by SSR. Never serialize an in-flight server
+		// loading flag that would prevent the hydrated browser from loading settings.
+		if (import.meta.server) return;
 		if (loading.value || (loaded.value && !force)) return;
 
 		loading.value = true;

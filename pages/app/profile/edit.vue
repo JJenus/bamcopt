@@ -1,357 +1,60 @@
 <script setup lang="ts">
-	const user = userData().data;
-	const save = () =>{
-		successAlert("Saved");
-	}
+	useAccountPage('Edit personal details');
+	const { user, account, state } = useAccountWorkspace();
+	const auth = useAuth();
+	const draft = reactive({ name: '', phone: '', address: '', city: '', country: '' });
+	const dirty = ref(false);
+	const busy = ref(false);
+	const errors = ref<Record<string, string>>({});
+	const error = ref('');
+	const file = ref<File | null>(null);
+	const fileInput = ref<HTMLInputElement>();
+	const preview = ref('');
+	const fields = [
+		{ key: 'name', label: 'Full name', autocomplete: 'name', type: 'text' },
+		{ key: 'phone', label: 'Phone number', autocomplete: 'tel', type: 'tel' },
+		{ key: 'address', label: 'Street address', autocomplete: 'street-address', type: 'text' },
+		{ key: 'city', label: 'City', autocomplete: 'address-level2', type: 'text' },
+		{ key: 'country', label: 'Country', autocomplete: 'country-name', type: 'text' },
+	] as const;
+	const clearPreview = () => { if (preview.value) URL.revokeObjectURL(preview.value); preview.value = ''; };
+	const reset = () => {
+		for (const field of fields) draft[field.key] = user.value[field.key] || '';
+		clearPreview(); file.value = null; dirty.value = false; errors.value = {}; error.value = '';
+		if (fileInput.value) fileInput.value.value = '';
+	};
+	watch(user, () => { if (!dirty.value && !busy.value) reset(); }, { immediate: true });
+	const choosePhoto = (event: Event) => {
+		const selected = (event.target as HTMLInputElement).files?.[0];
+		if (!selected) return;
+		errors.value.photo = '';
+		if (!['image/jpeg', 'image/png'].includes(selected.type) || !/\.(jpe?g|png)$/i.test(selected.name)) { errors.value.photo = 'Choose a JPG or PNG photo.'; return; }
+		if (selected.size > 2 * 1024 * 1024) { errors.value.photo = 'Your photo must be 2 MB or smaller.'; return; }
+		clearPreview(); file.value = selected; preview.value = URL.createObjectURL(selected); dirty.value = true;
+	};
+	const save = async () => {
+		if (busy.value || !state.value.ready) return;
+		errors.value = {}; error.value = '';
+		for (const field of fields) {
+			if (!draft[field.key].trim()) errors.value[field.key] = `${field.label} is required.`;
+			else if (draft[field.key].length > 254) errors.value[field.key] = 'Use 254 characters or fewer.';
+		}
+		if (Object.keys(errors.value).length) return;
+		const id = user.value.id;
+		const token = auth.token.value;
+		busy.value = true;
+		try {
+			const payload: Record<string, string> = Object.fromEntries(fields.map(field => [field.key, draft[field.key].trim()]));
+			if (file.value) payload.imgUrl = await uploadService.image(file.value);
+			if (user.value.id !== id || auth.token.value !== token) return;
+			const updated = await userService.update(id, payload);
+			if (user.value.id !== id || auth.token.value !== token) return;
+			user.value = { ...user.value, ...updated, account: updated.account || account.value };
+			dirty.value = false; reset(); successAlert('Your personal details have been saved.');
+		} catch { error.value = 'Your changes could not be saved. Please try again. Your current account details have not been changed on this screen.'; }
+		finally { busy.value = false; }
+	};
+	onUnmounted(clearPreview);
 </script>
 
-<template>
-	<div id="kt_account_settings_profile_details" class="collapse show">
-		<!--begin::Form-->
-		<form
-			@submit.prevent="save()"
-			id="kt_account_profile_details_form"
-			class="form fv-plugins-bootstrap5 fv-plugins-framework"
-			novalidate
-		>
-			<!--begin::Card body-->
-			<!--begin::Input group-->
-			<div class="row mb-6 justify-content-center align-items-center">
-				<!--begin::Label-->
-				<label class="col-lg-4 col-form-label fw-semibold fs-6"
-					>Avatar</label
-				>
-				<!--end::Label-->
-
-				<!--begin::Col-->
-				<div class="col-lg-8">
-					<!--begin::Image input-->
-					<div
-						class="image-input image-input-outline image-input-empty"
-						data-kt-image-input="true"
-						:style="`background-image: ${user.imgUrl};`"
-					>
-						<!--begin::Preview existing avatar-->
-						<div
-							class="image-input-wrapper w-125px h-125px"
-							style="background-image: none"
-						></div>
-						<!--end::Preview existing avatar-->
-
-						<!--begin::Label-->
-						<label
-							class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
-							data-kt-image-input-action="change"
-							data-bs-toggle="tooltip"
-							aria-label="Change avatar"
-							data-bs-original-title="Change avatar"
-							data-kt-initialized="1"
-						>
-							<i class="ki-outline ki-pencil fs-7"></i>
-							<!--begin::Inputs-->
-							<input
-								type="file"
-								name="avatar"
-								accept=".png, .jpg, .jpeg"
-							/>
-							<input
-								type="hidden"
-								name="avatar_remove"
-								value="1"
-							/>
-							<!--end::Inputs-->
-						</label>
-						<!--end::Label-->
-
-						<!--begin::Cancel-->
-						<span
-							class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
-							data-kt-image-input-action="cancel"
-							data-bs-toggle="tooltip"
-							aria-label="Cancel avatar"
-							data-bs-original-title="Cancel avatar"
-							data-kt-initialized="1"
-						>
-							<i class="ki-outline ki-cross fs-2"></i>
-						</span>
-						<!--end::Cancel-->
-
-						<!--begin::Remove-->
-						<span
-							class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
-							data-kt-image-input-action="remove"
-							data-bs-toggle="tooltip"
-							aria-label="Remove avatar"
-							data-bs-original-title="Remove avatar"
-							data-kt-initialized="1"
-						>
-							<i class="ki-outline ki-cross fs-2"></i>
-						</span>
-						<!--end::Remove-->
-					</div>
-					<!--end::Image input-->
-
-					<!--begin::Hint-->
-					<div class="form-text">
-						Allowed file types: png, jpg, jpeg.
-					</div>
-					<!--end::Hint-->
-				</div>
-				<!--end::Col-->
-			</div>
-			<!--end::Input group-->
-
-			<!--begin::Input group-->
-			<div class="row mb-6">
-				<!--begin::Label-->
-				<label class="col-lg-4 col-form-label required fw-semibold fs-6"
-					>Full Name</label
-				>
-				<!--end::Label-->
-
-				<!--begin::Col-->
-				<div class="col-lg-8">
-					<!--begin::Row-->
-					<div class="row">
-						<!--begin::Col-->
-						<div class="col fv-row fv-plugins-icon-container">
-							<input
-								type="text"
-								name="name"
-								class="form-control form-control-lg form-control-solid mb-3 mb-lg-0"
-								placeholder="Full name"
-								v-model="user.name"
-							/>
-							<div
-								class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"
-							></div>
-						</div>
-						<!--end::Col-->
-					</div>
-					<!--end::Row-->
-				</div>
-				<!--end::Col-->
-			</div>
-			<!--end::Input group-->
-
-			<!--begin::Input group-->
-			<div class="row mb-6">
-				<!--begin::Label-->
-				<label class="col-lg-4 col-form-label fw-semibold fs-6">
-					<span class="required">Contact Phone</span>
-
-					<span
-						class="ms-1"
-						data-bs-toggle="tooltip"
-						aria-label="Phone number must be active"
-						data-bs-original-title="Phone number must be active"
-						data-kt-initialized="1"
-					>
-						<i
-							class="ki-outline ki-information-5 text-gray-500 fs-6"
-						></i
-					></span>
-				</label>
-				<!--end::Label-->
-
-				<!--begin::Col-->
-				<div class="col-lg-8 fv-row fv-plugins-icon-container">
-					<input
-						type="tel"
-						name="phone"
-						class="form-control form-control-lg form-control-solid"
-						placeholder="Phone number"
-						v-model="user.phone"
-					/>
-					<div
-						class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"
-					></div>
-				</div>
-				<!--end::Col-->
-			</div>
-			<!--end::Input group-->
-
-			<!--begin::Input group-->
-			<div class="row mb-6">
-				<!--begin::Label-->
-				<label class="col-lg-4 col-form-label required fw-semibold fs-6"
-					>Address</label
-				>
-				<!--end::Label-->
-
-				<!--begin::Col-->
-				<div class="col-lg-8 fv-row fv-plugins-icon-container">
-					<input
-						type="text"
-						name="address"
-						class="form-control form-control-lg form-control-solid"
-						placeholder="Address"
-						v-model="user.address"
-					/>
-					<div
-						class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"
-					></div>
-				</div>
-				<!--end::Col-->
-			</div>
-			<!--end::Input group-->
-
-			<!--begin::Input group-->
-			<div class="row mb-6">
-				<!--begin::Label-->
-				<label class="col-lg-4 col-form-label fw-semibold fs-6"
-					>City</label
-				>
-				<!--end::Label-->
-
-				<!--begin::Col-->
-				<div class="col-lg-8 fv-row">
-					<input
-						type="text"
-						name="city"
-						class="form-control form-control-lg form-control-solid"
-						placeholder="City"
-						v-model="user.city"
-					/>
-				</div>
-				<!--end::Col-->
-			</div>
-			<!--end::Input group-->
-
-			<!--begin::Input group-->
-			<div class="row mb-6">
-				<!--begin::Label-->
-				<label class="col-lg-4 col-form-label fw-semibold fs-6">
-					<span class="required">Country</span>
-
-					<span
-						class="ms-1"
-						data-bs-toggle="tooltip"
-						aria-label="Country of origination"
-						data-bs-original-title="Country of origination"
-						data-kt-initialized="1"
-					>
-						<i
-							class="ki-outline ki-information-5 text-gray-500 fs-6"
-						></i
-					></span>
-				</label>
-				<!--end::Label-->
-
-				<!--begin::Col-->
-				<div class="col-lg-8 fv-row fv-plugins-icon-container">
-					<input
-						type="text"
-						name="country"
-						class="form-control form-control-lg form-control-solid mb-3 mb-lg-0"
-						placeholder="Country"
-						v-model="user.country"
-					/>
-					<div
-						class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"
-					></div>
-				</div>
-				<!--end::Col-->
-			</div>
-			<!--end::Input group-->
-
-			<!--begin::Input group-->
-			<div class="row mb-6">
-				<!--begin::Label-->
-				<label class="col-lg-4 col-form-label required fw-semibold fs-6"
-					>Communication</label
-				>
-				<!--end::Label-->
-
-				<!--begin::Col-->
-				<div class="col-lg-8 fv-row fv-plugins-icon-container">
-					<!--begin::Options-->
-					<div class="d-flex align-items-center mt-3">
-						<!--begin::Option-->
-						<label
-							class="form-check form-check-custom form-check-inline form-check-solid me-5"
-						>
-							<input
-								class="form-check-input"
-								name="communication[]"
-								type="checkbox"
-								value="1"
-							/>
-							<span class="fw-semibold ps-2 fs-6"> Email </span>
-						</label>
-						<!--end::Option-->
-
-						<!--begin::Option-->
-						<label
-							class="form-check form-check-custom form-check-inline form-check-solid"
-						>
-							<input
-								class="form-check-input"
-								name="communication[]"
-								type="checkbox"
-								value="2"
-							/>
-							<span class="fw-semibold ps-2 fs-6"> Phone </span>
-						</label>
-						<!--end::Option-->
-					</div>
-					<!--end::Options-->
-					<div
-						class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"
-					></div>
-				</div>
-				<!--end::Col-->
-			</div>
-			<!--end::Input group-->
-
-			<!--begin::Input group-->
-			<div class="row mb-0">
-				<!--begin::Label-->
-				<label class="col-lg-4 col-form-label fw-semibold fs-6">
-					Receive Notifications
-				</label>
-				<!--begin::Label-->
-
-				<!--begin::Label-->
-				<div class="col-lg-8 d-flex align-items-center">
-					<div
-						class="form-check form-check-solid form-switch form-check-custom fv-row"
-					>
-						<input
-							class="form-check-input w-45px h-30px"
-							type="checkbox"
-							id="allowmarketing"
-							checked
-						/>
-						<label
-							class="form-check-label"
-							for="allowmarketing"
-						></label>
-					</div>
-				</div>
-				<!--begin::Label-->
-			</div>
-			<!--end::Input group-->
-
-			<!--begin::Actions-->
-			<div class="d-flex justify-content-end py-6 px-9">
-				<button
-					type="reset"
-					class="btn btn-light btn-active-light-primary me-2"
-				>
-					Discard
-				</button>
-				<button
-					type="submit"
-					class="btn btn-primary"
-					id="kt_account_profile_details_submit"
-				>
-					Save Changes
-				</button>
-			</div>
-			<!--end::Actions-->
-			<input type="hidden" />
-		</form>
-		<!--end::Form-->
-	</div>
-</template>
+<template><div><NuxtLink to="/app/profile" class="d-inline-block fw-semibold fs-7 mb-6">← Personal details</NuxtLink><AppPageHeader title="Edit personal details" description="Changes are only applied after you save them." /><form class="card border" novalidate :aria-busy="busy" @submit.prevent="save"><div class="card-body p-7 p-lg-9"><p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p><div class="d-flex flex-wrap align-items-center gap-6 border-bottom pb-8 mb-8"><AppAvatar :src="preview || user.imgUrl" :size="80" /><div><label for="profile-photo" class="form-label">Profile photo</label><input id="profile-photo" ref="fileInput" type="file" accept="image/jpeg,image/png" class="form-control" :class="{ 'is-invalid': errors.photo }" :aria-invalid="!!errors.photo" aria-describedby="profile-photo-feedback profile-photo-help" :disabled="busy" @change="choosePhoto" /><div id="profile-photo-feedback" class="invalid-feedback">{{ errors.photo }}</div><p id="profile-photo-help" class="text-gray-600 fs-8 mt-3 mb-0">JPG or PNG, up to 2 MB. Do not upload identity documents.</p></div></div><div class="row g-6"><div v-for="field in fields" :key="field.key" :class="['city', 'country'].includes(field.key) ? 'col-md-6' : 'col-12'"><label :for="`profile-${field.key}`" class="form-label">{{ field.label }}</label><input :id="`profile-${field.key}`" v-model="draft[field.key]" :name="field.key" :type="field.type" :autocomplete="field.autocomplete" required maxlength="254" class="form-control" :class="{ 'is-invalid': errors[field.key] }" :aria-invalid="!!errors[field.key]" :aria-describedby="`profile-${field.key}-feedback`" :disabled="busy" @input="dirty = true; errors[field.key] = ''" /><div :id="`profile-${field.key}-feedback`" class="invalid-feedback">{{ errors[field.key] }}</div></div></div><div class="mt-9 d-flex flex-wrap align-items-center gap-4"><button type="submit" class="btn btn-primary" :disabled="busy || !dirty || !state.ready">{{ busy ? 'Saving…' : 'Save changes' }}</button><button type="button" class="btn btn-light" :disabled="busy || !dirty" @click="reset">Discard changes</button><span v-if="dirty" class="text-gray-600 fs-7">You have unsaved changes.</span></div></div></form></div></template>

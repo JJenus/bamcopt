@@ -1,5 +1,6 @@
 import type { AuthToken } from "~/utils/interfaces/AuthToken";
 import type { IUser } from "~/utils/interfaces/IUser";
+import { createAccountWorkspace } from './useAccountWorkspace';
 
 const AUTH_COOKIE = "auth";
 const AUTH_MAX_AGE = 60 * 60 * 24; // one day
@@ -18,6 +19,22 @@ export const useAuth = () => {
 	const openAuth = useState<string>("authAction", () => "login");
 
 	const hydrate = (auth: AuthToken | null | undefined) => {
+		const previousId = (authData.value?.user as IUser | undefined)?.id;
+		const nextId = (auth?.user as IUser | undefined)?.id;
+		if (!auth || previousId !== nextId || authData.value?.token !== auth.token) {
+			appUser.reset();
+			useNotifications().reset();
+			useToasts().messages.value = [];
+			useState('account-workspace').value = createAccountWorkspace();
+			useState('user-transactions-loaded').value = false;
+			useState('user-transactions-loading').value = false;
+			useState('transfer-recipient').value = undefined;
+			useState('transaction-form').value = undefined;
+			useState('transfer-recipient-found').value = '';
+			useState('admin-directory').value = [];
+			useState('admin-directory-loading').value = false;
+			useState('admin-directory-error').value = '';
+		}
 		authData.value = auth ?? null;
 
 		const user = auth?.user as IUser | undefined;

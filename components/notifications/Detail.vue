@@ -34,6 +34,7 @@
 		</div>
 
 		<div class="card-body">
+			<p v-if="bell.actionError.value" role="alert" class="alert alert-warning">{{ bell.actionError.value }}</p>
 			<div v-if="loading" class="text-center text-muted py-15">Loading…</div>
 
 			<div v-else-if="notFound || !notification" class="text-center py-15">
