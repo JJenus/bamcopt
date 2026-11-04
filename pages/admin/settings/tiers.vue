@@ -1,8 +1,7 @@
 <script setup lang="ts">
-	import axios from "axios";
 	import Cleave from "cleave.js";
 	import currency from "currency.js";
-	import { AccountLevel } from "utils/interfaces/AccountLevel";
+	import type { AccountLevel } from "~/utils/interfaces/AccountLevel";
 
 	const tiers = useAppSettings().accountLevels;
 	const loading = ref(false);
@@ -52,26 +51,13 @@
 
 		loading.value = true;
 
-		const axiosConfig: any = {
-			method: "POST",
-			url: `${useRuntimeConfig().public.BE_API}/account-levels`,
-			timeout: 20000,
-			data: vData,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				tiers.value.push(response.data);
+		settingsService
+			.createLevel(vData)
+			.then((level) => {
+				tiers.value.push(level);
 				successAlert("Saved!");
 			})
-			.catch((error): void => {
-				console.log(error);
-				errorAlert("Error occurred");
-			})
+			.catch(() => errorAlert("Error occurred"))
 			.finally(() => (loading.value = false));
 	};
 </script>

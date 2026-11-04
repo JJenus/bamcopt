@@ -1,9 +1,5 @@
 <script setup lang="ts">
-	import axios, { type AxiosResponse } from "axios";
-	import moment from "moment";
-	import type { AuthToken } from "~/utils/interfaces/AuthToken";
 
-	const appConfig = useRuntimeConfig();
 	const auth = useAuth();
 	const appResource = useAppResource();
 	const userCountry = appResource.country;
@@ -43,27 +39,9 @@
 		password: "",
 	});
 
-	const iToken: AuthToken = {
-		userId: "",
-		otp: {
-			token: "1234",
-			createdAt: moment().format(),
-			allowedTime: 0,
-		},
-	};
-
-	const isExpired = (createdAt: string): boolean => {
-		const createdMoment = moment(createdAt);
-		const now = createdMoment.add(15, "minutes");
-
-		console.log(`From ${createdAt} to ${now}`);
-
-		return moment().isAfter(now);
-	};
-
-	const authToken = useState<AuthToken>("login-auth", () => iToken);
-
 	const authAction = useState<string>("authAction", () => "login");
+	// OTP challenge from step 1 of the login (the code itself only exists in the e-mail)
+	const loginChallenge = ref<string | null>(null);
 	const loginButton = ref();
 	const regButton = ref();
 	const closeModalBtn = ref();
@@ -137,70 +115,34 @@
 	};
 
 	const checkOTP = () => {
+		if (!loginChallenge.value) {
+			errorAlert("Go back to login");
+			return;
+		}
 		verify.value.loading = true;
-		setTimeout(() => {
-			verify.value.loading = false;
-			console.log(
-				"Is Expired: ",
-				authToken.value.otp
-			);
-
-			if (verify.value.otp !== authToken.value.otp?.token+'') {
-				errorAlert("Invalid Token");
-				return;
-			}
-			
-			if (isExpired(authToken.value.otp.createdAt)) {
-				errorAlert("Token expired. Go back to login");
-				return;
-			}
-
-			auth.login(authToken.value);
-		}, 2000);
+		authService
+			.verifyOtp(loginChallenge.value, verify.value.otp)
+			.then((session) => auth.login(session))
+			.catch((err: ApiError) => errorAlert(err.message))
+			.finally(() => (verify.value.loading = false));
 	};
 
 	const login = () => {
-		const axiosConfig: any = {
-			method: "POST",
-			data: form.value,
-			url: `${appConfig.public.BE_API}/auth/login`,
-			timeout: 20000,
-		};
-
 		loading.value = true;
-
 		loginButton.value.setAttribute("data-kt-indicator", "on");
 
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<AuthToken, any>) => {
-				console.log("Response", response.data);
-				const authUser = response.data.user;
-				authToken.value = response.data;
-
-				auth.login(authToken.value);
-
-				// if (authUser.userType === "admin") {
-				// 	closeModalBtn.value.click();
-				// 	auth.login(response.data);
-				// } else {
-				// 	authAction.value = "otp";
-				// }
-
-				// successAlert("Welcome!");
+		authService
+			.login(form.value.email, form.value.password)
+			.then((res) => {
+				loginChallenge.value = res.challenge;
+				verify.value.otp = res.devOtp ?? ""; // only present in local dev without a mail server
+				authAction.value = "otp";
 			})
-			.catch((error): void => {
-				const errRes = error.response;
-				console.log("Status: ", errRes?.status);
-				if (
-					errRes?.status !== null &&
-					(errRes?.status === 401 || errRes?.status === 404)
-				) {
+			.catch((err: ApiError) => {
+				if (err.status === 401 || err.status === 404) {
 					isInvalidCredentials.value = true;
-					invalidMessage.value = errRes.data.message;
-					console.log(errRes.data);
+					invalidMessage.value = err.message;
 				} else errorAlert("Error occurred, check your internet!");
-				console.log(error);
 			})
 			.finally(() => {
 				loading.value = false;
@@ -221,30 +163,17 @@
 		loading.value = true;
 		rForm.value.password = form.value.password;
 
-		const axiosConfig: any = {
-			method: "post",
-			data: rForm.value,
-			url: `${appConfig.public.BE_API}/auth/register`,
-			timeout: 30000,
-		};
-
 		regButton.value.setAttribute("data-kt-indicator", "on");
 
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<AuthToken, any>) => {
-				console.log(response.data);
+		authService
+			.register(rForm.value)
+			.then(() => {
 				successAlert("Account Created. Login now!");
 				authAction.value = "login";
-				// auth.login(response.data);
 			})
-			.catch((error): void => {
-				const errRes = error.response;
-				console.log("Status: ", errRes?.status);
-				if (errRes?.status !== null && errRes?.status === 409) {
-					errorAlert(errRes.data.message);
-					console.log(errRes.data);
-				} else errorAlert("Error occurred, check your internet!");
+			.catch((err: ApiError) => {
+				if (err.status === 409) errorAlert(err.message);
+				else errorAlert("Error occurred, check your internet!");
 			})
 			.finally(() => {
 				loading.value = false;

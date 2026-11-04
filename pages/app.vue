@@ -1,5 +1,4 @@
 <script setup lang="ts">
-	import { type IUser } from "~/utils/interfaces/IUser";
 	import { UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
 
 	definePageMeta({
@@ -10,18 +9,15 @@
 		title: `App - ${useRuntimeConfig().public.APP}`,
 	});
 
-	const appConfig = useRuntimeConfig();
-
-	const userId = useAuth().userData.value?.userId;
+	const auth = useAuth();
 	const { data, reloadUser } = userData();
 
 	onMounted(() => {
-		const cookie = useAuth().userAuth;
-		if (cookie.value === null || cookie.value === undefined) {
-			console.log(cookie.value);
+		if (!auth.userAuth.value) {
 			infoAlert("Session expired");
-			return useAuth().logout();
+			return auth.logout();
 		}
+
 		reloadUser();
 
 		if (data.value.status === UserAccountStatus.HOLD) {
@@ -31,7 +27,7 @@
 		if (data.value.status === UserAccountStatus.SUSPENDED) {
 			errorAlert("Account suspended. Contact support immediately!");
 			setTimeout(() => {
-				useAuth().logout();
+				auth.logout();
 			}, 5000);
 		}
 	});

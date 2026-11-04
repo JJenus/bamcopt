@@ -1,5 +1,3 @@
-import axios from "axios";
-
 export const useAppResource = () => {
 	const countries = useState<any[]>("form-countries", () => []);
 	const country = useState<any>("user-country", () => {});
@@ -4568,26 +4566,8 @@ export const useAppResource = () => {
 		return countries.value[0]; // Return null if country is not found
 	};
 
-	const setCountry = () => {
-		axios
-			.request({
-				url: "https://api.ip2location.io",
-				method: "GET",
-			})
-			.then((res): void => {
-				// console.log("Res Data: ", res.data);
-				country.value = findCountryByAltSpellings(
-					res.data.country_code
-				);
-			})
-			.catch((e) => console.log("Data: ", e));
-	};
-
-	// setCountry();
-
 	return {
 		countries,
 		country,
-		setCountry,
 	};
 };

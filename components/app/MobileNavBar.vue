@@ -1,36 +1,23 @@
 <script setup lang="ts">
 	const route = useRoute();
-	const path = route.path;
-	console.log(path);
-	const active = ref(path);
 </script>
 <template>
 	<div
-		style="z-index: 1049"
-		class="position-fixed bg-light bottom-0 start-0 w-100 d-lg-none"
+		style="z-index: 1049; padding-bottom: env(safe-area-inset-bottom)"
+		class="position-fixed bg-light bottom-0 start-0 w-100 d-lg-none border-top"
 	>
-		<div
-			@click="closeDrawer()"
-			data-kt-drawer-dismiss="true"
-			class="w-100 d-flex align-items-center justify-content-between p-3"
-		>
+		<div @click="closeDrawer()" data-kt-drawer-dismiss="true" class="w-100 d-flex align-items-stretch">
 			<NuxtLink
-				@click="active = nav.dir"
 				v-for="nav in navs"
+				:key="nav.dir"
 				:to="nav.dir"
-				:class="
-					nav.name == 'Scan'
-						? 'd-none'
-						: active == nav.dir
-						? 'active'
-						: ''
-				"
-				class="btn btn-icon w-35px btn-active-primary btn-outline-dashed hover-scale btn-icon-primary btn-text-primary h-40px w-40px h-md-40px"
+				:class="isNavActive(nav.dir, route.path) ? 'text-primary' : 'text-gray-600'"
+				class="flex-fill d-flex flex-column align-items-center justify-content-center py-2"
 			>
-				<!-- <NuxtLink ></NuxtLink> -->
-				<i :class="nav.icon" class="fs-2x">
-					<i v-for="path in nav.paths" :class="path"></i>
+				<i :class="nav.icon" class="fs-1">
+					<i v-for="path in nav.paths" :key="path" :class="path"></i>
 				</i>
+				<span class="fs-9 fw-semibold mt-1" :class="isNavActive(nav.dir, route.path) ? 'fw-bold' : ''">{{ nav.name }}</span>
 			</NuxtLink>
 		</div>
 	</div>

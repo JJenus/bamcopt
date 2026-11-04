@@ -48,10 +48,10 @@
 	// Functions
 
 	const addAmount = (num: number | string) => {
-		const newValue = form.value.amount + num;
+		const newValue = String(form.value.amount || "") + num;
 		form.value.amount = newValue;
 
-		cleave.value.setRawValue(newValue);
+		cleave.value?.setRawValue(newValue);
 	};
 
 	const delNum = async () => {
@@ -74,11 +74,8 @@
 		delNum(); // Start the function initially
 	};
 	const enterAmount = (event: any) => {
-		const num: string = moneyInput.value.value.replace(/[a-zA-Z]/g, "");
-		if (num.includes(".")) {
-			const part: string[] = num.split(".");
-			form.value.amount = part[0] + "." + part[1].slice(0, 2);
-			console.log(form.value.amount);
+		if (cleave.value) {
+			form.value.amount = cleave.value.getRawValue();
 		}
 	};
 
@@ -90,6 +87,13 @@
 			numeralDecimalMark: ".",
 			numeralDecimalScale: 2, // Number of decimal places
 		});
+	});
+
+	onUnmounted(() => {
+		if (cleave.value) {
+			cleave.value.destroy();
+			cleave.value = null;
+		}
 	});
 </script>
 

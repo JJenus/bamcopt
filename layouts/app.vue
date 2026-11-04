@@ -13,7 +13,6 @@
 				defer: true,
 			},
 		],
-		__dangerouslyDisableSanitizers: ["script"],
 	});
 
 	

@@ -1,64 +1,34 @@
-import axios from "axios";
-import { type Transaction } from "~/utils/interfaces/Transaction";
+import type { Transaction } from "~/utils/interfaces/Transaction";
 
 export const useUserSettings = () => {
-	const appConfig = useRuntimeConfig();
 	const user = userData().data;
 	const transferBank = useState<string>("bank-recipient", () => "bancopt");
-
 	const transactions = useState<Transaction[]>("user-transactions", () => []);
+	const loaded = useState<boolean>("user-transactions-loaded", () => false);
+	const loading = useState<boolean>("user-transactions-loading", () => false);
 
-	const load = (obj: any, url: string) => {
-		const axiosConfig: any = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/${url}`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
+	const fetchTransactions = async (force = false) => {
+		const userId = user.value.id;
+		if (!userId || loading.value || (loaded.value && !force)) return;
 
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				obj.value = response.data;
-				// console.log(settings.value);
-			})
-			.catch((error): void => {
-				console.log(error);
-			});
+		loading.value = true;
+		try {
+			transactions.value = await transactionService.listForUser(userId);
+			loaded.value = true;
+		} catch {
+			// The service layer reports the failure; keep the cached list.
+		} finally {
+			loading.value = false;
+		}
 	};
 
-	const fetchTransactions = () => {
-		const axiosConfig = {
-			method: "get",
-			url: `${appConfig.public.BE_API}/transactions/${user.value.id}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
+	watch(
+		() => user.value.id,
+		(userId: string) => {
+			if (userId) fetchTransactions();
+		},
+		{ immediate: true }
+	);
 
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data.sort(
-					(a: any, b: any) =>
-						new Date(b.createdAt).getTime() -
-						new Date(a.createdAt).getTime()
-				);
-				transactions.value = data;
-			})
-			.catch((error) => {
-				console.log(error);
-			});
-	};
-
-	fetchTransactions();
-
-	return {
-		transferBank,
-		transactions,
-		load,
-	};
+	return { transferBank, transactions, fetchTransactions };
 };

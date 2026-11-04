@@ -1,5 +1,4 @@
 <script setup lang="ts">
-	import axios, { type AxiosRequestConfig } from "axios";
 
 	definePageMeta({
 		layout: "auth",
@@ -13,15 +12,17 @@
 	});
 
 	const appConfig = useRuntimeConfig();
-	const submitButton = ref();
+	const route = useRoute();
+	const submitButton = ref<HTMLButtonElement>();
 
-	const id = useRoute().query["token"];
+	const token =
+		typeof route.query["token"] === "string"
+			? route.query["token"]
+			: undefined;
 	const form = ref({
-		id: id,
 		password: "",
 		cPassword: "",
 	});
-	console.log(id);
 	const loading = ref(false);
 
 	const save = () => {
@@ -31,37 +32,22 @@
 		) {
 			return errorAlert("Errors detected in the form!");
 		}
-		if (!form.value.id) {
+		if (!token) {
 			infoAlert(
 				"Please follow the link on your email or request for password reset again!"
 			);
 			navigateTo("/sign-in");
 			return;
 		}
-		const { cPassword, ...userData } = form.value;
 
-		const axiosConfig: AxiosRequestConfig = {
-			method: "post",
-			data: userData,
-			url: `${appConfig.public.BE_API}/auth/reset-password`,
-			timeout: 15000,
-		};
-        console.log("Saving...")
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data;
-				console.log(data);
-				successAlert("Success. Proceed to sign in.");
-			})
-			.catch((error) => {
-				console.log(error);
-				const data = error.response.data;
-                errorAlert("Unable to set new password. Try again.")
-			})
+		loading.value = true;
+		authService
+			.resetPassword(token, form.value.password)
+			.then(() => successAlert("Success. Proceed to sign in."))
+			.catch(() => errorAlert("Unable to set new password. Try again."))
 			.finally(() => {
-				console.log("Done...")
-				submitButton.value.removeAttribute("data-kt-indicator");
+				loading.value = false;
+				submitButton.value?.removeAttribute("data-kt-indicator");
 			});
 	};
 </script>

@@ -1,13 +1,14 @@
 <script setup lang="ts">
-	import axios from "axios";
 
-	const appConfig = useRuntimeConfig();
 	const submitButton = ref();
 
 	const form = ref({
 		email: "",
 		amount: "",
+		fundingAccountId: "",
 	});
+	const funding = useFunding();
+	onMounted(() => funding.load());
 
 	const save = () => {
 		// successAlert("Saved!");
@@ -17,35 +18,17 @@
 			return;
 		}
 
-		const bal = {
-			email: form.value.email,
-			amount: Number(form.value.amount),
-		};
-
-		const axiosConfig = {
-			method: "post",
-			data: bal,
-			url: `${appConfig.public.BE_API}/account`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
 		submitButton.value.setAttribute("data-kt-indicator", "on");
 
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data;
-				console.log(data);
-				successAlert("Saved! New balance: " + data.amount);
+		accountService
+			.topUp(form.value.email, Number(form.value.amount), form.value.fundingAccountId || undefined)
+			.then((account) => {
+				successAlert("Saved! New balance: " + account.amount);
 				userData().fetchBalance();
 				userData().getUsers();
+				funding.load();
 			})
-			.catch((error) => {
-				errorAlert("Unable to update balance");
-				console.log(error);
-			})
+			.catch((e: ApiError) => errorAlert(e.message || "Unable to update balance"))
 			.finally(() => {
 				submitButton.value.removeAttribute("data-kt-indicator");
 			});
@@ -167,6 +150,16 @@
 							></div>
 						</div>
 						<!--end::Input group-->
+
+						<div class="d-flex flex-column mb-7">
+							<label class="fs-6 fw-semibold form-label mb-2">Received in (optional)</label>
+							<select v-model="form.fundingAccountId" class="form-select form-select-solid">
+								<option value="">Not tracked</option>
+								<option v-for="a in funding.accounts.value" :key="a.id" :value="a.id">
+									{{ a.label }}
+								</option>
+							</select>
+						</div>
 
 						<!--begin::Actions-->
 						<div class="text-center pt-15">

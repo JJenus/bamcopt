@@ -1,74 +1,73 @@
-import { AuthToken } from "../utils/interfaces/AuthToken";
+import type { AuthToken } from "~/utils/interfaces/AuthToken";
+import type { IUser } from "~/utils/interfaces/IUser";
 
+const AUTH_COOKIE = "auth";
+const AUTH_MAX_AGE = 60 * 60 * 24; // one day
+
+/**
+ * Auth state is derived from the `auth` cookie (the SSR source of truth) and mirrored
+ * into Nuxt state so every component/service shares the same instance.
+ */
 export const useAuth = () => {
 	const appUser = userData();
 	const authData = useState<AuthToken | null>("user", () => null);
-	const authenticated = useState<boolean>("isAuthenticated", () => false);
-	const userAuth = useCookie<AuthToken>("auth", {
-		maxAge: 60 * 60 * 24,
+	const userAuth = useCookie<AuthToken | null>(AUTH_COOKIE, {
+		maxAge: AUTH_MAX_AGE,
+		sameSite: "lax",
 	});
 	const openAuth = useState<string>("authAction", () => "login");
+
+	const hydrate = (auth: AuthToken | null | undefined) => {
+		authData.value = auth ?? null;
+
+		const user = auth?.user as IUser | undefined;
+		if (!user) return;
+
+		appUser.data.value = user;
+		appUser.account.value = user.account;
+	};
+
+	// Restore the session from the cookie on first use (client and SSR).
+	if (!authData.value && userAuth.value) hydrate(userAuth.value);
+
+	const token = computed(
+		() => authData.value?.token ?? userAuth.value?.token ?? null
+	);
+	const isAuthenticated = computed(() => Boolean(token.value));
+	const userType = computed(
+		() => (authData.value?.user as IUser | undefined)?.userType ?? null
+	);
 
 	const openAuthModal = (action: string) => {
 		openAuth.value = action;
 	};
 
+	const redirect = async (path: string): Promise<void> => {
+		if (import.meta.server) {
+			await navigateTo(path);
+			return;
+		}
+		window.location.href = path;
+	};
+
 	const login = (auth: AuthToken) => {
-		//store cookie
 		userAuth.value = auth;
+		hydrate(auth);
 
-		//set essential values
-		appUser.data.value = auth.user;
-		appUser.account.value = auth.user.account;
-
-		authData.value = auth;
-		authenticated.value = true;
-
-		// redirect to appropriate account
-		try {
-			if (auth.user.userType === "admin") {
-				// navigateTo("/admin");
-				window.location.href = "/admin";
-			} else {
-				window.location.href = "/app";
-			}
-		} catch (error) {}
+		return redirect(userType.value === "admin" ? "/admin" : "/app");
 	};
 
 	const logout = () => {
-		authData.value = null;
-		authenticated.value = false;
-		// storage().remove();
-		useCookie("auth").value = null;
-		// navigateTo("/sign-in");
-		try {
-			window.location.href = "/";
-		} catch (error) {}
-	};
+		userAuth.value = null;
+		hydrate(null);
 
-	const isAuthenticated = () => {
-		if (authenticated.value) {
-			return true;
-		}
-
-		const auth = useCookie<AuthToken | null>("auth");
-		// console.log(auth);
-		if (auth.value == null || auth.value == undefined) {
-			// console.log("Empty")
-			return false;
-		}
-
-		authenticated.value = true;
-		authData.value = auth.value;
-
-		appUser.data.value = auth.value.user;
-		appUser.account.value = auth.value.user.account;
-
-		return true;
+		return redirect("/");
 	};
 
 	return {
 		isAuthenticated,
+		token,
+		userType,
 		userData: authData,
 		logout,
 		login,

@@ -1,9 +1,15 @@
 <script setup lang="ts">
-	import moment from "moment";
+	import { currentHour } from "~/utils/date";
+
 	const user = userData().data;
 	const userSettings = useUserSettings();
 	const active = userSettings.transferBank;
 	const transactions = userSettings.transactions;
+	const { stats, load: loadStats } = useUserStats();
+	const money = useAppSettings().formatMoney;
+	const symbol = computed(() => useAppSettings().settings.value.currencySymbol);
+	const fmt = (n: number) => `${symbol.value}${money(n || 0, false)}`;
+	onMounted(loadStats);
 
 	const banks = ref({
 		skrill: "Skrill",
@@ -33,8 +39,7 @@
 		let userName = user.value.name.split(" ")[0];
 		userName = userName.charAt(0).toUpperCase() + userName.slice(1);
 
-		const now = moment();
-		const hour = now.hour();
+		const hour = currentHour();
 
 		let timeOfDay;
 
@@ -93,17 +98,24 @@
 		</div>
 		<!--end::Engage widget 12-->
 
+		<div class="row g-3 mb-5">
+			<div class="col-6 col-lg-3"><StatCard label="Received this month" :value="fmt(stats.monthReceived)" icon="ki-duotone ki-double-left" tone="success" to="/app/transactions" /></div>
+			<div class="col-6 col-lg-3"><StatCard label="Sent this month" :value="fmt(stats.monthSent)" icon="ki-duotone ki-double-right" tone="danger" to="/app/transactions" /></div>
+			<div class="col-6 col-lg-3"><StatCard label="Pending" :value="stats.pending" icon="ki-outline ki-time" tone="warning" to="/app/transactions" /></div>
+			<div class="col-6 col-lg-3"><StatCard label="All transactions" :value="stats.count" icon="ki-outline ki-arrows-loop" to="/app/transactions" /></div>
+		</div>
+
 		<!--begin::Chart widget 36-->
 		<div
 			class="card card-flush overflow-hidden mb-5 bg-transparent border-0"
 		>
 			<!--begin::Card body-->
 			<div class="card-body p-4">
-				<div class="d-flex flex-center flex-row mb-3 gap-2">
+				<div class="d-flex flex-center flex-wrap flex-row mb-3 gap-2">
 					<button
 						@click="selectBank(banks.bancopt)"
 						type="button"
-						class="btn btn-light-primary px-4 d-lg-flex fw-semibold py-lg-4"
+						class="btn btn-light-primary fw-bold d-flex flex-center flex-grow-1 py-4 fs-4"
 					>
 						<NFTexLogoMini
 							class="d-inline"
@@ -114,7 +126,7 @@
 					<button
 						@click="selectBank(banks.others)"
 						type="button"
-						class="btn btn-light-primary fw-semibold"
+						class="btn btn-light-primary fw-bold d-flex flex-center flex-grow-1 py-4 fs-5"
 					>
 						<i class="ki-solid ki-bank fs-2x mb-1"></i>
 						Banks
@@ -122,7 +134,7 @@
 					<button
 						@click="selectBank(banks.paypal)"
 						type="button"
-						class="btn btn-light-primary fw-semibold"
+						class="btn btn-light-primary fw-bold d-flex flex-center flex-grow-1 py-4 fs-5"
 					>
 						<i class="ki-duotone ki-paypal fs-2x">
 							<span class="path1"></span>
@@ -133,7 +145,7 @@
 					<button
 						@click="selectBank(banks.skrill)"
 						type="button"
-						class="btn btn-light-primary fw-semibold"
+						class="btn btn-light-primary fw-bold d-flex flex-center flex-grow-1 py-4 fs-5"
 					>
 						<span
 							class="rounded fs-3 fw-bold shadow-lg bg-transparent"
@@ -144,7 +156,7 @@
 					<button
 						@click="selectBank(banks.mbway)"
 						type="button"
-						class="btn btn-light-primary fw-semibold"
+						class="btn btn-light-primary fw-bold d-flex flex-center flex-grow-1 py-4 fs-5"
 					>
 						<span
 							class="rounded fs-3 fw-bold shadow-lg bg-transparent"

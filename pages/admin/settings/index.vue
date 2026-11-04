@@ -1,90 +1,15 @@
 <script setup lang="ts">
-	import axios from "axios";
-
-	const settings = useAppSettings().settings;
-	const form = ref({ ...settings.value });
-	const loading = ref(false);
-
-	const save = () => {
-		loading.value = true;
-
-		const method = !!settings.value.id ? "PUT" : "POST";
-		const path = !!settings.value.id ? `/${settings.value.id}` : "";
-
-		const axiosConfig: any = {
-			method: method,
-			url: `${useRuntimeConfig().public.BE_API}/app-settings${path}`,
-			timeout: 20000,
-			data: form.value,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				successAlert("Saved!");
-			})
-			.catch((error): void => {
-				console.log(error);
-				errorAlert("Error occurred");
-			})
-			.finally(() => (loading.value = false));
-	};
+	const auth = useAuth();
+	const items = [
+		{ title: "App defaults", text: "Currency, symbol and language", icon: "ki-outline ki-setting-2", to: "/admin/settings/defaults" },
+		{ title: "Account tiers", text: "Daily limits and maximum balances", icon: "ki-outline ki-medal-star", to: "/admin/settings/tiers" },
+		{ title: "Funding accounts", text: "Deposit accounts and their balances", icon: "ki-outline ki-bank", to: "/admin/funding" },
+		{ title: "Security", text: "Recent sign-ins on your account", icon: "ki-outline ki-shield-tick", to: "/admin/settings/security" },
+		{ title: "My profile", text: "Your admin profile", icon: "ki-outline ki-user", to: "/admin/profile" },
+		{ title: "Sign out", text: "Leave this device", icon: "ki-outline ki-exit-right", action: () => auth.logout() },
+	];
 </script>
-<template>
-	<div class="card">
-		<div class="card-header">
-			<div class="card-title m-0">
-				<h3 class="fw-bold m-0">Default App Settings</h3>
-			</div>
-		</div>
-		<div class="card-body">
-			<form
-				class="row row-cols-2"
-				ref="formElement"
-				@submit.prevent="save()"
-			>
-				<div class="mb-5">
-					<label class="form-label">Default Currency</label>
-					<input
-						v-model="form.defaultBaseCurrency"
-						type="text"
-						class="form-control"
-						required
-					/>
-				</div>
-				<div class="mb-5">
-					<label class="form-label">Symbol</label>
-					<input
-						v-model="form.currencySymbol"
-						type="text"
-						class="form-control"
-						placeholder="$"
-						required
-					/>
-				</div>
-				<div class="mb-5">
-					<label class="form-label">Default Language</label>
-					<input
-						v-model="form.defaultLanguage"
-						type="text"
-						class="form-control"
-						required
-					/>
-				</div>
 
-				<div class="mb-3i d-flex">
-					<button :disabled="loading" class="btn btn-primary w-100">
-						<span v-if="!loading">Save</span>
-						<span
-							v-else
-							class="spinner-border spinner-border-sm"
-						></span>
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
+<template>
+	<SettingsLinks :items="items" />
 </template>

@@ -1,9 +1,8 @@
 <script setup lang="ts">
-	import { type Transaction } from "~/utils/interfaces/Transaction";
+	import type { Transaction } from "~/utils/interfaces/Transaction";
 	import "animate.css";
-	import axios from "axios";
 	import currency from "currency.js";
-	import moment from "moment";
+	import { formatLongDateTime } from "~/utils/date";
 
 	const config = useRuntimeConfig().public;
 
@@ -36,29 +35,14 @@
 	};
 
 	const save = () => {
-		const conf = {
-			method: "PUT",
-			data: trans.value,
-			url: `${config.BE_API}/transactions`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
 		loading.value = true;
-
-		axios
-			.request(conf)
-			.then((response) => {
-				console.log("Yes ", response.data);
+		transactionService
+			.update({ id: trans.value.id, status: trans.value.status, notes: trans.value.notes })
+			.then(() => {
 				successAlert("Saved!");
+				userData().fetchBalance(); // a failed transfer is refunded
 			})
-			.catch((err) => {
-				const errRes = err.response;
-				errorAlert("Failed to update");
-				console.log(errRes);
-			})
+			.catch((e: ApiError) => errorAlert(e.message || "Failed to update"))
 			.finally(() => {
 				loading.value = false;
 			});
@@ -154,7 +138,7 @@
 						</tr>
 						<tr>
 							<td colspan="2" class="text-center">
-								{{ moment(trans.createdAt).format("lll") }}
+								{{ formatLongDateTime(trans.createdAt) }}
 							</td>
 						</tr>
 					</tbody>

@@ -6,6 +6,7 @@
 	// Variables
 	const moneyInput = ref();
 	const cleave = ref();
+	const cancelRAF = ref(); // Reference to cancel animation frame
 
 	const form = ref({
 		amount: "",
@@ -50,19 +51,29 @@
 	// Functions
 
 	const addAmount = (num: number | string) => {
-		const newValue = form.value.amount + num;
+		const newValue = String(form.value.amount || "") + num;
 		form.value.amount = newValue;
 
-		cleave.value.setRawValue(newValue);
+		cleave.value?.setRawValue(newValue);
 	};
 
 	const delNum = async () => {
 		if (startDelete.value) {
 			await new Promise((resolve) => setTimeout(resolve, 160));
-			form.value.amount = form.value.amount.slice(0, -1);
+			let current = form.value.amount;
+			if (current.length <= 1) {
+				form.value.amount = "0";
+				cleave.value.setRawValue("0");
+				return;
+			}
+			form.value.amount = current.slice(0, -1);
 			cleave.value.setRawValue(form.value.amount);
 
-			requestAnimationFrame(delNum);
+			// Cancel previous RAF if any, then start new one
+			if (cancelRAF.value) {
+				cancelAnimationFrame(cancelRAF.value);
+			}
+			cancelRAF.value = requestAnimationFrame(delNum);
 		}
 	};
 
@@ -90,6 +101,17 @@
 			delimiter: thousandSep,
 			numeralDecimalScale: 2, // Number of decimal places
 		});
+	});
+
+	// Cleanup to prevent memory leaks
+	onUnmounted(() => {
+		if (cancelRAF.value) {
+			cancelAnimationFrame(cancelRAF.value);
+		}
+		if (cleave.value) {
+			cleave.value.destroy();
+			cleave.value = null;
+		}
 	});
 </script>
 

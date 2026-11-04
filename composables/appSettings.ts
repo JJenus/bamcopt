@@ -1,6 +1,5 @@
-import axios from "axios";
-import { AccountLevel } from "utils/interfaces/AccountLevel";
-import { AppSettings } from "utils/interfaces/AppSettings";
+import type { AccountLevel } from "~/utils/interfaces/AccountLevel";
+import type { AppSettings } from "~/utils/interfaces/AppSettings";
 import currency from "currency.js";
 
 export const useAppSettings = () => {
@@ -14,28 +13,29 @@ export const useAppSettings = () => {
 	};
 
 	const settings = useState<AppSettings>("app-settings", () => init);
-	const isPageLoading = useState("load-page", () => true);
+	const isPageLoading = useState<boolean>("load-page", () => true);
 	const accountLevels = useState<AccountLevel[]>("account-levels", () => []);
+	const loaded = useState<boolean>("app-settings-loaded", () => false);
+	const loading = useState<boolean>("app-settings-loading", () => false);
 
-	const load = (obj: any, url: string) => {
-		const axiosConfig: any = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/${url}`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
+	const load = async (force = false) => {
+		if (loading.value || (loaded.value && !force)) return;
 
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				obj.value = response.data;
-				// console.log(settings.value);
-			})
-			.catch((error): void => {
-				console.log(error);
-			});
+		loading.value = true;
+		try {
+			const [appSettings, levels] = await Promise.all([
+				settingsService.getApp(),
+				settingsService.listLevels(),
+			]);
+
+			settings.value = appSettings;
+			accountLevels.value = levels;
+			loaded.value = true;
+		} catch {
+			// The service layer reports the failure; keep the safe defaults.
+		} finally {
+			loading.value = false;
+		}
 	};
 
 	const formatMoney = (amount?: string | number, addSymbol?: boolean) => {
@@ -61,8 +61,7 @@ export const useAppSettings = () => {
 		return cash;
 	};
 
-	load(settings, "app-settings");
-	load(accountLevels, "account-levels");
+	load();
 
 	return {
 		settings,

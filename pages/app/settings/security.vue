@@ -1,4 +1,3 @@
 <template>
 	<AppSettingsLoginSessions />
-	<AppSettingsDeactivate />
 </template>

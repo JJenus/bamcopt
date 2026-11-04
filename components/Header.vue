@@ -125,7 +125,7 @@
 					<a
 						href="/app"
 						class="cursor-pointer d-nonei d-lg-block symbol symbol-circle ms-2 symbol-35px symbol-lg-50px ms-0 ms-lg-3"
-						v-if="auth.isAuthenticated()"
+						v-if="auth.isAuthenticated.value"
 					>
 						<!--begin::Drawer toggle-->
 						<img

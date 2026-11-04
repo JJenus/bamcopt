@@ -49,7 +49,7 @@
 					>
 						<!--begin:Menu item-->
 						<a
-							v-if="useAuth().isAuthenticated()"
+							v-if="useAuth().isAuthenticated.value"
 							href="/app"
 							class="menu-item menu-accordion"
 						>

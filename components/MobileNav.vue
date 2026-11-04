@@ -29,12 +29,12 @@
 					<a href="/">
 						<img
 							alt="Logo"
-							src="/assets/media/logos/zipay-logo.png"
+							src="/assets/media/logos/logo-ban.png"
 							class="theme-light-show h-25px"
 						/>
 						<img
 							alt="Logo"
-							src="/assets/media/logos/zipay-logo.png"
+							src="/assets/media/logos/logo-ban.png"
 							class="theme-dark-show h-25px"
 						/>
 					</a>

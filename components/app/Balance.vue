@@ -1,4 +1,6 @@
 <script setup lang="ts">
+	import type { IUser } from "~/utils/interfaces/IUser";
+
 	const money = useAppSettings().formatMoney;
 	const settings = useAppSettings().settings;
 
@@ -6,7 +8,7 @@
 	const balance = ref(data.value.account);
 	watch(
 		data,
-		(newVal) => {
+		(newVal: IUser) => {
 			balance.value = newVal.account;
 		},
 	);

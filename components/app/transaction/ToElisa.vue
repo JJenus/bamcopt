@@ -1,5 +1,4 @@
 <script setup lang="ts">
-	import axios from "axios";
 
 	const AppName = ref(useRuntimeConfig().public.APP);
 	const money = useAppSettings().formatMoney;
@@ -27,29 +26,13 @@
 
 	const requestUser = () => {
 		searching.value = true;
-		const axiosConfig = {
-			method: "post",
-			data: {
-				email: recipient.value.email,
-			},
-			url: `${useRuntimeConfig().public.BE_API}/users/find`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data;
-				console.log("Found", data);
-				recipient.value = data;
-				// console.log(data);
-				userFound.value = data.name;
+		userService
+			.findByEmail(recipient.value.email)
+			.then((found) => {
+				recipient.value = found;
+				userFound.value = found.name;
 			})
-			.catch((error) => {
-				// console.log(error);
+			.catch(() => {
 				userFound.value = false;
 			})
 			.finally(() => {

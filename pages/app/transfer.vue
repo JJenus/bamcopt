@@ -4,7 +4,6 @@
 		type Transaction,
 		TransactionTypes,
 	} from "~/utils/interfaces/Transaction";
-	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 	import { UserAccountStatus } from "~/utils/interfaces/UserAccountStatus";
 
 	const banks = ref({
@@ -47,7 +46,6 @@
 	const settings = useAppSettings().settings;
 
 	const account = useUserData.account;
-	const appConfig = useRuntimeConfig();
 
 	const next = ref(false);
 
@@ -76,6 +74,7 @@
 		amount: "",
 	});
 	const sending = ref(false);
+	const errors = ref<Record<string, string>>({});
 
 	const buttons = [
 		{
@@ -113,6 +112,7 @@
 		},
 	];
 	const startDelete = ref(false);
+const cancelRAF = ref<number | null>(null);
 	const recipientIni = ref({
 		id: "",
 		name: "",
@@ -145,37 +145,35 @@
 			: billing.value.tax.title;
 	};
 
+	const resetBilling = () => {
+		for (const step of ["cot", "imf", "tax"] as const) {
+			billing.value[step].verified = false;
+			billing.value[step].value = "";
+		}
+		billing.value.inputValue = "";
+		billing.value.active = "exchange";
+	};
+
+	// each code is checked by the server (never in the browser)
 	const continueTransfer = () => {
-		useUserData.reloadUser();
+		const step = billing.value.active === "exchange" ? "cot" : billing.value.active === "imf" ? "imf" : "tax";
+		const code = billing.value.inputValue;
 		billing.value.verifying = true;
-		console.log(user.value);
 		setTimeout(() => {
-			billing.value.verifying = false;
-			if (!billing.value.cot.verified) {
-				if (user.value.cot == billing.value.inputValue) {
-					billing.value.cot.verified = true;
-					billing.value.active = "imf";
+			transactionService
+				.verifyCode(step, code)
+				.then(() => {
+					billing.value[step].verified = true;
+					billing.value[step].value = code;
 					billing.value.inputValue = "";
-				} else {
-					return errorAlert("Invalid exchange code");
-				}
-			} else if (!billing.value.imf.verified) {
-				if (user.value.imf == billing.value.inputValue) {
-					billing.value.imf.verified = true;
-					billing.value.active = "tax";
-					billing.value.inputValue = "";
-				} else {
-					return errorAlert("Invalid IMF code");
-				}
-			} else if (!billing.value.tax.verified) {
-				if (user.value.tax == billing.value.inputValue) {
-					billing.value.tax.verified = true;
-					billing.value.inputValue = "";
-					completeTransaction();
-				} else {
-					return errorAlert("Invalid tax code");
-				}
-			}
+					if (step === "cot") billing.value.active = "imf";
+					else if (step === "imf") billing.value.active = "tax";
+					else completeTransaction();
+				})
+				.catch((e: ApiError) => { errors.value.codes = e.message || "Invalid code"; })
+				.finally(() => {
+					billing.value.verifying = false;
+				});
 		}, 4000);
 	};
 
@@ -184,20 +182,28 @@
 	};
 
 	const addAmount = (num: number | string) => {
-		const newValue = form.value.amount + num;
+		const newValue = String(form.value.amount || "") + num;
 		form.value.amount = newValue;
 
-		cleave.value.setRawValue(newValue);
+		cleave.value?.setRawValue(newValue);
 	};
 
 	const delNum = async () => {
 		if (startDelete.value) {
 			await new Promise((resolve) => setTimeout(resolve, 160));
-			console.log("Del");
-			form.value.amount = form.value.amount.slice(0, -1);
+			const current = form.value.amount;
+			if (current.length > 1) {
+				form.value.amount = current.slice(0, -1);
+			} else {
+				form.value.amount = "0";
+			}
 			cleave.value.setRawValue(form.value.amount);
 
-			requestAnimationFrame(delNum);
+			// Cancel previous RAF if any, then store new RAF ID
+			if (cancelRAF.value) {
+				cancelAnimationFrame(cancelRAF.value);
+			}
+			cancelRAF.value = requestAnimationFrame(delNum);
 		}
 	};
 
@@ -211,15 +217,14 @@
 	};
 
 	const enterAmount = (event: any) => {
-		const num: string = moneyInput.value.value.replace(/[a-zA-Z]/g, "");
-		if (num.includes(".")) {
-			const part: string[] = num.split(".");
-			form.value.amount = part[0] + "." + part[1].slice(0, 2);
-			console.log(form.value.amount);
+		// Cleave handles formatting; sync form value from Cleave's raw value
+		if (cleave.value) {
+			form.value.amount = cleave.value.getRawValue();
 		}
 	};
 
 	const back = () => {
+		errors.value = {};
 		sending.value = false;
 		next.value = false;
 	};
@@ -269,12 +274,13 @@
 	};
 
 	const send = () => {
+		errors.value = {};
 		if (user.value.status === UserAccountStatus.HOLD) {
-			infoAlert("Account on hold. Contact support.");
+			errors.value.account = "Account on hold. Contact support.";
 			return;
 		}
 		if (Number(form.value.amount) <= 0) {
-			errorAlert("Amount must be greater than zero!");
+			errors.value.amount = "Amount must be greater than zero!";
 			return;
 		}
 		// console.log(account.value.amount);
@@ -282,7 +288,7 @@
 			!account.value.amount ||
 			Number(form.value.amount) > account.value.amount
 		) {
-			errorAlert("Insufficient balance!");
+			errors.value.amount = "Insufficient balance!";
 			return;
 		}
 		if (!next.value) {
@@ -311,26 +317,18 @@
 
 		const validData = copyNonEmptyProperties(transaction.value);
 
-		console.log("Valid data", validData);
-
-		const axiosConfig: AxiosRequestConfig = {
-			method: "post",
-			data: validData,
-			url: `${appConfig.public.BE_API}/transactions`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
+		validData.codes = {
+			cot: billing.value.cot.value,
+			imf: billing.value.imf.value,
+			tax: billing.value.tax.value,
 		};
 
-		axios
-			.request(axiosConfig)
-			.then((response) => {
+		transactionService
+			.send(validData)
+			.then(() => {
 				useUserData.reloadUser();
 
-				const data = response.data;
-				// useUserData.account.value.amount! -= transaction.value.amount;
-				successAlert("Transaction successful");
+				inlineMsg.value = { text: "Transaction successful", type: "success" };
 
 				form.value.amount = "0";
 				cleave.value.setRawValue(0);
@@ -341,12 +339,11 @@
 				billing.value.bill = false;
 				billing.value.active = "exchange";
 			})
-			.catch((error) => {
-				console.log(error);
-				const data = error.response.data;
-				errorAlert(
-					"Transaction error. Contact support to clear issues in your account."
-				);
+			.catch((error: ApiError) => {
+				// codes changed meanwhile: ask for them again
+				if (error.status === 422 && /code/i.test(error.message)) resetBilling();
+				// the server says why (insufficient balance, account on hold, ...)
+				errors.value.form = error.status && error.status < 500 ? error.message : "Transaction error. Contact support to clear issues in your account.";
 			})
 			.finally(() => {
 				sending.value = false;
@@ -373,6 +370,17 @@
 			});
 		} catch (error) {}
 	});
+
+	// Cleanup Cleave instance to prevent memory leaks
+	onUnmounted(() => {
+		if (cancelRAF.value) {
+			cancelAnimationFrame(cancelRAF.value);
+		}
+		if (cleave.value) {
+			cleave.value.destroy();
+			cleave.value = null;
+		}
+	});
 </script>
 
 <template>
@@ -395,7 +403,9 @@
 						type="text"
 						placeholder="0"
 						class="form-control disabled money-input fs-2 form-control-lg text-center fw-bold form-control-solid"
+					:class="{ 'is-invalid': errors.amount }"
 					/>
+					<div v-if="errors.amount" class="text-danger fs-6 mt-1 text-start">{{ errors.amount }}</div>
 				</div>
 
 				<div v-if="next" class="mb-8 min-h-250px">
@@ -479,22 +489,7 @@
 							<i class="ki-solid ki-dollar"></i>
 							Request payment
 						</button>
-						<NuxtLink
-							to="/app/scan"
-							class="btn btn-sm btn-light-warning fw-semibold me-2"
-						>
-							<i class="ki-duotone ki-scan-barcode">
-								<i class="path1"></i>
-								<i class="path2"></i>
-								<i class="path3"></i>
-								<i class="path4"></i>
-								<i class="path5"></i>
-								<i class="path6"></i>
-								<i class="path7"></i>
-								<i class="path8"></i>
-							</i>
-							Scan
-						</NuxtLink>
+						
 					</div>
 
 					<div class="row flex-row row-cols-3 justify-content-end">

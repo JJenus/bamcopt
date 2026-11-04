@@ -1,10 +1,10 @@
-import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 import { type Account, AccountStatus } from "~/utils/interfaces/Account";
 import { type IUser } from "~/utils/interfaces/IUser";
 import {
 	type INotification,
 	NotificationStatus,
-} from "../utils/interfaces/Notification";
+} from "~/utils/interfaces/Notification";
+import type { Transaction } from "~/utils/interfaces/Transaction";
 
 export const userData = () => {
 	const initAcc: Account = {
@@ -14,7 +14,7 @@ export const userData = () => {
 		status: AccountStatus.ACTIVE,
 		accountLevel: 0,
 		accountNumber: 0,
-	}; 
+	};
 
 	const initUser: IUser = {
 		id: "",
@@ -45,7 +45,7 @@ export const userData = () => {
 		tax: undefined,
 	};
 
-	const transactions = useState<any[]>("user-transactions", () => []);
+	const transactions = useState<Transaction[]>("user-transactions", () => []);
 	const notifications = useState<INotification[]>("notifications", () => []);
 	const newNotifications = useState<INotification[]>(
 		"new-notifications",
@@ -58,173 +58,75 @@ export const userData = () => {
 	const data = useState<IUser>("userData", () => initUser);
 	const account = useState<Account>("userAccount", () => initAcc);
 	const users = useState<IUser[]>("users", () => []);
-	const active = useState<IUser | null>("active-user");
+	const active = useState<IUser | null>("active-user", () => null);
 	const admins = useState<IUser[]>("admin", () => []);
 
+	const byNewest = (a: IUser, b: IUser) =>
+		new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
 	const getUsers = () => {
-		if (!useAuth().userData.value?.user) {
+		if (!useAuth().isAuthenticated.value) {
 			navigateTo("/sign-in");
+			return;
 		}
-		const axiosConfig: AxiosRequestConfig = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/users`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		console.log("TOKEN ", useAuth().userData.value?.token);
-
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<IUser[], any>) => {
-				users.value = response.data
-					.filter((e) => {
-						return e.userType !== "admin";
-					})
-					.sort(
-						(a, b) =>
-							new Date(b.createdAt).getTime() -
-							new Date(a.createdAt).getTime()
-					);
-
-				admins.value = response.data
-					.filter((e) => {
-						return e.userType === "admin";
-					})
-					.sort(
-						(a, b) =>
-							new Date(b.createdAt).getTime() -
-							new Date(a.createdAt).getTime()
-					);
-
-				// console.log(users.value);
+		userService
+			.list()
+			.then((all) => {
+				users.value = all
+					.filter((u) => u.userType !== "admin")
+					.sort(byNewest);
+				admins.value = all
+					.filter((u) => u.userType === "admin")
+					.sort(byNewest);
 			})
-			.catch((error) => {
-				// console.log(error);
-				const data = error.response.data;
-				if (
-					data.message.includes("Access denied") ||
-					error.response.status === 401
-				) {
-					// console.log("Access denied");
-				}
-			});
+			.catch(() => {});
 	};
 
 	const reloadUser = () => {
-		
-		const axiosConfig: AxiosRequestConfig = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/users/${data.value.id}`,
-			timeout: 20000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
+		if (!data.value.id) return;
 
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<IUser, any>) => {
-				data.value = response.data;
-
-				// console.log(response.data, data.value.account);
-			})
-			.catch((error) => {
-				// console.log(error);
-				const data = error.response.data;
-				if (
-					data.message.includes("Access denied") ||
-					error.response.status === 401
-				) {
-					// console.log("Access denied");
-				}
-			});
+		userService
+			.get(data.value.id)
+			.then((user) => (data.value = user))
+			.catch(() => {});
 	};
 
 	const fetchBalance = () => {
-		const axiosConfig = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/account/${data.value.id}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
+		if (!data.value.id) return;
 
-		axios
-			.request(axiosConfig)
-			.then((response) => {
-				const data = response.data;
-				account.value = data;
-			})
-			.catch((error) => {
-				// console.log(error);
-			});
+		accountService
+			.get(data.value.id)
+			.then((acc) => (account.value = acc))
+			.catch(() => {});
 	};
 
 	const showNotifications = () => {
-		if (!isNewNotification.value) {
-			return;
-		}
-		const axiosConfig = {
-			method: "put",
-			data: notifications.value,
-			url: `${useRuntimeConfig().public.BE_API}/notifications/all`,
-			timeout: 25000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
+		if (!isNewNotification.value) return;
 
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<INotification[], any>) => {})
-			.catch((error) => {
-				console.log(error);
-			});
+		notifications.value = notifications.value.map((notification) => ({
+			...notification,
+			status: NotificationStatus.READ,
+		}));
+		newNotifications.value = [];
+		isNewNotification.value = false;
+
+		notificationService.markAllRead().catch(() => {});
 	};
 
 	const getNotifications = () => {
-		const axiosConfig = {
-			method: "get",
-			url: `${useRuntimeConfig().public.BE_API}/notifications/${
-				data.value.id
-			}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
+		if (!data.value.id) return;
 
-		axios
-			.request(axiosConfig)
-			.then((response: AxiosResponse<INotification[], any>) => {
-				notifications.value = response.data.sort(
-					(a, b) =>
-						new Date(b.createdAt).getTime() -
-						new Date(a.createdAt).getTime()
+		notificationService
+			.listForUser(data.value.id)
+			.then((list) => {
+				notifications.value = list;
+				newNotifications.value = list.filter(
+					(notification) =>
+						notification.status === NotificationStatus.UNREAD
 				);
-
-				const xx = notifications.value.filter((notice) => {
-					if (notice.status === NotificationStatus.UNREAD) {
-						isNewNotification.value = true;
-						return true;
-					}
-					return false;
-				});
-
-				if (
-					isNewNotification.value &&
-					notifications.value.length == 0
-				) {
-					newNotifications.value = xx;
-				}
+				isNewNotification.value = newNotifications.value.length > 0;
 			})
-			.catch((error) => {
-				// console.log(error);
-			});
+			.catch(() => {});
 	};
 
 	return {

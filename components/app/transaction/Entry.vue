@@ -1,8 +1,7 @@
 <script setup lang="ts">
-	import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
-	import moment from "moment";
-	import { type IUser } from "~/utils/interfaces/IUser";
-	import { type Transaction } from "~/utils/interfaces/Transaction";
+	import { formatMessageTime } from "~/utils/date";
+	import type { IUser } from "~/utils/interfaces/IUser";
+	import type { Transaction } from "~/utils/interfaces/Transaction";
 
 	const props = defineProps<{
 		transaction: Transaction;
@@ -15,49 +14,17 @@
 
 	const money = useAppSettings().formatMoney;
 
-	const appConfig = useRuntimeConfig();
-
 	const tType = ref("");
-
-	const getUserData = () => {
-		if (!useAuth().userData.value) {
-			return useAuth().logout();
-		}
-
-		const axiosConfig: AxiosRequestConfig = {
-			method: "get",
-			url: `${appConfig.public.BE_API}/users/${props.transaction.senderId}`,
-			timeout: 15000,
-			headers: {
-				Authorization: "Bearer " + useAuth().userData.value?.token,
-			},
-		};
-
-		axios
-			.request<IUser>(axiosConfig)
-			.then((response: AxiosResponse<IUser, any>) => {
-				user.value = response.data;
-				props.transaction.beneficiary!.name = user.value.name;
-				console.log("SENDER", user.value);
-			})
-			.catch((error) => {
-				console.log(error);
-			});
-	};
 
 	const show = ref(false);
 
+	// Beneficiary name is already provided server-side by listUserTransactions
 	const getType = () => {
 		if (props.transaction.receiverId === userData().data.value.id) {
-			if (props.transaction.beneficiary && !user.value.name)
-				getUserData();
 			tType.value = "Received";
 			return;
 		}
-
-		// if (props.transaction.beneficiary)
-		user.value.name = props.transaction.beneficiary!.name;
-
+		user.value.name = props.transaction.beneficiary?.name ?? "Unknown";
 		tType.value = "Sent";
 	};
 
@@ -78,18 +45,7 @@
 		} else return "ki-check-circle text-success";
 	};
 
-	const time = () => {
-		const now = moment();
-		const inputTime = moment(props.transaction.createdAt);
-
-		if (now.diff(inputTime, "hours") <= 1) {
-			return inputTime.fromNow();
-		} else if (now.isSame(inputTime, "day")) {
-			return inputTime.format("hh:mm A");
-		} else {
-			return inputTime.format("DD/MM/YY HH:mm");
-		}
-	};
+	const time = () => formatMessageTime(props.transaction.createdAt);
 
 	const toggleShowData = () => {
 		if (props.showDetails) show.value = !show.value;

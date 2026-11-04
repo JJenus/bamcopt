@@ -1,4 +1,4 @@
-import { AuthToken } from "./interfaces/AuthToken";
+import type { AuthToken } from "./interfaces/AuthToken";
 
 export const storage = () => {
 	const authKey = "zipayauthkey";
@@ -19,7 +19,7 @@ export const storage = () => {
 
 	const remove = () => {
 		try {
-			if (process.client) localStorage.removeItem(authKey);
+			if (import.meta.client) localStorage.removeItem(authKey);
 		} catch (error) {
 			// console.log(error);
 		}
@@ -32,16 +32,16 @@ export const storage = () => {
 	};
 };
 
-function generateSalt(): Uint8Array {
-	const array = new Uint8Array(16);
-	window.crypto.getRandomValues(array);
+function generateSalt(): Uint8Array<ArrayBuffer> {
+	const array = new Uint8Array(new ArrayBuffer(16));
+	crypto.getRandomValues(array);
 	return array;
 }
 
 // Function to derive a key from a passphrase
 async function deriveKey(
 	passphrase: string,
-	salt: Uint8Array
+	salt: Uint8Array<ArrayBuffer>
 ): Promise<CryptoKey> {
 	const encoder = new TextEncoder();
 	const passphraseKey = await crypto.subtle.importKey(
@@ -100,11 +100,11 @@ async function encryptAndStore(
 		// 	path: '/',
 		// 	maxAge: 60 * 60 * 24 * 7
 		// });
-		if (process.client) {
+		if (import.meta.client) {
 			localStorage.setItem(key, JSON.stringify(encryptedObject));
 		}
-	} catch (error) {
-		console.log(error);
+	} catch {
+		// Storage is best-effort; auth falls back to the session cookie.
 	}
 }
 
@@ -112,16 +112,14 @@ async function encryptAndStore(
 async function retrieveAndDecrypt(key: string, passphrase: string) {
 	let encryptedData;
 	try {
-		if (process.client) encryptedData = localStorage.getItem(key);
-	} catch (error) {
-		// console.log(error);
+		if (import.meta.client) encryptedData = localStorage.getItem(key);
+	} catch {
+		// localStorage can be unavailable (private mode); treat as no session.
 	}
 
 	if (!encryptedData) {
 		return null;
 	}
-
-	console.log("Yes")
 
 	const encryptedObject = JSON.parse(encryptedData);
 

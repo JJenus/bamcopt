@@ -1,11 +1,4 @@
 <script setup lang="ts">
-	import axios, {
-		AxiosError,
-		type AxiosRequestConfig,
-		type AxiosResponse,
-	} from "axios";
-	import { type AuthToken } from "~/utils/interfaces/AuthToken";
-
 	definePageMeta({
 		layout: "auth",
 	});
@@ -20,67 +13,63 @@
 		],
 	});
 
-	const appConfig = useRuntimeConfig();
 	const auth = useAuth();
 	const forgot = useState<boolean>("forgot", () => false);
 
-	const submitButton = ref();
-	const isInvalidCredentials = ref();
+	const submitButton = ref<HTMLButtonElement>();
+	const isInvalidCredentials = ref("");
 
-	const axiosConfig = ref<AxiosRequestConfig>({
-		method: "post",
-		data: {},
-		url: `${appConfig.public.BE_API}/auth/login`,
-		timeout: 15000,
-	});
 	const form = ref({
-		email: null,
-		password: null,
+		email: "",
+		password: "",
 	});
+
+	// step 2: one-time code sent by e-mail (verified by the server)
+	const challenge = ref<string | null>(null);
+	const otp = ref("");
+	const otpError = ref("");
+	const verifying = ref(false);
 
 	const submitForm = () => {
-		console.log("logging...");
-		isInvalidCredentials.value;
+		isInvalidCredentials.value = "";
 		if (!form.value.email || !form.value.password) {
 			errorAlert(null);
 			return;
 		}
 
-		console.log("Passed");
-
-		const { email, password } = form.value;
-
-		axiosConfig.value.data = { email, password };
-
-		axios
-			.request(axiosConfig.value)
-			.then((response: AxiosResponse<AuthToken, any>) => {
-				console.log("status: ", response.data);
-				// successAlert("Signing in...");
-
-				auth.login(response.data);
+		authService
+			.login(form.value.email, form.value.password)
+			.then((res) => {
+				challenge.value = res.challenge;
+				otp.value = res.devOtp ?? ""; // only present in local dev without a mail server
 			})
-			.catch((err: AxiosError<any, any>) => {
-				const errRes = err.response;
-				console.log("Status: ", errRes?.status);
-				if (
-					errRes?.status !== null &&
-					(errRes?.status === 401 || errRes?.status === 404) &&
-					!errRes.data.message.includes("/")
-				) {
-					isInvalidCredentials.value = errRes.data.message;
-					console.log(err.message);
+			.catch((err: ApiError) => {
+				if (err.status === 401 || err.status === 404) {
+					isInvalidCredentials.value = err.message;
 				} else errorAlert(null);
-				console.log(errRes);
 			})
 			.finally(() => {
-				submitButton.value.removeAttribute("data-kt-indicator");
+				submitButton.value?.removeAttribute("data-kt-indicator");
 			});
 	};
 
+	const submitOtp = () => {
+		if (!challenge.value || otp.value.length !== 6) return;
+		verifying.value = true;
+		otpError.value = "";
+		authService
+			.verifyOtp(challenge.value, otp.value)
+			.then((session) => auth.login(session))
+			.catch((err: ApiError) => {
+				otpError.value = err.message;
+				if (err.status === 401 && /expired|already used|Too many/i.test(err.message)) challenge.value = null;
+			})
+			.finally(() => (verifying.value = false));
+	};
+
 	onMounted(() => {
-		if (auth.isAuthenticated()) {
-			auth.login(auth.userData.value!);
+		if (auth.isAuthenticated.value && auth.userData.value) {
+			auth.login(auth.userData.value);
 		}
 	});
 </script>
@@ -131,6 +120,7 @@
 						<div class="card-body">
 							<!--begin::Form-->
 							<form
+								v-if="!challenge"
 								@submit.prevent="submitForm"
 								class="form w-100"
 								novalidate
@@ -247,6 +237,30 @@
 									</NuxtLink>
 								</div>
 								<!--end::Sign up-->
+							</form>
+							<form v-else class="form w-100" @submit.prevent="submitOtp">
+								<div class="text-center mb-8">
+									<h1 class="text-gray-900 fw-bolder mb-3">Enter your code</h1>
+									<div class="text-gray-500 fw-semibold fs-6">We sent a 6-digit code to your email.</div>
+								</div>
+								<div class="fv-row mb-8">
+									<input
+										v-model="otp"
+										type="text"
+										inputmode="numeric"
+										maxlength="6"
+										autocomplete="one-time-code"
+										placeholder="000000"
+										class="form-control bg-transparent text-center fs-2"
+									/>
+								</div>
+								<div v-if="otpError" class="text-danger text-center mb-5">{{ otpError }}</div>
+								<div class="d-grid mb-5">
+									<button type="submit" class="btn btn-primary" :disabled="otp.length !== 6 || verifying">Verify</button>
+								</div>
+								<div class="text-center">
+									<a href="#" class="link-primary" @click.prevent="challenge = null">Back to sign in</a>
+								</div>
 							</form>
 							<!--end::Form-->
 						</div>

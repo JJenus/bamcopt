@@ -1,11 +1,4 @@
 <script setup lang="ts">
-	import axios, {
-		AxiosError,
-		type AxiosRequestConfig,
-		type AxiosResponse,
-	} from "axios";
-	import { type AuthToken } from "~/utils/interfaces/AuthToken";
-
 	definePageMeta({
 		layout: "auth",
 	});
@@ -20,36 +13,25 @@
 		title: `Sign Up - ${useRuntimeConfig().public.APP}`,
 	});
 
-	const appConfig = useRuntimeConfig();
 	const auth = useAuth();
 
-	const submitButton = ref();
-	const emailExists = ref();
-
-	const axiosConfig = ref<AxiosRequestConfig>({
-		method: "post",
-		data: {},
-		url: `${appConfig.public.BE_API}/auth/register`,
-	});
+	const submitButton = ref<HTMLButtonElement>();
+	const emailExists = ref("");
 
 	const form = ref({
-		name: null,
-		email: null,
-		imgUrl: null,
-		phone: null,
-		address: null,
-		city: null,
-		country: null,
-		dob: null,
-		password: null,
-		confirmPassword: null,
+		name: "",
+		email: "",
+		phone: "",
+		address: "",
+		city: "",
+		country: "",
+		password: "",
+		confirmPassword: "",
 	});
 
-	const submitForm = (event: Event) => {
-		emailExists.value = false;
-		const { confirmPassword, dob, imgUrl, ...data } = form.value;
-		console.log(data);
-		// console.log("API Url: ", appConfig.public.BE_API);
+	const submitForm = () => {
+		emailExists.value = "";
+		const { confirmPassword, ...data } = form.value;
 		if (
 			!form.value.address ||
 			!form.value.city ||
@@ -68,34 +50,19 @@
 		// submitButton.setAttribute("data-kt-indicator", "on");
 		// submitButton.value.disabled = true;
 
-		axiosConfig.value.data = data;
-
-		axios
-			.request(axiosConfig.value)
-			.then((response: AxiosResponse<AuthToken, any>) => {
-				console.log("status: ", response.data);
-				const userAuth = useCookie<AuthToken>("auth", {
-					maxAge: 60 * 60 * 24,
-				});
-				userAuth.value = response.data;
-				auth.login(userAuth.value);
-			})
-			.catch((err: AxiosError<any, any>) => {
-				const errRes = err.response;
-				console.log("Status: ", errRes?.status);
-				if (errRes?.status !== null && errRes?.status === 409) {
-					emailExists.value = errRes.data.message;
-					console.log(err.message);
+		authService
+			.register(data)
+			.then((session) => auth.login(session))
+			.catch((err: ApiError) => {
+				if (err.status === 409) {
+					emailExists.value = err.message;
 					errorAlert(emailExists.value);
 				} else errorAlert(null);
-				console.log(errRes);
 			})
 			.finally(() => {
-				submitButton.value.removeAttribute("data-kt-indicator");
+				submitButton.value?.removeAttribute("data-kt-indicator");
 			});
 
-		// infoAlert("Note this");
-		// axios.request({}).then();
 	};
 </script>
 

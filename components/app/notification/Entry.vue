@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import moment from "moment";
+	import { formatDateTime } from "~/utils/date";
 	import {
 		type INotification,
 		NotificationStatus,
@@ -7,9 +7,7 @@
 
 	const props = defineProps<{ notification: INotification }>();
 	const nDate = () => {
-		return moment(props.notification.createdAt).format(
-			"DD/MM/YYYY hh:mm A"
-		);
+		return formatDateTime(props.notification.createdAt);
 	};
 </script>
 

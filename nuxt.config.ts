@@ -1,7 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { defineNuxtConfig } from "nuxt/config";
+
 export default defineNuxtConfig({
 	modules: ["nuxt-swiper", "@nuxt/image"],
-	devtools: { enabled: true },
+	compatibilityDate: "2024-09-01",
+	devtools: { enabled: false },
 	ssr: true,
 	routeRules: {
 		// "/": { redirect: "/about-us" },
@@ -19,16 +22,21 @@ export default defineNuxtConfig({
 		},
 	},
 	runtimeConfig: {
-		BE_API: process.env.BE_API || "https://bancopt.alwaysdata.net/api",
+		// server-only secrets (JWT_SECRET, DB_*, SMTP_*) are read from process.env in /server
 		public: {
-			BE_API: process.env.BE_API || "https://bancopt.alwaysdata.net/api",
+			// the API lives in this same Nuxt app (/server/api)
+			API_BASE: "/api",
 			APP: "Bancopt",
 			MOBILE: "+49 (178) 793 1942",
-			CLOUD_NAME: "dpangnog4",
-			CLOUD_KEY: "232136269489291",
-			CLOUD_SECRETE: "B3_WYvhc4C_MSW6RCW-r-O-tiD4",
+			CLOUD_NAME: "dpangnog4", // unsigned upload preset: no secret needed in the browser
 			DEFAULT_DP: "/assets/media/svg/avatars/blank.svg",
 		},
+	},
+	// UI never calls the API directly: everything goes through /services
+	imports: { dirs: ["services"] },
+	nitro: {
+		// Sequelize loads its PostgreSQL driver dynamically
+		externals: { traceInclude: ["node_modules/pg/lib/index.js", "node_modules/pg-hstore/lib/index.js"] },
 	},
 	devServer: {
 		// https: {
