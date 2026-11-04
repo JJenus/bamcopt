@@ -14,7 +14,7 @@ export function transactionPresentation(tx: Partial<Transaction>, userId: string
 	const incoming = tx.receiverId === userId || tx.type === 'credit';
 	const status = tx.status || 'unknown';
 	const tone = status === 'completed' ? 'success' : status === 'failed' ? 'danger' : ['pending', 'awaiting', 'processing'].includes(status) ? 'warning' : 'secondary';
-	const label = tx.type === 'credit' && !tx.beneficiary ? (tx.notes?.startsWith('Refund') ? 'Transfer refund' : 'Account funding') : incoming ? 'Money received' : tx.beneficiary?.name || 'Money sent';
+	const label = tx.notes?.startsWith('Administrative debit:') ? 'Account debit' : tx.notes?.startsWith('Administrative credit:') ? 'Account credit' : tx.type === 'credit' && !tx.beneficiary ? (tx.notes?.startsWith('Refund') ? 'Transfer refund' : 'Account funding') : incoming ? 'Money received' : tx.beneficiary?.name || 'Money sent';
 	return { incoming, status, tone, label };
 }
 

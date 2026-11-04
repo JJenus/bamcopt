@@ -8,6 +8,7 @@ export const toMinor = (amount: number | string): number => {
 	const n = Number(amount);
 	if (!Number.isFinite(n)) throw unprocessable("Invalid amount");
 	const minor = Math.round(n * 100);
+	if (!Number.isSafeInteger(minor)) throw unprocessable('Amount exceeds safe precision');
 	if (Math.abs(n * 100 - minor) > 1e-6) throw unprocessable("Amount can have at most 2 decimal places");
 	return minor;
 };

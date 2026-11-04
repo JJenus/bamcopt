@@ -1,6 +1,7 @@
 import type { Transaction } from "~/utils/interfaces/Transaction";
 
 export const transactionService = {
+	reverse: (id: string, reason: string) => apiRequest<Transaction>(`/transactions/${id}/reverse`, { method: 'POST', body: { action: 'reverse', reason } }),
 	listForUser: async (userId: string) => {
 		const list = await apiRequest<Transaction[]>(`/transactions/${userId}`);
 		return list.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());

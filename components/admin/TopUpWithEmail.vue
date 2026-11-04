@@ -1,1 +1,1 @@
-<template><NuxtLink to="/admin/top-up" class="btn btn-primary">Credit user account</NuxtLink></template>
+<template><NuxtLink to="/admin/top-up" class="btn btn-primary">Adjust user balance</NuxtLink></template>

@@ -17,6 +17,8 @@ test('only completed activity has success styling; directions reflect the curren
 	assert.equal(transactionPresentation({ status: 'completed', type: 'send', receiverId: 'me' }, 'me').incoming, true);
 	assert.equal(transactionPresentation({ status: 'completed', type: 'credit' }, 'me').label, 'Account funding');
 	assert.equal(transactionPresentation({ status: 'completed', type: 'credit', notes: 'Refund for failed transfer' }, 'me').label, 'Transfer refund');
+	assert.equal(transactionPresentation({ status: 'completed', type: 'credit', notes: 'Administrative credit: Correction' }, 'me').label, 'Account credit');
+	assert.equal(transactionPresentation({ status: 'completed', type: 'withdrawal', notes: 'Administrative debit: Correction' }, 'me').label, 'Account debit');
 	assert.equal(transactionPresentation({ status: 'completed', type: 'send', receiverId: 'other' }, 'me').incoming, false);
 });
 

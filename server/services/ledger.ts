@@ -7,7 +7,7 @@
 import crypto from "node:crypto";
 import { Op, Transaction as DbTx } from "sequelize";
 import {
-	Account, AccountLevel, AccountStatus, Beneficiary, FundingAccount, NotificationType, Transaction, TransactionStatus, TransactionType, User,
+	Account, AccountLevel, AccountStatus, Beneficiary, Currency, FundingAccount, NotificationType, Transaction, TransactionStatus, TransactionType, User,
 } from "../models";
 import { sequelize } from "../utils/db";
 import { badRequest, forbidden, notFound, unprocessable } from "../utils/errors";
@@ -25,6 +25,17 @@ const lockAccounts = async (userIds: string[], t: DbTx) => {
 	const ids = [...new Set(userIds)].sort(); // fixed order => no deadlocks
 	const rows = await Account.findAll({ where: { userId: ids }, order: [["userId", "ASC"]], transaction: t, lock: t.LOCK.UPDATE });
 	return new Map(rows.map((a) => [a.userId, a]));
+};
+
+/** A deposit association tracks the same denomination, never an implicit FX conversion. */
+const creditFundingAccount = async (id: string, account: Account, minor: number, t: DbTx) => {
+	const funding = await FundingAccount.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
+	if (!funding) throw notFound('Funding account not found');
+	const currency = /^[a-z]{3,10}$/i.test(account.currencyId || '') ? account.currencyId : (await Currency.findByPk(account.currencyId, { transaction: t }))?.get('code');
+	if (!currency || !funding.currency || String(currency).toUpperCase() !== funding.currency.toUpperCase()) throw unprocessable('Funding and customer currencies must match; no conversion is performed');
+	const next = toMinor(funding.balance) + minor;
+	if (!Number.isSafeInteger(next)) throw unprocessable('Funding balance exceeds safe precision');
+	await funding.update({ balance: fromMinor(next) }, { transaction: t });
 };
 
 const OUTGOING = [TransactionType.DEBIT, TransactionType.WITHDRAWAL, TransactionType.SEND];
@@ -142,16 +153,16 @@ export const topUp = async (email: string, amount: number, fundingAccountId?: st
 		const account = (await lockAccounts([user.id], t)).get(user.id);
 		if (!account) throw notFound("Account not found");
 		if (account.status === AccountStatus.CLOSED) throw unprocessable("Account is closed");
+		const next = toMinor(account.amount) + minor;
+		if (!Number.isSafeInteger(next)) throw unprocessable('Balance exceeds safe precision');
 		const { max } = await limitsFor(account, t);
-		if (max > 0 && toMinor(account.amount) + minor > max) {
+		if (max > 0 && next > max) {
 			throw unprocessable(`Exceeds the account's maximum balance of ${fromMinor(max)}`);
 		}
 
-		await account.update({ amount: fromMinor(toMinor(account.amount) + minor) }, { transaction: t });
+		await account.update({ amount: fromMinor(next) }, { transaction: t });
 		if (fundingAccountId) {
-			const funding = await FundingAccount.findByPk(fundingAccountId, { transaction: t, lock: t.LOCK.UPDATE });
-			if (!funding) throw notFound("Funding account not found");
-			await funding.update({ balance: fromMinor(toMinor(funding.balance) + minor) }, { transaction: t });
+			await creditFundingAccount(fundingAccountId, account, minor, t);
 		}
 		await Transaction.create(
 			{
@@ -164,15 +175,51 @@ export const topUp = async (email: string, amount: number, fundingAccountId?: st
 	});
 };
 
+/** Explicit administrative correction. Positive amount + direction; every change gets a ledger row. */
+export const adjustAccountBalance = async (input: { email: string; direction: 'credit' | 'debit'; amount: number; reason: string; fundingAccountId?: string }) => {
+	if (!['credit', 'debit'].includes(input.direction)) throw unprocessable('Choose credit or debit');
+	if (!input.reason?.trim() || input.reason.trim().length < 3) throw unprocessable('A reason is required');
+	if (input.direction === 'debit' && input.fundingAccountId) throw unprocessable('Funding association is only available for credits');
+	const minor = positiveMinor(input.amount);
+	const user = await getUserByEmail(input.email);
+	const { account, tx } = await sequelize.transaction(async t => {
+		const account = (await lockAccounts([user.id], t)).get(user.id);
+		if (!account) throw notFound('Account not found');
+		if (account.status === AccountStatus.CLOSED) throw unprocessable('Account is closed');
+		const current = toMinor(account.amount);
+		const next = current + (input.direction === 'credit' ? minor : -minor);
+		if (next < 0) throw unprocessable('Insufficient customer balance');
+		if (!Number.isSafeInteger(next)) throw unprocessable('Balance exceeds safe precision');
+		if (input.direction === 'credit') {
+			const { max } = await limitsFor(account, t);
+			if (max > 0 && next > max) throw unprocessable(`Exceeds the account's maximum balance of ${fromMinor(max)}`);
+		}
+		if (input.fundingAccountId) {
+			await creditFundingAccount(input.fundingAccountId, account, minor, t);
+		}
+		await account.update({ amount: fromMinor(next) }, { transaction: t });
+		const tx = await Transaction.create({
+			senderId: user.id, receiverId: input.direction === 'credit' ? user.id : null,
+			transactionId: newTransactionId(), amount: fromMinor(minor), status: TransactionStatus.COMPLETED,
+			type: input.direction === 'credit' ? TransactionType.CREDIT : TransactionType.WITHDRAWAL,
+			notes: `Administrative ${input.direction}: ${input.reason.trim()}`,
+		}, { transaction: t });
+		return { account, tx };
+	});
+	await notifySafe({ userId: user.id, title: input.direction === 'credit' ? 'Account credited' : 'Account debited', message: `${fromMinor(minor)} ${input.direction} recorded. ${input.reason.trim()}`, type: input.direction === 'credit' ? NotificationType.CREDIT : NotificationType.DEBIT, entityType: 'transaction', entityId: tx.id });
+	return account;
+};
+
 /**
  * Admin changes the status / notes of a transaction (e.g. "sent to bank").
  * Marking a transfer to another bank as FAILED refunds the sender (once, atomically).
  * Internal transfers and deposits cannot be failed, and a failed transaction cannot be reopened.
  */
-export const updateTransaction = async (id: string, data: { status?: TransactionStatus; notes?: string }) => {
+export const updateTransaction = async (id: string, data: { status?: TransactionStatus; notes?: string; reversalReason?: string }) => {
 	const { tx, refunded } = await sequelize.transaction(async (t) => {
 		const tx = await Transaction.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE }); // serialises double-clicks
 		if (!tx) throw notFound("Transaction not found");
+		if (data.reversalReason && [TransactionType.SEND, TransactionType.CREDIT].includes(tx.type)) throw unprocessable('Only outgoing debits can be reversed');
 
 		let refunded = false;
 		if (data.status && data.status !== tx.status) {
@@ -183,20 +230,25 @@ export const updateTransaction = async (id: string, data: { status?: Transaction
 				}
 				const account = (await lockAccounts([tx.senderId], t)).get(tx.senderId);
 				if (!account) throw notFound("Account not found");
-				await account.update({ amount: fromMinor(toMinor(account.amount) + toMinor(tx.amount)) }, { transaction: t });
+				const next = toMinor(account.amount) + toMinor(tx.amount);
+				if (!Number.isSafeInteger(next)) throw unprocessable('Refund exceeds safe balance precision');
+				await account.update({ amount: fromMinor(next) }, { transaction: t });
 				await Transaction.create(
 					{
 						senderId: tx.senderId, receiverId: tx.senderId, transactionId: newTransactionId(), amount: tx.amount,
-						type: TransactionType.CREDIT, notes: `Refund of ${tx.transactionId}`, status: TransactionStatus.COMPLETED,
+						type: TransactionType.CREDIT, notes: `Refund of ${tx.transactionId}${data.reversalReason ? `: ${data.reversalReason}` : ''}`, status: TransactionStatus.COMPLETED,
 					},
 					{ transaction: t }
 				);
 				refunded = true;
 			}
 		}
-		await tx.update({ ...(data.status && { status: data.status }), ...(data.notes !== undefined && { notes: data.notes }) }, { transaction: t });
+		const notes = refunded && data.reversalReason ? `${tx.notes || ''}\nReversal reason: ${data.reversalReason}`.trim() : data.notes;
+		await tx.update({ ...(data.status && { status: data.status }), ...(notes !== undefined && { notes }) }, { transaction: t });
 		return { tx, refunded };
 	});
+	// A retried explicit reversal is a no-op, including its notifications.
+	if (data.reversalReason && !refunded) return tx;
 
 	await notifySafe(
 		refunded

@@ -24,7 +24,7 @@ if (PG_URL) {
 mkdirSync(".data", { recursive: true });
 rmSync(DB, { force: true });
 
-const server = spawn("npx", ["nuxt", "dev", "--port", String(PORT)], {
+	const server = spawn("pnpm", ["exec", "nuxt", "dev", "--port", String(PORT)], {
 	env: {
 		...process.env, DB_SYNC: "true", JWT_SECRET: SECRET,
 		...(PG_URL ? { DATABASE_URL: PG_URL } : { DB_DIALECT: "sqlite", DB_STORAGE: DB }),
@@ -50,6 +50,7 @@ const call = async (method, path, { token, body } = {}) => {
 	}
 	const res = await fetch(BASE + path, {
 		method,
+		signal: AbortSignal.timeout(30000),
 		headers: { "content-type": "application/json", ...(token && { authorization: `Bearer ${token}` }) },
 		body: body && JSON.stringify(body),
 	});
@@ -296,9 +297,17 @@ async function main() {
 	check("user cannot create funding account", (await call("POST", "/api/funding-accounts", { token: alice.token, body: fbody })).status === 403);
 	const fa = await call("POST", "/api/funding-accounts", { token: admin.token, body: fbody });
 	check("admin creates funding account", fa.status === 200 && fa.data.balance === 0, JSON.stringify(fa.data));
-	const adj = await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { adjustment: 250.75 } });
+	const adj = await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { balanceChange: { direction: "credit", amount: 250.75 } } });
 	check("adjustment raises the balance", adj.status === 200 && adj.data.balance === 250.75, JSON.stringify(adj.data));
-	check("balance cannot go negative", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { adjustment: -1000 } })).status === 422);
+	check("balance cannot go negative", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { balanceChange: { direction: "debit", amount: 1000 } } })).status === 422);
+	check("signed adjustment is no longer accepted", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { adjustment: -5 } })).status === 422);
+	check("funding adjustment requires a direction", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { balanceChange: { amount: 5 } } })).status === 422);
+	check("funding adjustment rejects a negative amount", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { balanceChange: { direction: "debit", amount: -5 } } })).status === 422);
+	check("funding adjustment rejects an unknown direction", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { balanceChange: { direction: "subtract", amount: 5 } } })).status === 422);
+	const smallDebit = await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { balanceChange: { direction: "debit", amount: 0.29 } } });
+	check("explicit funding debit preserves cents", smallDebit.status === 200 && smallDebit.data.balance === 250.46);
+	await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { balanceChange: { direction: "credit", amount: 0.29 } } });
+	check('funded account currency cannot be relabeled', (await call('PUT', `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { currency: 'EUR' } })).status === 422);
 	check("balance cannot be overwritten", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { balance: 9999 } })).data.balance === 250.75);
 	check("user cannot update funding account", (await call("PUT", `/api/funding-accounts/${fa.data.id}`, { token: alice.token, body: { adjustment: 5 } })).status === 403);
 	const seen = await call("GET", "/api/funding-accounts", { token: alice.token });
@@ -319,6 +328,38 @@ async function main() {
 	check("stats need admin", (await call("GET", "/api/admin/stats", { token: alice.token })).status === 403);
 	const st = await call("GET", "/api/admin/stats", { token: admin.token });
 	check("admin stats", st.status === 200 && st.data.users.total >= 2 && st.data.balances.funding === fundBefore + 10 && st.data.recentTransactions.length > 0, JSON.stringify(st.data).slice(0, 200));
+
+	console.log("\nexplicit customer balance changes and reversals");
+	const adjustCustomer = (body, token = admin.token) => call("POST", "/api/account/adjustments", { token, body: { email: "bob@x.com", reason: "Correction after reconciliation", ...body } });
+	check("customer adjustment requires admin", (await adjustCustomer({ direction: "credit", amount: 5 }, bob.token)).status === 403);
+	check("customer adjustment requires direction", (await adjustCustomer({ amount: 5 })).status === 422);
+	check("customer adjustment requires positive amount", (await adjustCustomer({ direction: "debit", amount: -5 })).status === 422);
+	check("customer adjustment requires reason", (await adjustCustomer({ direction: "debit", amount: 5, reason: "" })).status === 422);
+	check("customer debit rejects a funding association", (await adjustCustomer({ direction: "debit", amount: 5, fundingAccountId: fa.data.id })).status === 422);
+	const customerBefore = await bal(bob);
+	check("customer credit records exact balance", (await adjustCustomer({ direction: "credit", amount: 10.29 })).data.amount === customerBefore + 10.29);
+	const corrected = await adjustCustomer({ direction: "debit", amount: 0.29 });
+	check("customer debit records exact balance", corrected.status === 200 && corrected.data.amount === customerBefore + 10);
+	check("customer debit cannot overdraw", (await adjustCustomer({ direction: "debit", amount: customerBefore + 1000 })).status === 422 && await bal(bob) === customerBefore + 10);
+	const debitHistory = (await call("GET", `/api/transactions/${bob.id}`, { token: bob.token })).data;
+	check("customer adjustments create descriptive ledger rows", debitHistory.some(tx => tx.type === "withdrawal" && tx.amount === 0.29 && tx.notes?.includes("Correction after reconciliation")));
+	const reverse = (id, body = { action: "reverse", reason: "Bank transfer was not delivered" }, token = admin.token) => call("POST", `/api/transactions/${id}/reverse`, { token, body });
+	check("reversal requires an explicit action", (await reverse(w2.data.id, { reason: "Bank transfer was not delivered" })).status === 422);
+	check("reversal requires admin", (await reverse(w2.data.id, undefined, bob.token)).status === 403);
+	const debit = debitHistory.find(tx => tx.type === "withdrawal" && tx.amount === 0.29);
+	const refunded = await Promise.all([reverse(debit?.id), reverse(debit?.id)]);
+	check("concurrent explicit debit reversals refund once", refunded.some(result => result.status === 200) && await bal(bob) === customerBefore + 10.29, JSON.stringify(refunded.map(result => result.status)));
+	check('concurrent explicit reversals create one refund ledger row', (await call('GET', `/api/transactions/${bob.id}`, { token: bob.token })).data.filter(tx => tx.notes?.startsWith(`Refund of ${debit.transactionId}`)).length === 1);
+	await reverse(debit?.id);
+	check("repeated explicit reversal cannot refund twice", await bal(bob) === customerBefore + 10.29);
+	const internalReversal = await reverse(t1.data.id);
+	check("internal transfers cannot be reversed", internalReversal.status === 422);
+	const deposit = debitHistory.find(tx => tx.type === "credit");
+	check("deposits cannot be reversed", (await reverse(deposit?.id)).status === 422);
+	const euroFunding = await call('POST', '/api/funding-accounts', { token: admin.token, body: { ...fbody, label: 'Euro reserve', currency: 'EUR', active: false } });
+	const beforeMismatch = await bal(bob);
+	check('cross-currency funding association rejected atomically', (await adjustCustomer({ direction: 'credit', amount: 10, fundingAccountId: euroFunding.data.id })).status === 422 && await bal(bob) === beforeMismatch);
+	check('legacy credit also rejects mismatched funding currency', (await call('POST', '/api/account', { token: admin.token, body: { email: 'bob@x.com', amount: 10, fundingAccountId: euroFunding.data.id } })).status === 422 && await bal(bob) === beforeMismatch);
 
 	const logs = await call("GET", `/api/security-logs/${alice.id}`, { token: alice.token });
 	check("login history is recorded", logs.status === 200 && logs.data.some((l) => l.action === "login"), JSON.stringify(logs.data).slice(0, 150));
@@ -343,7 +384,7 @@ async function main() {
 	check("unread-count needs a session", (await call("GET", "/api/notifications/unread-count")).status === 401);
 	check("cannot list someone else's notifications", (await nlist(bob, "", dave.token)).status === 403);
 
-	const credit = tr.data.items.find((n) => n.type === "credit" && n.entityType === "transaction");
+	const credit = tr.data.items.find((n) => n.type === "credit" && n.entityId === t1.data.id);
 	check("credit notification links to its transaction", !!credit && !!credit.entityId);
 	const det = await call("GET", `/api/transactions/detail/${credit.entityId}`, { token: bob.token });
 	check("receiver can open the transaction", det.status === 200 && det.data.receiverId === bob.id && !!det.data.senderName && !!det.data.beneficiary);

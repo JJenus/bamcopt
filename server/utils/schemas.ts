@@ -40,14 +40,19 @@ export const TransferBody = z.object({
 });
 export const TransactionUpdateBody = z.object({ id: uuid, status: z.nativeEnum(TransactionStatus).optional(), notes: z.string().optional() });
 export const TopUpBody = z.object({ email: z.string().email(), amount: z.number(), fundingAccountId: uuid.optional() });
+export const BalanceChangeBody = z.object({ direction: z.enum(['credit', 'debit']), amount: z.number().positive() }).strict();
+export const AccountAdjustmentBody = BalanceChangeBody.extend({
+	email: z.string().email(), reason: z.string().trim().min(3).max(500), fundingAccountId: uuid.optional(),
+}).refine(body => body.direction === 'credit' || !body.fundingAccountId, 'Funding association is only available for credits');
+export const TransactionReversalBody = z.object({ action: z.literal('reverse'), reason: z.string().trim().min(3).max(500) }).strict();
 
 export const FundingAccountBody = z.object({
 	label: z.string().min(2), type: z.enum(["bank", "crypto", "other"]).default("bank"),
 	bankName: z.string().optional(), accountName: z.string().optional(), accountNumber: z.string().min(1),
-	currency: z.string().optional(), instructions: z.string().optional(), active: z.boolean().optional(),
+	currency: z.string().trim().regex(/^[a-z]{3,10}$/i, 'Use a currency code').transform(value => value.toUpperCase()).optional(), instructions: z.string().optional(), active: z.boolean().optional(),
 });
-/** Balance only moves through `adjustment` (signed, in major units), never by overwriting it. */
-export const FundingAccountUpdateBody = FundingAccountBody.partial().extend({ adjustment: z.number().optional() });
+/** Never infer direction from a sign or accept a direct balance overwrite. */
+export const FundingAccountUpdateBody = FundingAccountBody.partial().extend({ balanceChange: BalanceChangeBody.optional(), adjustment: z.never().optional() });
 
 export const AccountUpdateBody = z.object({
 	id: uuid.optional(), userId: uuid, currencyId: z.string().optional(),

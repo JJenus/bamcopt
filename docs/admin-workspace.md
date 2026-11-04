@@ -1,6 +1,6 @@
 # Administration workspace
 
-The `/admin` revamp retains Nuxt 3, the supplied Bootstrap theme, existing admin authorization, and the server ledger rules. No database migration, production deployment, or real financial operation is part of this UI task.
+The `/admin` revamp retains Nuxt 3, the supplied Bootstrap theme and existing admin authorization. Its initial UI release preserved the server ledger rules. The subsequent explicit funding/balance operations follow-up is documented in [funding-operations.md](funding-operations.md). No production migration, deployment, or real financial operation was performed.
 
 ## Routes and interaction contract
 
@@ -9,9 +9,9 @@ The `/admin` revamp retains Nuxt 3, the supplied Bootstrap theme, existing admin
 | `/admin` | Operational counts, recent transaction/user links, funding totals grouped by currency |
 | `/admin/users` | Search by name, email, phone, ID or account number; filter by role/status; mobile cards |
 | `/admin/users/:id` | Refresh-safe user details, isolated account-control drafts, recent transactions and notification composer |
-| `/admin/top-up` | Validate and resolve a recipient, review the deposit, explicitly confirm a single credit |
+| `/admin/top-up` | Validate and resolve a customer, choose Credit/Debit, review and explicitly confirm a correction |
 | `/admin/transaction/:id` | Transaction details, constrained status options, notes and refund consequence review |
-| `/admin/funding` | Funding instructions, visibility confirmation and reviewed signed balance adjustments |
+| `/admin/funding` | Shared customer instruction preview, publication confirmation and explicit Credit/Debit adjustments |
 | `/admin/settings` | Workspace settings hub |
 | `/admin/settings/defaults` | Persist and refresh display defaults; no currency conversion |
 | `/admin/settings/tiers` | Isolated create/edit drafts; existing tiers use the PUT endpoint; review limit changes |
@@ -26,7 +26,7 @@ The shell has one desktop navigation sidebar, a mobile bottom navigation, a noti
 - Credit review resolves the exact account before submission. The amount uses the existing strict decimal parser. Submit buttons are guarded while requests run. A timeout/server failure blocks another credit on that screen and instructs the operator to reconcile the customer's activity first.
 - A funding association **increases** that tracked funding balance by the credited amount, matching the existing server behavior. It is not a debit from a reserve. No foreign exchange occurs. Operators must verify matching denominations.
 - Funding accounts are summarized separately by their labeled currency, never under a single global symbol. The existing transaction API does not provide a reliable per-transaction currency snapshot, so these amounts are explicitly described as account units rather than inventing a currency.
-- Transaction status editing sends only changed status/notes and the transaction ID. Failing an external transfer explicitly warns about the irreversible, once-only refund. Internal transfers/deposits do not offer failure; failed transactions cannot be reopened. Other server-supported status changes remain available.
+- Transaction status editing sends only changed status/notes and the transaction ID. The funding follow-up moves refunds to an explicit Reverse and refund operation with a required reason. Internal transfers/deposits do not offer reversal; failed transactions cannot be reopened. Other server-supported status changes remain available.
 - User controls send field-specific payloads rather than broad user records. They refresh the selected user after success; financial actions link to freshly loaded customer records rather than refreshing the administrator's balance.
 - Neither the UI guards nor confirmations provide server-side idempotency, two-person approval, or an audit trail. See `ATTENTION.md` for release concerns.
 
