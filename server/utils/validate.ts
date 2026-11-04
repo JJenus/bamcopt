@@ -1,4 +1,4 @@
-import { H3Event, readBody, getValidatedRouterParams, createError } from "h3";
+import { H3Event, readBody, getQuery, getValidatedRouterParams, createError } from "h3";
 import { z, ZodError, type ZodTypeAny } from "zod";
 
 const toHttpError = (error: ZodError) =>
@@ -18,6 +18,9 @@ const run = <S extends ZodTypeAny>(schema: S, data: unknown): z.infer<S> => {
 /** Parse + validate the JSON body. Unknown keys are stripped (zod default). */
 export const parseBody = async <S extends ZodTypeAny>(event: H3Event, schema: S): Promise<z.infer<S>> =>
 	run(schema, (await readBody(event)) ?? {});
+
+/** Validate + coerce the query string (e.g. `?limit=20`). */
+export const parseQuery = <S extends ZodTypeAny>(event: H3Event, schema: S): z.infer<S> => run(schema, getQuery(event));
 
 export const uuidParam = async (event: H3Event, name = "id"): Promise<string> => {
 	const params = await getValidatedRouterParams(event, (p) =>

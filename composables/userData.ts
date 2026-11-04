@@ -1,9 +1,5 @@
 import { type Account, AccountStatus } from "~/utils/interfaces/Account";
 import { type IUser } from "~/utils/interfaces/IUser";
-import {
-	type INotification,
-	NotificationStatus,
-} from "~/utils/interfaces/Notification";
 import type { Transaction } from "~/utils/interfaces/Transaction";
 
 export const userData = () => {
@@ -46,15 +42,6 @@ export const userData = () => {
 	};
 
 	const transactions = useState<Transaction[]>("user-transactions", () => []);
-	const notifications = useState<INotification[]>("notifications", () => []);
-	const newNotifications = useState<INotification[]>(
-		"new-notifications",
-		() => []
-	);
-	const isNewNotification = useState<boolean>(
-		"new-notification",
-		() => false
-	);
 	const data = useState<IUser>("userData", () => initUser);
 	const account = useState<Account>("userAccount", () => initAcc);
 	const users = useState<IUser[]>("users", () => []);
@@ -100,49 +87,15 @@ export const userData = () => {
 			.catch(() => {});
 	};
 
-	const showNotifications = () => {
-		if (!isNewNotification.value) return;
-
-		notifications.value = notifications.value.map((notification) => ({
-			...notification,
-			status: NotificationStatus.READ,
-		}));
-		newNotifications.value = [];
-		isNewNotification.value = false;
-
-		notificationService.markAllRead().catch(() => {});
-	};
-
-	const getNotifications = () => {
-		if (!data.value.id) return;
-
-		notificationService
-			.listForUser(data.value.id)
-			.then((list) => {
-				notifications.value = list;
-				newNotifications.value = list.filter(
-					(notification) =>
-						notification.status === NotificationStatus.UNREAD
-				);
-				isNewNotification.value = newNotifications.value.length > 0;
-			})
-			.catch(() => {});
-	};
-
 	return {
 		account,
 		data,
 		users,
 		admins,
 		active,
-		notifications,
-		newNotifications,
-		isNewNotification,
 		transactions,
 		getUsers,
 		fetchBalance,
-		getNotifications,
-		showNotifications,
 		reloadUser,
 	};
 };

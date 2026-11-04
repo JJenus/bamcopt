@@ -52,6 +52,15 @@ Same `/api/...` paths and request/response shapes, so the frontend keeps working
 
 ## Nothing left open from the original review
 
+## Notifications UX
+- **Bell dropdown** (user + admin, desktop side bar and mobile header): unread badge, latest 6, "Mark all as read", "View all". It anchors to the bell and stays on screen (side bar, phones). Closes on outside click, Esc or navigation.
+- **Notifications page** (`/app/notifications`, `/admin/notifications`): All / Unread tabs, type filter (transfers / account / system), "Load more" paging.
+- **Detail view** (`/app/notifications/:id`, `/admin/notifications/:id`): opening it marks that one as read; a button opens what it is about (a transaction detail page at `/app/transaction/:id`, or the users list for admins).
+- **Toast** for new arrivals (click opens the notification). The bell polls only `GET /api/notifications/unread-count` every 15 s.
+- **Server:** paged + filtered list, unread count, single notification, single/all mark-as-read, `entity_type`/`entity_id` on notifications, `GET /api/transactions/detail/:id` (sender, receiver or admin). Run the SQL in `db/README.md` on an existing database.
+- Removed: the side drawer, the demo toast code, the duplicated admin copies, the client enum that had debit/credit swapped.
+- `npm run test:pages` server-renders the new pages with real sessions.
+
 ## Frontend
 - `services/` is the only place that calls the API (`http.ts` = single `$fetch` wrapper that adds the token, normalises errors to `ApiError`, logs out on an expired session). One file per area: auth, user, account, transaction, notification, settings, upload.
 - Components / pages / layouts never call the API. `pnpm lint:api` fails if they do.

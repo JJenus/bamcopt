@@ -328,7 +328,7 @@ const cancelRAF = ref<number | null>(null);
 			.then(() => {
 				useUserData.reloadUser();
 
-				inlineMsg.value = { text: "Transaction successful", type: "success" };
+				successAlert("Transaction successful");
 
 				form.value.amount = "0";
 				cleave.value.setRawValue(0);

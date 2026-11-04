@@ -24,7 +24,8 @@ export const useAuth = () => {
 		if (!user) return;
 
 		appUser.data.value = user;
-		appUser.account.value = user.account;
+		// an account-less user (e.g. a seeded admin) keeps the empty default instead of null
+		if (user.account) appUser.account.value = user.account;
 	};
 
 	// Restore the session from the cookie on first use (client and SSR).

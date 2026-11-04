@@ -1,5 +1,4 @@
 <script setup lang="ts">
-	const newNotification = userData().isNewNotification;
 
 	onMounted(() => {});
 </script>
@@ -31,32 +30,7 @@
 				<div
 					class="app-navbar-item d-flex justify-content-end flex-grow-1 me-1 d-lg-none"
 				>
-					<!--begin::Drawer toggle-->
-					<div
-						@click="userData().showNotifications()"
-						:class="
-							newNotification
-								? 'btn-color-primary btn-icon-primary'
-								: 'btn-color-muted btn-icon-muted'
-						"
-						class="symbol btn btn-icon btn-custom btn-active-light-primary w-35px h-35px w-md-40px h-md-40px"
-						id="kt_activities_toggle"
-					>
-						<i
-							v-if="newNotification"
-							class="ki-outline ki-notification-on fs-2x"
-						></i>
-						<i
-							v-else
-							class="ki-outline ki-notification-bing fs-2x"
-						></i>
-						<div
-							v-if="newNotification"
-							class="bg-danger blink position-absolute rounded-circle translate-middle start-100 top-100 border border-4 border-body h-15px w-15px ms-n3 mt-n3"
-							bis_skin_checked="1"
-						></div>
-					</div>
-					<!--end::Drawer toggle-->
+					<NotificationsBell base="/app" />
 				</div>
 				<!--end::Notifications-->
 				<div

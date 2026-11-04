@@ -104,7 +104,8 @@
 			title: "Account Upgrade",
 			message: `${user.value.name} (${user.value.email}) requests upgrade to level ${form.value.account.accountLevel}.`,
 			type: "info",
-			status: "unread",
+			entityType: "user" as const, // lets the admin open it from the notification
+			entityId: user.value.id,
 		};
 
 		// best effort: a failed notification must not break the upgrade request

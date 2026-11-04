@@ -1,5 +1,5 @@
 import { z } from "./validate";
-import { AccountStatus, NotificationType, TransactionStatus, TransactionType, SecurityLogAction } from "../models";
+import { AccountStatus, NotificationStatus, NotificationType, TransactionStatus, TransactionType, SecurityLogAction } from "../models";
 
 const uuid = z.string().uuid();
 const password = z.string().min(5, "password too short");
@@ -56,6 +56,13 @@ export const AccountUpdateBody = z.object({
 
 export const NotificationBody = z.object({
 	userId: uuid, title: z.string(), message: z.string().min(3), type: z.nativeEnum(NotificationType).optional(),
+	entityType: z.enum(["transaction", "user"]).optional(), entityId: z.string().max(64).optional(),
+});
+export const NotificationQuery = z.object({
+	status: z.nativeEnum(NotificationStatus).optional(),
+	group: z.enum(["transfers", "account", "system"]).optional(),
+	limit: z.coerce.number().int().min(1).max(50).default(20),
+	offset: z.coerce.number().int().min(0).default(0),
 });
 export const NotificationUpdateBody = z.object({ id: uuid });
 

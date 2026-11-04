@@ -13,3 +13,24 @@ SELECT account_number, COUNT(*) FROM accounts GROUP BY account_number HAVING COU
 ALTER TABLE accounts ADD UNIQUE (account_number);
 ALTER TABLE transactions ADD UNIQUE (transaction_id);
 ```
+
+## Notifications update (existing databases)
+
+New columns link a notification to what it is about (a transaction, a user). Run once:
+
+```sql
+ALTER TABLE notifications
+  ADD COLUMN IF NOT EXISTS entity_type varchar(255),
+  ADD COLUMN IF NOT EXISTS entity_id   varchar(255);
+CREATE INDEX IF NOT EXISTS notifications_user_status_created_idx
+  ON notifications (user_id, status, created_at DESC);
+```
+
+Notifications written by the OLD Express backend have `debit` / `credit` swapped (a bug that is fixed now).
+Only if your data came from that backend, and only ONCE, flip them (check the enum name first with `\dT` in psql):
+
+```sql
+UPDATE notifications
+   SET type = (CASE type WHEN 'credit' THEN 'debit' ELSE 'credit' END)::enum_notifications_type
+ WHERE type IN ('credit', 'debit');
+```

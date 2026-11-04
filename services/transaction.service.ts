@@ -12,6 +12,10 @@ export const transactionService = {
 	send: (tx: Record<string, unknown>) => apiRequest<Transaction>("/transactions", { method: "POST", body: tx }),
 	/** Admin: change status / notes. */
 	update: (tx: Pick<Transaction, "id" | "status" | "notes">) => apiRequest<Transaction>("/transactions", { method: "PUT", body: tx }),
+	/** One transaction (sender, receiver or admin) with names + beneficiary. */
+	get: (id: string) => apiRequest<Transaction & { senderName: string | null; receiverName: string | null }>(`/transactions/detail/${id}`),
+	/** Totals shown on the transactions page. */
+	aggregates: () => apiRequest<{ received: number; sent: number; net: number }>("/transactions/aggregates"),
 	/** Public receipt lookup. */
 	findReceipt: (transactionId: string) => apiRequest<Transaction>(`/transactions/find/${transactionId}`, { auth: false }),
 };

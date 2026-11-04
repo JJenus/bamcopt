@@ -1,5 +1,4 @@
 <script setup>
-	const newNotification = userData().isNewNotification;
 
 	const transactions = useUserSettings().transactions;
 
@@ -58,28 +57,7 @@
 
 			<div class="flex-grow-1 ms-1 ms-lg-3 d-lg-none"></div>
 
-			<!--begin::Notifications-->
-			<div
-				@click="userData().showNotifications()"
-				:class="
-					newNotification
-						? 'btn-color-primary btn-icon-primary'
-						: 'btn-color-muted btn-icon-muted'
-				"
-				class="symbol btn btn-icon btn-custom ms-lg-auto btn-active-light-primary w-35px h-35px w-md-40px h-md-40px"
-				id="kt_activities_toggle"
-			>
-				<i
-					v-if="newNotification"
-					class="ki-outline ki-notification-on fs-2x"
-				></i>
-				<i v-else class="ki-outline ki-notification-bing fs-2x"></i>
-				<div
-					v-if="newNotification"
-					class="bg-danger blink position-absolute rounded-circle translate-middle start-100 top-100 border border-4 border-body h-15px w-15px ms-n3 mt-n3"
-					bis_skin_checked="1"
-				></div>
-			</div>
+			<NotificationsBell base="/app" class="ms-lg-auto" />
 			<!--end::Notifications-->
 
 			<!--begin::Edit profile-->
