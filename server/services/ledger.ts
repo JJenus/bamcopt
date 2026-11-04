@@ -112,20 +112,20 @@ export const transfer = async (input: TransferInput) => {
 		});
 
 		// after commit, best effort
-		await notifySafe({ userId: input.senderId, title: "Transfer Processing", message: `${fromMinor(minor)} processing`, type: NotificationType.DEBIT });
+		await notifySafe({ userId: input.senderId, title: "Transfer Processing", message: `${fromMinor(minor)} processing`, type: NotificationType.DEBIT, entityType: "transaction", entityId: tx.id });
 		if (receiverId) {
-			await notifySafe({ userId: receiverId, title: "Credit alert", message: `Received ${fromMinor(minor)} from ${sender.name}`, type: NotificationType.CREDIT });
+			await notifySafe({ userId: receiverId, title: "Credit alert", message: `Received ${fromMinor(minor)} from ${sender.name}`, type: NotificationType.CREDIT, entityType: "transaction", entityId: tx.id });
 		}
 		return { ...tx.toJSON(), beneficiary: beneficiary.toJSON() };
 	} catch (error: any) {
 		// A refused transfer is recorded (no money moved) and the sender is told why.
 		if ([403, 404, 422].includes(error?.statusCode)) {
 			try {
-				await Transaction.create({
+				const failed = await Transaction.create({
 					senderId: input.senderId, receiverId: receiverId ?? null, transactionId: newTransactionId(),
 					amount: fromMinor(minor), type: input.type, notes: input.notes, status: TransactionStatus.FAILED,
 				});
-				await notifySafe({ userId: input.senderId, title: "Transaction error", message: error.message, type: NotificationType.FAILED });
+				await notifySafe({ userId: input.senderId, title: "Transaction error", message: error.message, type: NotificationType.FAILED, entityType: "transaction", entityId: failed.id });
 			} catch {}
 		}
 		throw error;
@@ -200,12 +200,14 @@ export const updateTransaction = async (id: string, data: { status?: Transaction
 
 	await notifySafe(
 		refunded
-			? { userId: tx.senderId, title: "Transfer failed", message: `${tx.amount} was refunded to your account`, type: NotificationType.FAILED }
+			? { userId: tx.senderId, title: "Transfer failed", message: `${tx.amount} was refunded to your account`, type: NotificationType.FAILED, entityType: "transaction", entityId: tx.id }
 			: {
 					userId: tx.senderId,
 					title: tx.status === TransactionStatus.COMPLETED ? "Transaction Successful" : "Transfer Processing",
 					message: `${tx.amount} ${tx.status === TransactionStatus.AWAITING ? "Sent to bank" : tx.status}`,
 					type: NotificationType.DEBIT,
+					entityType: "transaction",
+					entityId: tx.id,
 			  }
 	);
 	return tx;
@@ -265,4 +267,14 @@ export const findReceipt = async (transactionId: string) => {
 		receipt.beneficiary = b;
 	}
 	return receipt;
+};
+
+/** One transaction for its sender / receiver (or an admin). Others get "not found". */
+export const getTransactionDetail = async (id: string, userId: string, admin: boolean) => {
+	const tx = await Transaction.findByPk(id);
+	if (!tx || (!admin && tx.senderId !== userId && tx.receiverId !== userId)) throw notFound("Transaction not found");
+	const [full] = await withBeneficiaries([tx]);
+	const people = await User.findAll({ where: { id: [tx.senderId, tx.receiverId].filter(Boolean) as string[] } });
+	const name = (uid: string | null) => people.find((u) => u.id === uid)?.name ?? null;
+	return { ...full, senderName: name(tx.senderId), receiverName: name(tx.receiverId) };
 };

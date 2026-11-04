@@ -9,15 +9,16 @@ export class ApiError extends Error {
 	}
 }
 
-type Options = { method?: "GET" | "POST" | "PUT" | "DELETE"; body?: unknown; auth?: boolean; timeout?: number };
+type Options = { method?: "GET" | "POST" | "PUT" | "DELETE"; body?: unknown; query?: Record<string, unknown>; auth?: boolean; timeout?: number };
 
-export async function apiRequest<T>(path: string, { method = "GET", body, auth = true, timeout = 20000 }: Options = {}): Promise<T> {
+export async function apiRequest<T>(path: string, { method = "GET", body, query, auth = true, timeout = 20000 }: Options = {}): Promise<T> {
 	const token = auth ? useAuth().token.value : undefined;
 	try {
 		const response = await $fetch(path, {
 			baseURL: useRuntimeConfig().public.API_BASE as string,
 			method,
 			body: body as any,
+			query,
 			timeout,
 			headers: token ? { Authorization: `Bearer ${token}` } : undefined,
 		});

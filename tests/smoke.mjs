@@ -324,8 +324,55 @@ async function main() {
 	check("login history is recorded", logs.status === 200 && logs.data.some((l) => l.action === "login"), JSON.stringify(logs.data).slice(0, 150));
 	check("cannot read someone else's login history", (await call("GET", `/api/security-logs/${alice.id}`, { token: bob.token })).status === 403);
 
+	console.log("\nnotifications (paging, filters, unread count, detail, links)");
+	const nlist = (u, q = "", token = u.token) => call("GET", `/api/notifications/${u.id}${q}`, { token });
+	const first = await nlist(bob);
+	check("list returns items + total + unread", first.status === 200 && Array.isArray(first.data.items) && typeof first.data.total === "number" && typeof first.data.unread === "number");
+	check("newest first", first.data.items.every((n, i, a) => i === 0 || new Date(a[i - 1].createdAt) >= new Date(n.createdAt)));
+	const p1 = await nlist(bob, "?limit=2&offset=0");
+	const p2 = await nlist(bob, "?limit=2&offset=2");
+	check("paging returns different items", p1.data.items.length === 2 && p2.data.items.length > 0 && !p2.data.items.some((n) => p1.data.items.some((m) => m.id === n.id)));
+	check("limit above 50 -> 422", (await nlist(bob, "?limit=500")).status === 422);
+	check("unknown group -> 422", (await nlist(bob, "?group=nope")).status === 422);
+	const un = await nlist(bob, "?status=unread");
+	check("unread filter", un.data.items.length > 0 && un.data.items.every((n) => n.status === "unread") && un.data.total === un.data.unread);
+	const tr = await nlist(bob, "?group=transfers");
+	check("transfers filter", tr.data.items.length > 0 && tr.data.items.every((n) => ["debit", "credit", "failed"].includes(n.type)));
+	const cnt = await call("GET", "/api/notifications/unread-count", { token: bob.token });
+	check("unread-count matches the list", cnt.status === 200 && cnt.data.unread === first.data.unread);
+	check("unread-count needs a session", (await call("GET", "/api/notifications/unread-count")).status === 401);
+	check("cannot list someone else's notifications", (await nlist(bob, "", dave.token)).status === 403);
+
+	const credit = tr.data.items.find((n) => n.type === "credit" && n.entityType === "transaction");
+	check("credit notification links to its transaction", !!credit && !!credit.entityId);
+	const det = await call("GET", `/api/transactions/detail/${credit.entityId}`, { token: bob.token });
+	check("receiver can open the transaction", det.status === 200 && det.data.receiverId === bob.id && !!det.data.senderName && !!det.data.beneficiary);
+	const senderTok = [alice, carol, frank, erin].find((u) => u.id === det.data.senderId)?.token;
+	check("sender can open it too", (await call("GET", `/api/transactions/detail/${credit.entityId}`, { token: senderTok })).status === 200);
+	check("admin can open it", (await call("GET", `/api/transactions/detail/${credit.entityId}`, { token: admin.token })).status === 200);
+	check("a stranger gets 404", (await call("GET", `/api/transactions/detail/${credit.entityId}`, { token: dave.token })).status === 404);
+	const debitN = (await nlist(alice, "?group=transfers")).data.items.find((n) => n.type === "debit");
+	check("sender notification links to a transaction as well", debitN?.entityType === "transaction" && !!debitN.entityId);
+
+	const one = un.data.items[0];
+	const got = await call("GET", `/api/notifications/item/${one.id}`, { token: bob.token });
+	check("open one notification", got.status === 200 && got.data.id === one.id);
+	check("stranger gets 404 for it", (await call("GET", `/api/notifications/item/${one.id}`, { token: dave.token })).status === 404);
+	await call("PUT", "/api/notifications", { token: bob.token, body: { id: one.id } });
+	const unreadAfter = (await call("GET", "/api/notifications/unread-count", { token: bob.token })).data.unread;
+	check("marking one as read lowers the count by one", unreadAfter === cnt.data.unread - 1);
+	await call("PUT", "/api/notifications", { token: bob.token, body: { id: one.id } });
+	check("marking it again changes nothing", (await call("GET", "/api/notifications/unread-count", { token: bob.token })).data.unread === unreadAfter);
+	check("cannot mark someone else's as read", (await call("PUT", "/api/notifications", { token: dave.token, body: { id: one.id } })).status === 404);
+	const all = await call("PUT", "/api/notifications/all", { token: bob.token });
+	check("mark all as read", all.status === 200 && all.data.unread === 0 && (await call("GET", "/api/notifications/unread-count", { token: bob.token })).data.unread === 0);
+
+	check("bad entity type -> 422", (await call("POST", "/api/notifications", { token: alice.token, body: { userId: admin.id, title: "x", message: "hello", entityType: "nope" } })).status === 422);
+	await call("POST", "/api/notifications", { token: alice.token, body: { userId: admin.id, title: "Upgrade", message: "please upgrade me", entityType: "user", entityId: alice.id } });
+	const adminList = await nlist({ id: admin.id }, "", admin.token);
+	check("user -> admin notification keeps its link", adminList.data.items.some((n) => n.entityType === "user" && n.entityId === alice.id));
+
 	console.log("\nhousekeeping");
-	check("mark all notifications read", (await call("PUT", "/api/notifications/all", { token: alice.token })).data.every((n) => n.status === "read"));
 	check("unknown route -> 404 json", (await call("GET", "/api/nope", { token: alice.token })).status === 404);
 }
 

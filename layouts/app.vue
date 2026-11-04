@@ -96,12 +96,6 @@
 			<AppMobileNavBar />
 		</div>
 		<!--end::App-->
-		<AppNotifications />
-
-		<!-- To be USED AS NOTIFICATION -->
-		<!--begin::Drawers-->
-
-		<!--end::Drawers-->
 
 		<!--end::Engage toolbar--><!--begin::Scrolltop-->
 		<div

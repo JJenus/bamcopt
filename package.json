@@ -15,7 +15,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "node tests/smoke.mjs",
-    "lint:api": "node scripts/check-no-api-in-ui.mjs"
+    "lint:api": "node scripts/check-no-api-in-ui.mjs",
+    "test:pages": "node tests/pages.mjs"
   },
   "devDependencies": {
     "@nuxt/devtools": "^3.4.4",

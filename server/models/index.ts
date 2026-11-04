@@ -115,6 +115,7 @@ Beneficiary.init(
 export class Notification extends Model {
 	declare id: string; declare userId: string; declare title: string; declare message: string;
 	declare status: NotificationStatus; declare type: NotificationType;
+	declare entityType: string | null; declare entityId: string | null;
 }
 Notification.init(
 	{
@@ -122,6 +123,9 @@ Notification.init(
 		userId: DataTypes.STRING, title: DataTypes.STRING, message: DataTypes.STRING,
 		status: { type: DataTypes.ENUM(...Object.values(NotificationStatus)), defaultValue: NotificationStatus.UNREAD },
 		type: { type: DataTypes.ENUM(...Object.values(NotificationType)), defaultValue: NotificationType.INFO },
+		// what the notification is about (for the "view" link): 'transaction' | 'user'
+		entityType: { type: DataTypes.STRING, allowNull: true },
+		entityId: { type: DataTypes.STRING, allowNull: true },
 	},
 	{ sequelize, modelName: "Notification" }
 );

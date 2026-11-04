@@ -20,6 +20,7 @@
 		data-bs-theme-mode="dark"
 		class="app-default"
 	>
+		<Toast class="mt-15 mt-lg-5" />
 		<div
 			class="d-flex flex-column flex-root app-root position-relative"
 			id="kt_app_root"
@@ -78,12 +79,6 @@
 			<AdminMobileNavBar />
 		</div>
 		<!--end::App-->
-		<AppNotifications />
-
-		<!-- To be USED AS NOTIFICATION -->
-		<!--begin::Drawers-->
-
-		<!--end::Drawers-->
 
 		<!--end::Engage toolbar--><!--begin::Scrolltop-->
 		<div
