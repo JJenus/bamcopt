@@ -489,22 +489,7 @@ const cancelRAF = ref<number | null>(null);
 							<i class="ki-solid ki-dollar"></i>
 							Request payment
 						</button>
-						<NuxtLink
-							to="/app/scan"
-							class="btn btn-sm btn-light-warning fw-semibold me-2"
-						>
-							<i class="ki-duotone ki-scan-barcode">
-								<i class="path1"></i>
-								<i class="path2"></i>
-								<i class="path3"></i>
-								<i class="path4"></i>
-								<i class="path5"></i>
-								<i class="path6"></i>
-								<i class="path7"></i>
-								<i class="path8"></i>
-							</i>
-							Scan
-						</NuxtLink>
+						
 					</div>
 
 					<div class="row flex-row row-cols-3 justify-content-end">

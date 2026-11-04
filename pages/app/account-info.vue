@@ -11,6 +11,7 @@
 </script>
 <template>
 	<div>
+		<SettingsBack hub="/app/settings" :titles="{ '/app/account-info': 'Account & limits' }" />
 		<!--begin::Engage widget 12-->
 		<div class="card card-custom border-0 h-md-100 mb-5 mb-lg-10">
 			<div

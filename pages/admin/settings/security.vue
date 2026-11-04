@@ -1,6 +1,3 @@
 <template>
-	<div>
-		<AppSettingsLoginSessions />
-		<AppSettingsDeactivate />
-	</div>
+	<AppSettingsLoginSessions />
 </template>

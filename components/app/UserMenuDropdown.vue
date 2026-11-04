@@ -287,9 +287,9 @@
 
 			<!--begin::Menu item-->
 			<div class="menu-item px-5 my-1 d-none">
-				<NuxLink to="/app/settings" class="menu-link px-5">
+				<NuxtLink to="/app/settings" class="menu-link px-5">
 					Account Settings
-				</NuxLink>
+				</NuxtLink>
 			</div>
 			<!--end::Menu item-->
 

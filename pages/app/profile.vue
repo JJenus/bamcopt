@@ -13,6 +13,7 @@
 
 <template>
 	<div>
+		<SettingsBack hub="/app/settings" :titles="{ '/app/profile': 'Profile', '/app/profile/edit': 'Edit profile' }" />
 		<div class="card mb-5 mb-xl-8">
 			<!--begin::Card body-->
 			<div class="card-body pt-15">
