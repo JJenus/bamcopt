@@ -21,6 +21,7 @@ export const notificationMeta = (type: NotificationType | string): Meta => {
 /** Where "view" should take the user, or null when the notification has nothing to open. */
 export const notificationTarget = (n: INotification, base: string): { to: string; label: string } | null => {
 	if (!n.entityId) return null;
+	if (n.entityType === 'deposit') return { to: `${base === '/admin' ? '/admin/deposits' : '/app/add-funds/requests'}?request=${encodeURIComponent(n.entityId)}`, label: 'View deposit request' };
 	if (n.entityType === "transaction" && base === "/app") return { to: `/app/transaction/${n.entityId}`, label: "View transaction" };
 	if (n.entityType === "user" && base === "/admin") return { to: `/admin/users/${encodeURIComponent(n.entityId)}`, label: "Open user" };
 	if (n.entityType === "transaction" && base === "/admin") return { to: `/admin/transaction/${encodeURIComponent(n.entityId)}`, label: "View transaction" };

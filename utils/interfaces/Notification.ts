@@ -23,7 +23,7 @@ export interface INotification {
 	type: NotificationType;
 	createdAt: string;
 	/** what it is about; used for the "view" link */
-	entityType?: "transaction" | "user" | null;
+	entityType?: "transaction" | "user" | "deposit" | null;
 	entityId?: string | null;
 }
 

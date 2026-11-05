@@ -7,10 +7,10 @@
 import crypto from "node:crypto";
 import { Op, Transaction as DbTx } from "sequelize";
 import {
-	Account, AccountLevel, AccountStatus, Beneficiary, Currency, FundingAccount, NotificationType, Transaction, TransactionStatus, TransactionType, User,
+	Account, AccountLevel, AccountStatus, Beneficiary, Currency, DepositRequest, FundingAccount, NotificationType, Transaction, TransactionStatus, TransactionType, User,
 } from "../models";
 import { sequelize } from "../utils/db";
-import { badRequest, forbidden, notFound, unprocessable } from "../utils/errors";
+import { badRequest, conflict, forbidden, notFound, unprocessable } from "../utils/errors";
 import { fromMinor, positiveMinor, toMinor } from "../utils/money";
 import { checkAllCodes, type Codes } from "./codes";
 import { getUser, getUserByEmail } from "./users";
@@ -173,6 +173,38 @@ export const topUp = async (email: string, amount: number, fundingAccountId?: st
 		);
 		return account;
 	});
+};
+
+/** A request decision and all credited balances/ledger links commit as a single operation. */
+export const decideDepositRequest = async (id: string, reviewerId: string, input: { action: 'approve' | 'reject'; note: string }) => {
+	const result = await sequelize.transaction(async t => {
+		const request = await DepositRequest.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
+		if (!request) throw notFound('Deposit request not found');
+		const status = input.action === 'approve' ? 'approved' : 'rejected';
+		if (request.status === status) return { request, changed: false };
+		if (request.status !== 'pending') throw conflict('This deposit request has already been decided');
+		const [claimed] = await DepositRequest.update({ status, decisionNote: input.note, reviewedBy: reviewerId, reviewedAt: new Date() }, { where: { id, status: 'pending' }, transaction: t });
+		if (claimed !== 1) throw conflict('This request was decided by another administrator. Refresh its status.');
+		if (input.action === 'approve') {
+			const minor = positiveMinor(request.amount);
+			const account = (await lockAccounts([request.userId], t)).get(request.userId);
+			if (!account || account.status === AccountStatus.CLOSED) throw unprocessable('Customer account is unavailable');
+			const funding = await FundingAccount.findByPk(request.fundingAccountId, { transaction: t, lock: t.LOCK.UPDATE });
+			if (!funding || funding.currency?.toUpperCase() !== request.currency) throw unprocessable('Funding currency changed. Do not approve this request.');
+			const next = toMinor(account.amount) + minor;
+			if (!Number.isSafeInteger(next)) throw unprocessable('Balance exceeds safe precision');
+			const { max } = await limitsFor(account, t);
+			if (max > 0 && next > max) throw unprocessable(`Exceeds the account's maximum balance of ${fromMinor(max)}`);
+			await creditFundingAccount(request.fundingAccountId, account, minor, t);
+			await account.update({ amount: fromMinor(next) }, { transaction: t });
+			const tx = await Transaction.create({ senderId: request.userId, receiverId: request.userId, transactionId: newTransactionId(), amount: fromMinor(minor), type: TransactionType.CREDIT, status: TransactionStatus.COMPLETED, notes: `Deposit request ${request.id}${request.reference ? ` (${request.reference})` : ''}: ${input.note}` }, { transaction: t });
+			await request.update({ transactionId: tx.id }, { transaction: t });
+		}
+		await request.reload({ transaction: t });
+		return { request, changed: true };
+	});
+	if (result.changed) await notifySafe({ userId: result.request.userId, title: input.action === 'approve' ? 'Deposit approved' : 'Deposit request rejected', message: input.action === 'approve' ? `${result.request.amount} ${result.request.currency} credited after verification. ${input.note}` : input.note, type: input.action === 'approve' ? NotificationType.CREDIT : NotificationType.INFO, ...(result.request.transactionId ? { entityType: 'transaction', entityId: result.request.transactionId } : { entityType: 'deposit', entityId: result.request.id }) });
+	return result.request;
 };
 
 /** Explicit administrative correction. Positive amount + direction; every change gets a ledger row. */

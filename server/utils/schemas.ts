@@ -45,6 +45,9 @@ export const AccountAdjustmentBody = BalanceChangeBody.extend({
 	email: z.string().email(), reason: z.string().trim().min(3).max(500), fundingAccountId: uuid.optional(),
 }).refine(body => body.direction === 'credit' || !body.fundingAccountId, 'Funding association is only available for credits');
 export const TransactionReversalBody = z.object({ action: z.literal('reverse'), reason: z.string().trim().min(3).max(500) }).strict();
+export const DepositRequestBody = z.object({ fundingAccountId: uuid, amount: z.number().positive(), requestKey: uuid, reference: z.string().trim().max(200).default('') }).strict();
+export const DepositRequestQuery = z.object({ status: z.enum(['pending', 'approved', 'rejected']).optional(), limit: z.coerce.number().int().min(1).max(50).default(20), offset: z.coerce.number().int().min(0).default(0) });
+export const DepositDecisionBody = z.object({ action: z.enum(['approve', 'reject']), note: z.string().trim().min(3).max(500) }).strict();
 
 export const FundingAccountBody = z.object({
 	label: z.string().min(2), type: z.enum(["bank", "crypto", "other"]).default("bank"),
@@ -61,7 +64,7 @@ export const AccountUpdateBody = z.object({
 
 export const NotificationBody = z.object({
 	userId: uuid, title: z.string(), message: z.string().min(3), type: z.nativeEnum(NotificationType).optional(),
-	entityType: z.enum(["transaction", "user"]).optional(), entityId: z.string().max(64).optional(),
+	entityType: z.enum(["transaction", "user", "deposit"]).optional(), entityId: z.string().max(64).optional(),
 });
 export const NotificationQuery = z.object({
 	status: z.nativeEnum(NotificationStatus).optional(),

@@ -15,7 +15,7 @@ type NewNotification = {
 	message: string;
 	type?: NotificationType;
 	/** what it is about, so the UI can link to it */
-	entityType?: "transaction" | "user";
+	entityType?: "transaction" | "user" | "deposit";
 	entityId?: string;
 };
 

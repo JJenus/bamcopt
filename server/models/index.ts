@@ -188,4 +188,27 @@ FundingAccount.init(
 	{ sequelize, modelName: "FundingAccount" }
 );
 
+export class DepositRequest extends Model {
+	declare id: string; declare userId: string; declare fundingAccountId: string; declare requestKey: string;
+	declare amount: number; declare currency: string; declare fundingSnapshot: Record<string, unknown>;
+	declare reference: string; declare status: 'pending' | 'approved' | 'rejected';
+	declare decisionNote: string | null; declare reviewedBy: string | null; declare reviewedAt: Date | null;
+	declare transactionId: string | null;
+}
+DepositRequest.init({
+	id,
+	userId: { type: DataTypes.UUID, allowNull: false, references: { model: 'users', key: 'id' } },
+	fundingAccountId: { type: DataTypes.UUID, allowNull: false, references: { model: 'funding_accounts', key: 'id' } },
+	requestKey: { type: DataTypes.UUID, allowNull: false },
+	amount: money('amount'), currency: { type: DataTypes.STRING(10), allowNull: false },
+	fundingSnapshot: { type: DataTypes.JSON, allowNull: false },
+	reference: { type: DataTypes.STRING(200), allowNull: false, defaultValue: '' },
+	status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'pending', validate: { isIn: [['pending', 'approved', 'rejected']] } },
+	decisionNote: DataTypes.TEXT, reviewedBy: { type: DataTypes.UUID, references: { model: 'users', key: 'id' } }, reviewedAt: DataTypes.DATE,
+	transactionId: { type: DataTypes.UUID, unique: true, references: { model: 'transactions', key: 'id' } },
+}, { sequelize, modelName: 'DepositRequest', indexes: [
+	{ unique: true, fields: ['user_id', 'request_key'] },
+	{ fields: ['user_id', 'created_at'] }, { fields: ['status', 'created_at'] },
+] });
+
 export { sequelize };

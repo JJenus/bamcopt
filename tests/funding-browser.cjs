@@ -64,7 +64,11 @@ if (!['127.0.0.1', 'localhost'].includes(new URL(BASE).hostname) || !DB || !reso
 		await card.getByRole('button', { name: 'Publish to customers' }).click();
 		await adminPage.getByRole('button', { name: 'Confirm and save', exact: true }).click();
 		await adminPage.getByRole('heading', { name: 'Change customer visibility' }).waitFor({ state: 'hidden' });
-		await go(userPage, '/app/add-funds'); await userPage.getByRole('heading', { name: label, exact: true }).waitFor();
+		await go(userPage, '/app/add-funds');
+		await userPage.getByLabel('Deposit amount', { exact: true }).fill('1.00');
+		await userPage.getByLabel('Funding account', { exact: true }).selectOption(fundingId);
+		await userPage.getByRole('button', { name: 'Continue to payment details', exact: true }).click();
+		await userPage.getByRole('heading', { name: label, exact: true }).waitFor();
 		const publicAccount = (await api('/funding-accounts', { token: customer.token })).find(item => item.id === fundingId);
 		assert.equal('balance' in publicAccount, false); assert.equal('active' in publicAccount, false);
 		await userPage.getByRole('button', { name: 'Copy Account / destination', exact: true }).click();
@@ -126,13 +130,50 @@ if (!['127.0.0.1', 'localhost'].includes(new URL(BASE).hostname) || !DB || !reso
 		await go(userPage, '/app/transactions'); await userPage.getByRole('button', { name: /^Transfer refund,/ }).click();
 		await userPage.getByText(refunded[0].notes, { exact: true }).waitFor(); await userPage.getByRole('button', { name: 'Close transaction details', exact: true }).click();
 		console.log('PASS real customer credit/debit → ledger/activity → explicit reversal → once-only refund; funding association remains correct');
+		await go(userPage, '/app/add-funds');
+		await userPage.getByRole('button', { name: 'Continue to payment details', exact: true }).click(); assert.equal(await userPage.locator('.is-invalid').count(), 2);
+		await userPage.getByLabel('Deposit amount', { exact: true }).fill('7.71');
+		await userPage.getByLabel('Funding account', { exact: true }).selectOption(fundingId);
+		await userPage.getByRole('button', { name: 'Continue to payment details', exact: true }).click();
+		assert.equal((await api('/deposit-requests', { token: customer.token })).total, 0, 'Step 1 must not submit a request');
+		await userPage.getByLabel('Payment reference (optional)', { exact: true }).fill(`BANK-${stamp}`);
+		await userPage.getByRole('button', { name: 'Submit deposit request', exact: true }).click(); await userPage.waitForURL('**/app/add-funds/requests?**');
+		await userPage.getByRole('heading', { name: 'Deposit requests', exact: true }).waitFor();
+		assert.equal(await balance(), 25.29); assert.equal((await fundingList()).find(item => item.id === fundingId).balance, 115.29);
+		const request = (await api('/deposit-requests', { token: customer.token })).items[0]; assert.equal(request.status, 'pending');
+		await go(adminPage, '/admin/deposits');
+		await adminPage.getByRole('button').filter({ hasText: `BANK-${stamp}` }).click();
+		await adminPage.getByLabel('Decision', { exact: true }).selectOption('approve');
+		await adminPage.getByLabel('Verification note / rejection reason (visible to customer)', { exact: true }).fill('Receipt verified on bank statement');
+		await adminPage.getByRole('checkbox').check(); await adminPage.getByRole('button', { name: 'Review decision', exact: true }).click();
+		assert.equal(await balance(), 25.29);
+		await adminPage.getByRole('button', { name: 'Confirm decision', exact: true }).click(); await adminPage.getByText(/This request is approved/).waitFor();
+		assert.equal(await balance(), 33); assert.equal((await fundingList()).find(item => item.id === fundingId).balance, 123);
+		await api(`/deposit-requests/${request.id}/decision`, { token: adminToken, method: 'POST', body: { action: 'approve', note: 'Retry after verifying recorded approval' } }); assert.equal(await balance(), 33);
+		await userPage.getByRole('button', { name: 'Refresh requests', exact: true }).click(); await userPage.getByRole('link', { name: 'View credited transaction', exact: true }).click(); await userPage.waitForURL('**/app/transaction/**');
+		await go(userPage, '/app/add-funds'); await userPage.getByLabel('Deposit amount', { exact: true }).fill('2'); await userPage.getByLabel('Funding account', { exact: true }).selectOption(fundingId); await userPage.getByRole('button', { name: 'Continue to payment details', exact: true }).click(); await userPage.getByLabel('Payment reference (optional)', { exact: true }).fill(`REJECT-${stamp}`); await userPage.getByRole('button', { name: 'Submit deposit request', exact: true }).click(); await userPage.waitForURL('**/app/add-funds/requests?**');
+		await go(adminPage, '/admin/deposits'); await adminPage.getByRole('button').filter({ hasText: `REJECT-${stamp}` }).click(); await adminPage.getByLabel('Decision', { exact: true }).selectOption('reject'); await adminPage.getByLabel('Verification note / rejection reason (visible to customer)', { exact: true }).fill('No matching payment found'); await adminPage.getByRole('button', { name: 'Review decision', exact: true }).click(); await adminPage.getByRole('button', { name: 'Confirm decision', exact: true }).click(); await adminPage.getByText(/This request is rejected/).waitFor();
+		await userPage.getByRole('button', { name: 'Refresh requests', exact: true }).click(); await userPage.getByText('No matching payment found', { exact: true }).waitFor(); assert.equal(await balance(), 33);
+		console.log('PASS two-step user deposit → dedicated requests page → admin verification → atomic once-only credit and customer receipt; rejection moves no money');
+		let dropResponse = true;
+		await userPage.route('**/api/deposit-requests', async route => {
+			if (route.request().method() === 'POST' && dropResponse) { dropResponse = false; await route.fetch(); await route.abort('failed'); }
+			else await route.continue();
+		});
+		await go(userPage, '/app/add-funds'); await userPage.getByLabel('Deposit amount', { exact: true }).fill('1'); await userPage.getByLabel('Funding account', { exact: true }).selectOption(fundingId); await userPage.getByRole('button', { name: 'Continue to payment details', exact: true }).click(); await userPage.getByLabel('Payment reference (optional)', { exact: true }).fill(`RECOVERY-${stamp}`); await userPage.getByRole('button', { name: 'Submit deposit request', exact: true }).click();
+		await userPage.getByRole('button', { name: 'Retry same request', exact: true }).waitFor();
+		const beforeRecovery = await api('/deposit-requests', { token: customer.token }); assert.equal(beforeRecovery.total, 3);
+		await go(userPage, '/app/add-funds'); await userPage.getByRole('button', { name: 'Retry same request', exact: true }).click(); await userPage.waitForURL('**/app/add-funds/requests?**');
+		assert.equal((await api('/deposit-requests', { token: customer.token })).total, 3); assert.equal(await balance(), 33);
+		await userPage.unroute('**/api/deposit-requests');
+		console.log('PASS lost response after real submission → reload → same-key recovery without duplicate request or money movement');
 		await go(adminPage, '/admin/funding');
 		card = adminPage.locator('section').filter({ has: adminPage.getByRole('heading', { name: label, exact: true }) });
 		await card.getByRole('button', { name: 'Hide from customers', exact: true }).click(); await adminPage.getByRole('button', { name: 'Confirm and save', exact: true }).click();
 		await adminPage.getByRole('heading', { name: 'Change customer visibility' }).waitFor({ state: 'hidden' });
 		await go(userPage, '/app/add-funds'); assert.equal(await userPage.getByRole('heading', { name: label, exact: true }).count(), 0);
 		await adminPage.setViewportSize({ width: 390, height: 844 });
-		for (const path of ['/admin/funding', '/admin/top-up', `/admin/transaction/${debit.id}`]) { await go(adminPage, path); assert.equal(await adminPage.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, path); }
+		for (const path of ['/admin/funding', '/admin/top-up', '/admin/deposits', `/admin/transaction/${debit.id}`]) { await go(adminPage, path); assert.equal(await adminPage.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, path); }
 		await go(adminPage, '/admin/funding'); await adminPage.screenshot({ path: '/tmp/opencode/bancopt-funding-admin-mobile.png', fullPage: true });
 		assert.deepEqual(failures, []);
 		console.log('PASS real unpublish → customer hidden, responsive admin forms, no runtime/hydration errors');

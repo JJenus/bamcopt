@@ -35,6 +35,9 @@ The public pages use conservative, general information where business details we
 
 ## Explicit funding operations follow-up
 
+- **Verified deposit-request deployment:** The new two-step Add funds submission and `/admin/deposits` approval queue require `db/migrations/20261105_deposit_requests.sql` on existing PostgreSQL databases. No real database migration has been executed. See `docs/deposit-requests.md` for the flow, API and recovery contract.
+- **Actual receipt verification:** User submission is not proof of payment. Approvers must verify the external receipt and check for prior manual credits/other requests for the same payment. Request-key uniqueness and atomic approval prevent retries of a single request from crediting twice; they cannot identify one bank payment submitted under different request IDs.
+
 - **Client compatibility:** Signed funding `adjustment` payloads are rejected. Use `balanceChange: { direction: "credit" | "debit", amount: positiveNumber }`. The legacy positive-credit endpoint remains available, now with matching-currency validation for funding associations. See `docs/funding-operations.md` for contracts.
 - **Correction accounting:** Customer corrections require a reason and write credit/withdrawal ledger entries. Administrative debits count under the existing outgoing aggregation and daily-limit accounting. A debit only changes the customer balance; funding associations are credit-only. Transaction reversals refund the sender once and never implicitly adjust a funding balance.
 - **Audit and concurrency:** Funding-only changes still lack a separate durable operator history. Customer ledger reasons are not an immutable approval/audit system. SQLite concurrency tests verify no duplicate refunds, but a contending request may receive an error; PostgreSQL locking needs deployment-environment validation. Enums do not replace server idempotency keys or cross-device reconciliation.

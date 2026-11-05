@@ -1,6 +1,6 @@
 # Explicit funding and balance operations
 
-Follow-up to the UI revamp pushed as `658b089`. No database schema change or production migration is required.
+Follow-up to the UI revamp pushed as `658b089`. The explicit adjustment/reversal release itself needs no schema migration. The subsequent [verified deposit-request extension](deposit-requests.md) adds a two-step user form, a dedicated requests view and admin approval; **that extension requires** `db/migrations/20261105_deposit_requests.sql` before production deployment.
 
 ## Customer funding instructions
 

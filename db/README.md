@@ -14,6 +14,15 @@ ALTER TABLE accounts ADD UNIQUE (account_number);
 ALTER TABLE transactions ADD UNIQUE (transaction_id);
 ```
 
+## Deposit requests (2026-11-05)
+
+Before deploying customer deposit submissions and admin approval, apply
+`db/migrations/20261105_deposit_requests.sql` to the existing PostgreSQL database.
+It creates an additive table with per-user submission-key uniqueness and a unique ledger link.
+It does not alter historical balances or transactions. Back up before migration; do not drop the
+table for rollback after requests have been received. Fresh local test databases create it through
+`DB_SYNC=true`. No production migration has been run by the coding task.
+
 ## Notifications update (existing databases)
 
 New columns link a notification to what it is about (a transaction, a user). Run once:

@@ -36,6 +36,8 @@ try {
     ["admin: routable user details", `/admin/users/${user.userId}`, admin, "User workspace"],
     ["admin: account-less administrator", `/admin/users/${admin.userId}`, admin, "User workspace"],
     ["admin: funding", "/admin/funding", admin, "Funding accounts"],
+    ["admin: deposit requests", "/admin/deposits", admin, "Deposit requests"],
+    ["user: deposit request history", "/app/add-funds/requests", user, "Deposit requests"],
     ["admin: balance adjustment review", "/admin/top-up", admin, "Adjust user balance"],
     ["admin: transaction details", "/admin/transaction/00000000-0000-4000-8000-000000000000", admin, "Transaction details"],
     ["admin: defaults", "/admin/settings/defaults", admin, "App defaults"],
