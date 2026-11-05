@@ -37,7 +37,7 @@ This deduplicates one submission and approval. It does **not** prove money arriv
 
 ## Deployment
 
-**Before deploying this feature to an existing PostgreSQL database**, apply `db/migrations/20261105_deposit_requests.sql` after a backup. It creates the request table, foreign keys, unique submission keys, unique ledger links and lookup indexes. It does not modify balances or historical transactions. The task does not execute a production migration. Do not drop the table to roll back after accepting live requests; retain records and disable the submission/review UI if a rollback is needed.
+**Before deploying this feature to an existing PostgreSQL database**, back up and run `pnpm db:migrate`. The standard Sequelize CLI applies pending JavaScript migrations and tracks them in `SequelizeMeta`; no individual SQL execution is required. It creates/adopts the request table and adds its missing checks/unique indexes without modifying balances or historical transactions. The original SQL file remains an unchanged reference. The task does not execute a production migration. Do not drop the table to roll back after accepting live requests; retain records and disable the submission/review UI if a rollback is needed. See `db/README.md` for configuration and release-job setup.
 
 Fresh isolated SQLite test databases create the table through `DB_SYNC=true`. Recorded concurrency checks use SQLite; deployment-specific PostgreSQL locking and migration application still require validation in the target environment.
 

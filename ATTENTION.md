@@ -35,7 +35,7 @@ The public pages use conservative, general information where business details we
 
 ## Explicit funding operations follow-up
 
-- **Verified deposit-request deployment:** The new two-step Add funds submission and `/admin/deposits` approval queue require `db/migrations/20261105_deposit_requests.sql` on existing PostgreSQL databases. No real database migration has been executed. See `docs/deposit-requests.md` for the flow, API and recovery contract.
+- **Verified deposit-request deployment:** Before deploying the two-step Add funds submission and `/admin/deposits` queue, back up and run `pnpm db:migrate` against the configured PostgreSQL database. This uses the official Sequelize CLI and `SequelizeMeta` history, not individual SQL-file execution. No real database migration has been executed. See `db/README.md` and `docs/deposit-requests.md`.
 - **Actual receipt verification:** User submission is not proof of payment. Approvers must verify the external receipt and check for prior manual credits/other requests for the same payment. Request-key uniqueness and atomic approval prevent retries of a single request from crediting twice; they cannot identify one bank payment submitted under different request IDs.
 
 - **Client compatibility:** Signed funding `adjustment` payloads are rejected. Use `balanceChange: { direction: "credit" | "debit", amount: positiveNumber }`. The legacy positive-credit endpoint remains available, now with matching-currency validation for funding associations. See `docs/funding-operations.md` for contracts.

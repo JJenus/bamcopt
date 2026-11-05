@@ -1,5 +1,58 @@
 # Database (PostgreSQL)
 
+## Apply migrations with the Sequelize CLI
+
+Use the installed, official `sequelize-cli` (v6), not individual SQL commands:
+
+```sh
+pnpm db:migrate:status
+pnpm db:migrate
+```
+
+`db:migrate` applies all pending JavaScript migrations in filename order and records them in
+`SequelizeMeta`. Re-running it skips recorded migrations. Each shipped migration wraps its DDL in
+a transaction; failures stop later migrations. Do not edit a migration once deployed—add a new one.
+
+Configure `DATABASE_URL`, or `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`, using the same target
+as the app. `DB_SSL=true` uses the app's existing TLS configuration. Exported environment variables
+take precedence over `.env`. Native `.env` loading requires Node 20.12+ (the tested runtime is Node 24).
+For another file: `MIGRATION_ENV_FILE=.env.production pnpm db:migrate --env production`.
+Set `MIGRATION_ENV_FILE=-` to use only exported variables. No credentials are stored in CLI config.
+
+Run migrations **once per deployment in a release job**, before starting the new app version;
+keep `DB_SYNC=false` in production. Do not launch the CLI independently in every app replica.
+The standard CLI does not supply an automatic cross-process migration lock or checksum history;
+deployment serialization and immutable migration files are required. Back up before production changes.
+
+The CLI is a dev dependency, as in Sequelize's guidance. The release/build job must install dev
+dependencies; a production-only `.output` bundle does not include the CLI or migration files.
+
+To create a future migration:
+
+```sh
+pnpm db:migration:generate --name describe-your-schema-change
+```
+
+Implement its `up`/`down` functions using `queryInterface`; never import changing application models.
+The shipped adoption migrations are explicitly forward-only because those tables/columns may already
+contain financial or notification data. Their `down` functions refuse destructive rollback. Use a
+reviewed forward fix instead of `db:migrate:undo` on these migrations.
+
+These migrations upgrade an existing Bancopt schema. They do not bootstrap all legacy tables in an
+empty production database. Fresh test/development databases use the existing initialization below.
+`DB_SYNC=true` creates missing tables; it is not a substitute for migration history or database checks.
+
+`pnpm test:migrations` runs the real Sequelize CLI against disposable SQLite fixtures under
+`/tmp/opencode`, including reruns, adopting a sync-created table without deleting requests, required
+constraints, rollback-on-failure and rejecting unconfigured production targets. No production database
+is contacted by that test. PostgreSQL staging verification is still required before deployment.
+
+Verification (2026-11-05): six migration tests pass using the actual CLI and disposable SQLite
+databases, including rejecting invalid existing data without deleting it and exported-env precedence.
+The initial regression run failed before CLI configuration/migrations existed. The production build,
+API-boundary check and whitespace checks also pass. PostgreSQL execution was not tested here because
+no isolated PostgreSQL server was available; no real database migration was executed.
+
 Money columns are `NUMERIC(20,2)` (Sequelize `DECIMAL(20,2)`). Fresh database: run the app once with `DB_SYNC=true`
 (creates the missing tables and enum types, never alters existing ones), then set it back to `false`.
 
@@ -16,16 +69,17 @@ ALTER TABLE transactions ADD UNIQUE (transaction_id);
 
 ## Deposit requests (2026-11-05)
 
-Before deploying customer deposit submissions and admin approval, apply
-`db/migrations/20261105_deposit_requests.sql` to the existing PostgreSQL database.
-It creates an additive table with per-user submission-key uniqueness and a unique ledger link.
-It does not alter historical balances or transactions. Back up before migration; do not drop the
-table for rollback after requests have been received. Fresh local test databases create it through
-`DB_SYNC=true`. No production migration has been run by the coding task.
+Before deploying customer deposit submissions and admin approval, run `pnpm db:migrate`.
+The deposit-request migration creates the missing table or adopts a table already created by
+sync/manual SQL, preserves its records, and adds missing checks and unique indexes. No balance or
+historical transaction is rewritten. The older `20261105_deposit_requests.sql` remains an unchanged
+manual-reference artifact; the CLI intentionally runs only JavaScript migration files.
+No production migration has been run by the coding task.
 
 ## Notifications update (existing databases)
 
-New columns link a notification to what it is about (a transaction, a user). Run once:
+`pnpm db:migrate` also handles missing notification entity columns and their lookup index.
+The following DDL is retained as a reference, not a separate deployment step:
 
 ```sql
 ALTER TABLE notifications

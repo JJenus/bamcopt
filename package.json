@@ -15,6 +15,10 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "node tests/smoke.mjs",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:status": "sequelize-cli db:migrate:status",
+    "db:migration:generate": "sequelize-cli migration:generate",
+    "test:migrations": "node --test tests/migrations.test.mjs",
     "lint:api": "node scripts/check-no-api-in-ui.mjs",
     "test:pages": "node tests/pages.mjs"
   },
@@ -26,6 +30,7 @@
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "nuxt": "^3.21.11",
+    "sequelize-cli": "^6.6.5",
     "sqlite3": "^6.0.1"
   },
   "dependencies": {
