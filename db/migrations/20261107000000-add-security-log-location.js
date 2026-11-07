@@ -4,7 +4,9 @@
 module.exports = {
 	async up(queryInterface, Sequelize) {
 		await queryInterface.sequelize.transaction(async transaction => {
-			const columns = await queryInterface.describeTable('security_logs', { transaction });
+			// a database that has never had the table gets it (with this column) from the app's first DB_SYNC start
+			const columns = await queryInterface.describeTable('security_logs', { transaction }).catch(() => null);
+			if (!columns) return;
 			if (!columns.location) await queryInterface.addColumn('security_logs', 'location', { type: Sequelize.STRING(255), allowNull: true }, { transaction });
 			const indexes = await queryInterface.showIndex('security_logs', { transaction });
 			const fields = ['user_id', 'action', 'created_at'];
