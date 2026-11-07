@@ -1,4 +1,5 @@
 <script setup lang="ts">
+	import type { LoginChallenge } from "~/services/auth.service";
 
 	const auth = useAuth();
 	const appResource = useAppResource();
@@ -134,8 +135,11 @@
 		authService
 			.login(form.value.email, form.value.password)
 			.then((res) => {
-				loginChallenge.value = res.challenge;
-				verify.value.otp = res.devOtp ?? ""; // only present in local dev without a mail server
+				// OTP_ON=false: the server returns the session itself, no code step
+				if ("token" in res && res.token) return auth.login(res);
+				const step = res as LoginChallenge;
+				loginChallenge.value = step.challenge;
+				verify.value.otp = step.devOtp ?? ""; // only present in local dev without a mail server
 				authAction.value = "otp";
 			})
 			.catch((err: ApiError) => {
@@ -167,7 +171,9 @@
 
 		authService
 			.register(rForm.value)
-			.then(() => {
+			.then(({ otpRequired, ...session }) => {
+				// OTP_ON=false: the account is signed in straight away
+				if (otpRequired === false) return auth.login(session);
 				successAlert("Account Created. Login now!");
 				authAction.value = "login";
 			})
@@ -325,9 +331,9 @@
 								</div>
 							</div>
 
-							<div class="mx-5 mt-3 text-center">
+							<div v-if="loginChallenge" class="mx-5 mt-3 text-center">
 								<a
-									@click="authAction = 'otp'"
+									@click="authAction = \'otp\'"
 									role="button"
 									class="btn-link border-bottom border-4 fw-bold"
 								>
