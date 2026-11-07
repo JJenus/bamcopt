@@ -1,4 +1,5 @@
 <script setup lang="ts">
+	import type { LoginChallenge } from '~/services/auth.service';
 	definePageMeta({ layout: 'auth' });
 	usePublicSeo('Sign in', 'Sign in to your account with your password and one-time email code.', true);
 	const auth = useAuth();
@@ -17,8 +18,11 @@
 				await auth.login(await authService.verifyOtp(challenge.value, otp.value));
 			} else {
 				const result = await authService.login(form.email.trim(), form.password);
-				challenge.value = result.challenge;
-				otp.value = result.devOtp ?? '';
+				// OTP_ON=false: the server returns the session itself, no code step
+				if ('token' in result && result.token) { await auth.login(result); return; }
+				const step = result as LoginChallenge;
+				challenge.value = step.challenge;
+				otp.value = step.devOtp ?? '';
 			}
 		} catch (err) {
 			error.value = (err as { message?: string }).message || 'Unable to sign in. Please try again.';

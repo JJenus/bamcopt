@@ -22,7 +22,8 @@
 		busy.value = true;
 		try {
 			const { confirmPassword, ...data } = form;
-			await auth.login(await authService.register(data));
+			const { otpRequired, ...session } = await authService.register(data);
+			await auth.login(session);
 		} catch (err) { error.value = (err as { message?: string }).message || 'Unable to create your account. Please try again.'; }
 		finally { busy.value = false; }
 	};
