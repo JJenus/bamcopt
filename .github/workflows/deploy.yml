@@ -137,13 +137,22 @@ jobs:
           ln -sfn "releases/$SHA" current.new
           mv -T current.new current
 
-          # stop the running app; alwaysdata starts it again on the next request
-          pkill -u "$(id -u)" -f 'node .*\.output/server/index\.mjs' || true
-
           # keep the newest $KEEP releases
           ls -1dt releases/*/ | tail -n +"$((KEEP + 1))" | xargs -r rm -rf
           echo "Deployed $SHA"
           REMOTE
+
+      - name: Restart site (alwaysdata API)
+        env:
+          API_TOKEN: ${{ secrets.ALWAYSDATA_API_TOKEN }}
+          SITE_ID: ${{ secrets.ALWAYSDATA_SITE_ID }}
+        run: |
+          if [ -z "$API_TOKEN" ] || [ -z "$SITE_ID" ]; then
+            echo "::warning title=Manual restart needed::ALWAYSDATA_API_TOKEN / ALWAYSDATA_SITE_ID not set: restart the site from the alwaysdata dashboard."
+            exit 0
+          fi
+          curl -fsS -X POST -u "$API_TOKEN account=$SSH_USER:" "https://api.alwaysdata.com/v1/site/$SITE_ID/restart/"
+          echo "restart requested"
 
       - name: Health check (API up and serving this build)
         env:
@@ -160,7 +169,7 @@ jobs:
             if echo "$api" | grep -q 'api - v1' && [ "$live" = "$expected" ]; then echo "healthy: new build is live"; exit 0; fi
             sleep 6
           done
-          echo "The site is not serving the new build. If api is ok but the build id differs, the old process is still running: restart the site from the alwaysdata dashboard."
+          echo "The site is not serving the new build. If api is ok but the build id differs, the old process is still running: restart the site from the alwaysdata dashboard (or set ALWAYSDATA_API_TOKEN and ALWAYSDATA_SITE_ID to automate it)."
           exit 1
 
       - name: Diagnose (on failure)

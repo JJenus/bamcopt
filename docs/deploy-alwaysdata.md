@@ -21,6 +21,7 @@ Create an environment named `production`, then:
 | `ALWAYSDATA_KNOWN_HOSTS` | secret, optional | output of `ssh-keyscan -t ed25519 <host>` (pins the host key; otherwise it is scanned at deploy time) |
 | `ALWAYSDATA_DB_HOST`, `ALWAYSDATA_DB_NAME`, `ALWAYSDATA_DB_USER`, `ALWAYSDATA_DB_PASSWORD` | secrets | same database the app uses; the runner connects directly to run migrations |
 | `ALWAYSDATA_DB_PORT`, `ALWAYSDATA_DB_SSL` | variables, optional | default `5432` / `false` |
+| `ALWAYSDATA_API_TOKEN`, `ALWAYSDATA_SITE_ID` | secrets, optional | alwaysdata API token (Account -> API tokens) and the site id (visible in the site's dashboard URL); enables automatic restart |
 | `ALWAYSDATA_APP_DIR` | variable, optional | directory under `$HOME`, default `bamcopt` |
 | `HEALTH_URL` | variable, optional | e.g. `https://<site>/api`, must return `api - v1` |
 
@@ -48,4 +49,4 @@ Create an environment named `production`, then:
 
 ## Rollback
 `ssh <user>@<host>`, then `cd ~/bamcopt && ln -sfn releases/<older-sha> current.new && mv -T current.new current`
-and stop the app process (alwaysdata restarts it on the next request). The last 5 releases are kept.
+and stop the app process (alwaysdata restarts it). The last 5 releases are kept.
