@@ -8,7 +8,7 @@ const srv = spawn("pnpm", ["exec", "nuxt", "dev", "--port", String(PORT)], { cwd
   env: { ...process.env, DB_DIALECT: "sqlite", DB_STORAGE: ".data/pages-check.db", DB_SYNC: "true", JWT_SECRET: "x", TEST_DATABASE_URL: "" } });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const api = async (m, p, { token, body } = {}) => { const r = await fetch(BASE + "/api" + p, { method: m, headers: { "content-type": "application/json", ...(token && { authorization: `Bearer ${token}` }) }, body: body && JSON.stringify(body) }); return { status: r.status, data: await r.json().catch(() => null) }; };
-const login = async (email, password) => { const s1 = await api("POST", "/auth/login", { body: { email, password } }); return (await api("POST", "/auth/verify-otp", { body: { challenge: s1.data.challenge, code: s1.data.devOtp } })).data; };
+const login = async (email, password) => { const s1 = await api("POST", "/auth/login", { body: { email, password } }); if (s1.data?.token) return s1.data; return (await api("POST", "/auth/verify-otp", { body: { challenge: s1.data.challenge, code: s1.data.devOtp } })).data; };
 const cookie = (session) => `auth=${encodeURIComponent(JSON.stringify(session))}`;
 const results = [];
 let completed = false;

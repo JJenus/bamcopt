@@ -15,6 +15,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "node tests/smoke.mjs",
+    "test:otp-off": "OTP_ON=false node tests/smoke.mjs",
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:status": "sequelize-cli db:migrate:status",
     "db:migration:generate": "sequelize-cli migration:generate",

@@ -12,6 +12,8 @@ const PORT = 3111;
 const BASE = `http://localhost:${PORT}`;
 const DB = ".data/smoke.db";
 const SECRET = "smoke-secret";
+// OTP_ON=false runs the whole suite with password-only sign-in (`pnpm test:otp-off`)
+const OTP_ON = !/^(false|0|off|no)$/i.test((process.env.OTP_ON || "").trim());
 // TEST_DATABASE_URL=postgres://... runs against PostgreSQL (needs an empty database); otherwise SQLite
 const PG_URL = process.env.TEST_DATABASE_URL;
 if (PG_URL) {
@@ -98,25 +100,36 @@ async function main() {
 	// login = password step -> OTP challenge -> session
 	const login = async (email, password = "secret123") => {
 		const step1 = await call("POST", "/api/auth/login", { body: { email, password } });
-		if (step1.status !== 200) return step1;
+		if (step1.status !== 200 || !OTP_ON) return step1;
 		return call("POST", "/api/auth/verify-otp", { body: { challenge: step1.data.challenge, code: step1.data.devOtp } });
 	};
 	check("wrong password -> 401", (await call("POST", "/api/auth/login", { body: { email: "alice@x.com", password: "nope" } })).status === 401);
 	check("unknown user -> 401", (await call("POST", "/api/auth/login", { body: { email: "ghost@x.com", password: "secret123" } })).status === 401);
 
-	const s1 = await call("POST", "/api/auth/login", { body: { email: "alice@x.com", password: "secret123" } });
-	check("password step returns a challenge, NOT a session", s1.status === 200 && !!s1.data.challenge && s1.data.token === undefined && s1.data.user === undefined);
-	check("challenge is not usable as a session", (await call("GET", `/api/account/${bobReg.data.userId}`, { token: s1.data.challenge })).status === 401);
-	check("wrong code -> 401", (await call("POST", "/api/auth/verify-otp", { body: { challenge: s1.data.challenge, code: s1.data.devOtp === "000000" ? "111111" : "000000" } })).status === 401);
-	check("malformed code -> 422", (await call("POST", "/api/auth/verify-otp", { body: { challenge: s1.data.challenge, code: "12" } })).status === 422);
-	const otpOk = await call("POST", "/api/auth/verify-otp", { body: { challenge: s1.data.challenge, code: s1.data.devOtp } });
-	check("right code returns the session", otpOk.status === 200 && !!otpOk.data.token && otpOk.data.user.email === "alice@x.com");
-	check("code is single-use", (await call("POST", "/api/auth/verify-otp", { body: { challenge: s1.data.challenge, code: s1.data.devOtp } })).status === 401);
-	const s2 = await call("POST", "/api/auth/login", { body: { email: "alice@x.com", password: "secret123" } });
-	let locked;
-	for (let i = 0; i < 6; i++) locked = await call("POST", "/api/auth/verify-otp", { body: { challenge: s2.data.challenge, code: s2.data.devOtp === "123456" ? "654321" : "123456" } });
-	check("brute force is cut off after 5 tries", locked.status === 401 && /Too many/.test(locked.data.message));
-	check("...even with the right code afterwards", (await call("POST", "/api/auth/verify-otp", { body: { challenge: s2.data.challenge, code: s2.data.devOtp } })).status === 401);
+	let otpOk;
+	if (OTP_ON) {
+		const s1 = await call("POST", "/api/auth/login", { body: { email: "alice@x.com", password: "secret123" } });
+		check("password step returns a challenge, NOT a session", s1.status === 200 && !!s1.data.challenge && s1.data.token === undefined && s1.data.user === undefined);
+		check("challenge is not usable as a session", (await call("GET", `/api/account/${bobReg.data.userId}`, { token: s1.data.challenge })).status === 401);
+		check("wrong code -> 401", (await call("POST", "/api/auth/verify-otp", { body: { challenge: s1.data.challenge, code: s1.data.devOtp === "000000" ? "111111" : "000000" } })).status === 401);
+		check("malformed code -> 422", (await call("POST", "/api/auth/verify-otp", { body: { challenge: s1.data.challenge, code: "12" } })).status === 422);
+		otpOk = await call("POST", "/api/auth/verify-otp", { body: { challenge: s1.data.challenge, code: s1.data.devOtp } });
+		check("right code returns the session", otpOk.status === 200 && !!otpOk.data.token && otpOk.data.user.email === "alice@x.com");
+		check("code is single-use", (await call("POST", "/api/auth/verify-otp", { body: { challenge: s1.data.challenge, code: s1.data.devOtp } })).status === 401);
+		const s2 = await call("POST", "/api/auth/login", { body: { email: "alice@x.com", password: "secret123" } });
+		let locked;
+		for (let i = 0; i < 6; i++) locked = await call("POST", "/api/auth/verify-otp", { body: { challenge: s2.data.challenge, code: s2.data.devOtp === "123456" ? "654321" : "123456" } });
+		check("brute force is cut off after 5 tries", locked.status === 401 && /Too many/.test(locked.data.message));
+		check("...even with the right code afterwards", (await call("POST", "/api/auth/verify-otp", { body: { challenge: s2.data.challenge, code: s2.data.devOtp } })).status === 401);
+		check("register tells the client an OTP step exists", evil.data.otpRequired === true);
+	} else {
+		const direct = await call("POST", "/api/auth/login", { body: { email: "alice@x.com", password: "secret123" } });
+		check("OTP off: the password alone returns the session", direct.status === 200 && !!direct.data.token && direct.data.user.email === "alice@x.com" && direct.data.challenge === undefined, JSON.stringify(direct.data).slice(0, 120));
+		check("OTP off: the session works", (await call("GET", `/api/account/${direct.data.userId}`, { token: direct.data.token })).status === 200);
+		check("OTP off: verify-otp is refused", (await call("POST", "/api/auth/verify-otp", { body: { challenge: "x".repeat(20), code: "123456" } })).status === 400);
+		check("OTP off: register tells the client to sign in directly", evil.data.otpRequired === false && !!evil.data.token);
+		otpOk = direct;
+	}
 	const [a, b, adm] = await Promise.all([login("alice@x.com"), login("bob@x.com"), login("admin@x.com")]);
 	check("login (2 steps) ends with a session", a.status === 200 && !!a.data.token);
 	const alice = { id: a.data.userId, name: "alice", email: "alice@x.com", token: a.data.token };
