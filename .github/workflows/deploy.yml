@@ -2,9 +2,9 @@ name: CI/CD
 
 on:
   push:
-    branches: [fullstack-nuxt]
+    branches: [main]
   pull_request:
-    branches: [fullstack-nuxt]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -32,6 +32,11 @@ jobs:
 
       - name: Smoke tests (SQLite)
         run: pnpm test
+
+      - name: Migration tests (SQLite)
+        run: |
+          mkdir -p /tmp/opencode
+          pnpm test:migrations
 
       - name: Build
         run: pnpm build
@@ -61,6 +66,17 @@ jobs:
       APP_DIR: ${{ vars.ALWAYSDATA_APP_DIR || 'bamcopt' }}
       KEEP_RELEASES: 5
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
       - uses: actions/download-artifact@v4
         with:
           name: release
@@ -78,6 +94,29 @@ jobs:
           else
             ssh-keyscan -t ed25519,rsa "$SSH_HOST" > ~/.ssh/known_hosts
           fi
+
+      - name: Run database migrations
+        env:
+          DB_HOST: ${{ secrets.ALWAYSDATA_DB_HOST }}
+          DB_PORT: ${{ vars.ALWAYSDATA_DB_PORT || '5432' }}
+          DB_NAME: ${{ secrets.ALWAYSDATA_DB_NAME }}
+          DB_USER: ${{ secrets.ALWAYSDATA_DB_USER }}
+          DB_PASSWORD: ${{ secrets.ALWAYSDATA_DB_PASSWORD }}
+          DB_SSL: ${{ vars.ALWAYSDATA_DB_SSL || 'false' }}
+          MIGRATION_ENV_FILE: "-"
+          NODE_ENV: production
+        run: |
+          command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client; }
+          export PGPASSWORD="$DB_PASSWORD" PGCONNECT_TIMEOUT=15
+          [ "$DB_SSL" = "true" ] && export PGSSLMODE=require
+          has_users=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc "select to_regclass('public.users') is not null")
+          if [ "$has_users" != "t" ]; then
+            echo "Fresh database (no users table): skipping migrations; the app creates the schema with DB_SYNC=true on first start."
+            echo "Set DB_SYNC=false afterwards. The next deploy adopts the existing tables via the migrations."
+            exit 0
+          fi
+          pnpm db:migrate:status
+          pnpm db:migrate
 
       - name: Upload release
         run: |
