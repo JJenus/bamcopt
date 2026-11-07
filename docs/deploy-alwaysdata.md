@@ -42,6 +42,7 @@ Create an environment named `production`, then:
 | `DB_PASSWORD` | database password |
 | `DB_SSL` | `false` unless the server requires TLS |
 | `DB_SYNC` | `true` for the FIRST start on an empty database only, then `false`. On an empty database the migrate step is skipped; the next deploy adopts the tables via the migrations |
+| `OTP_ON` | `true` (default) asks for the e-mailed login code; `false` signs in with the password alone. Restart the site after changing it |
 | `APP_URL` | public site URL, used in e-mail links |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | mail; e-mails are skipped when `SMTP_PASS` is empty |
 

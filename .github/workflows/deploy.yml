@@ -33,6 +33,9 @@ jobs:
       - name: Smoke tests (SQLite)
         run: pnpm test
 
+      - name: Smoke tests with OTP off (SQLite)
+        run: pnpm test:otp-off
+
       - name: Migration tests (SQLite)
         run: |
           mkdir -p /tmp/opencode

@@ -70,7 +70,7 @@ Same `/api/...` paths and request/response shapes, so the frontend keeps working
 - Removed: axios, SSE composable (dead), ip2location call (dead), Cloudinary secret in the public config, committed `.output`, TLS keys, `.env.local`.
 
 ## Login OTP (now real)
-`POST /api/auth/login` checks the password and e-mails a 6-digit code; it returns only a signed `challenge` (holds an HMAC of the code, 15 min). `POST /api/auth/verify-otp {challenge, code}` returns the session. 5 tries per challenge, single use. Attempt counting is in memory (fine for one instance; use a shared store if you scale out).
+`POST /api/auth/login` checks the password and e-mails a 6-digit code; it returns only a signed `challenge` (holds an HMAC of the code, 15 min). `POST /api/auth/verify-otp {challenge, code}` returns the session. 5 tries per challenge, single use. `OTP_ON=false` (env, default on) skips this step: `POST /api/auth/login` returns the session directly, `verify-otp` answers 400, and `POST /api/auth/register` returns `otpRequired:false` so the UI signs the new user in. Attempt counting is in memory (fine for one instance; use a shared store if you scale out).
 
 ## Layout
 ```
