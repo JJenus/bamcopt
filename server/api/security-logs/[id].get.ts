@@ -1,9 +1,12 @@
-import { parseBody, uuidParam } from "../../utils/validate";
-import { requireAdmin, requireAuth, requireSelfOrAdmin, isAdmin } from "../../utils/auth";
+import { uuidParam } from "../../utils/validate";
+import { requireAuth } from "../../utils/auth";
 import { listSecurityLogs } from "../../services/catalog";
+import { assertCanViewSessions } from "../../services/sessions";
+import { getUser } from "../../services/users";
 
 export default defineEventHandler(async (event) => {
-	const id = await uuidParam(event);
-	requireSelfOrAdmin(event, id);
-	return listSecurityLogs(id);
+	const auth = requireAuth(event);
+	const target = await getUser(await uuidParam(event));
+	await assertCanViewSessions(auth, target);
+	return listSecurityLogs(target.id);
 });

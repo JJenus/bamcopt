@@ -137,8 +137,10 @@ SecurityLog.init(
 		userId: DataTypes.STRING,
 		action: DataTypes.ENUM(...Object.values(SecurityLogAction)),
 		ip: DataTypes.STRING, deviceInfo: DataTypes.STRING, reason: DataTypes.STRING,
+		// "City, Country" resolved from the IP in the background; empty when unknown
+		location: { type: DataTypes.STRING, allowNull: true },
 	},
-	{ sequelize, modelName: "SecurityLog" }
+	{ sequelize, modelName: "SecurityLog", indexes: [{ name: "security_logs_user_action_created_idx", fields: ["user_id", "action", "created_at"] }] }
 );
 
 export class AppSetting extends Model {

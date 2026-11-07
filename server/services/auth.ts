@@ -4,6 +4,7 @@ import { User, NotificationType, SecurityLog, SecurityLogAction } from "../model
 import { sequelize } from "../utils/db";
 import { signOtpChallenge, signPurposeToken, signSession, verifyOtpChallenge, verifyPurposeToken } from "../utils/auth";
 import { env } from "../utils/env";
+import { lookupLocation } from "../utils/geo";
 import { badRequest, unauthorized } from "../utils/errors";
 import { AppName, mailEnabled, sendOtpEmail, sendPasswordEmail, sendWelcomeEmail } from "../utils/mail";
 import { createAccount } from "./accounts";
@@ -16,7 +17,9 @@ export type RequestInfo = { ip: string; device: string };
 /** Best effort: a failing audit row must never block a login. */
 const logAccess = async (userId: string, action: SecurityLogAction, info?: RequestInfo, reason = "") => {
 	try {
-		await SecurityLog.create({ userId, action, ip: info?.ip || "unknown", deviceInfo: (info?.device || "unknown").slice(0, 250), reason });
+		const row = await SecurityLog.create({ userId, action, ip: info?.ip || "unknown", deviceInfo: (info?.device || "unknown").slice(0, 250), reason });
+		// never delays or fails the sign-in: the location is filled in when the lookup returns
+		void lookupLocation(info?.ip).then((location) => location && row.update({ location })).catch(() => {});
 	} catch {}
 };
 

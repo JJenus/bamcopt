@@ -94,8 +94,14 @@ export const verifyOtpChallenge = (challenge: string, code: string): string => {
 	return p.sub as string;
 };
 
-/** Where a request came from (for the login history). */
-export const requestInfo = (event: H3Event) => ({
-	ip: (getHeader(event, "x-forwarded-for")?.split(",")[0] || event.node.req.socket?.remoteAddress || "unknown").trim(),
-	device: getHeader(event, "user-agent") || "unknown",
-});
+/**
+ * Where a request came from (for the login history). The IP is the entry added by our own proxy:
+ * with TRUST_PROXY_HOPS proxies in front (default 1) that is the last / n-th from last X-Forwarded-For entry.
+ * The first entry is whatever the client chose to send, so it is never trusted.
+ */
+export const requestInfo = (event: H3Event) => {
+	const hops = Math.max(1, Number(process.env.TRUST_PROXY_HOPS) || 1);
+	const chain = (getHeader(event, "x-forwarded-for") || "").split(",").map((part) => part.trim()).filter(Boolean);
+	const raw = chain.length ? chain[Math.max(0, chain.length - hops)] : event.node.req.socket?.remoteAddress || "unknown";
+	return { ip: raw.replace(/^::ffff:/i, ""), device: getHeader(event, "user-agent") || "unknown" };
+};
