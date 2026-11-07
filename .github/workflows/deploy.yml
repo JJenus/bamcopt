@@ -162,3 +162,15 @@ jobs:
           done
           echo "The site is not serving the new build. If api is ok but the build id differs, the old process is still running: restart the site from the alwaysdata dashboard."
           exit 1
+
+      - name: Diagnose (on failure)
+        if: failure()
+        env:
+          HEALTH_URL: ${{ vars.HEALTH_URL }}
+        run: |
+          report=$(ssh "$SSH_USER@$SSH_HOST" "cd \"\$HOME/$APP_DIR\" 2>/dev/null && echo \"current -> \$(readlink current)\" && ls -1t releases | head -3 | tr '\n' ' '; echo; echo '--- processes'; ps -u \$(id -u) -o pid,etime,args | cut -c1-160; echo '--- home'; ls \$HOME | tr '\n' ' '" 2>&1 || true)
+          live=$(curl -sI --max-time 10 "${HEALTH_URL%/api}/" | head -8 | tr -d '\r')
+          home=$(curl -s --max-time 10 "${HEALTH_URL%/api}/" | head -c 300 | tr '\n' ' ')
+          msg=$(printf '%s\n--- live headers\n%s\n--- live body\n%s' "$report" "$live" "$home")
+          msg="${msg//'%'/'%25'}"; msg="${msg//$'\n'/'%0A'}"
+          echo "::notice title=deploy-diagnostics::$msg"
