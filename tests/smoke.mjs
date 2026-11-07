@@ -28,7 +28,7 @@ rmSync(DB, { force: true });
 
 	const server = spawn("pnpm", ["exec", "nuxt", "dev", "--port", String(PORT)], {
 	env: {
-		...process.env, DB_SYNC: "true", JWT_SECRET: SECRET,
+		...process.env, DB_SYNC: "true", JWT_SECRET: SECRET, GEOIP: "off", SUPERADMIN_EMAIL: "super@x.com", SUPERADMIN_PASSWORD: "SuperPass123!",
 		...(PG_URL ? { DATABASE_URL: PG_URL } : { DB_DIALECT: "sqlite", DB_STORAGE: DB }),
 	},
 	stdio: "ignore",
@@ -45,7 +45,7 @@ const check = (name, ok, extra = "") => {
 
 // transfers need the user's COT/IMF/TAX codes: inject them (unless the test sets _noCodes / its own codes)
 const CODES = new Map();
-const call = async (method, path, { token, body } = {}) => {
+const call = async (method, path, { token, body, headers } = {}) => {
 	if (method === "POST" && path === "/api/transactions" && body) {
 		if (body._noCodes) body = Object.fromEntries(Object.entries(body).filter(([k]) => k !== "_noCodes"));
 		else if (!body.codes && CODES.has(token)) body = { ...body, codes: CODES.get(token) };
@@ -53,7 +53,7 @@ const call = async (method, path, { token, body } = {}) => {
 	const res = await fetch(BASE + path, {
 		method,
 		signal: AbortSignal.timeout(30000),
-		headers: { "content-type": "application/json", ...(token && { authorization: `Bearer ${token}` }) },
+		headers: { "content-type": "application/json", ...(token && { authorization: `Bearer ${token}` }), ...headers },
 		body: body && JSON.stringify(body),
 	});
 	const text = await res.text();
@@ -478,6 +478,68 @@ async function main() {
 	check('hidden funding account rejects new request', (await requestDeposit({ requestKey: '00000000-0000-4000-8000-000000000779' })).status === 422);
 	check('already-submitted payment remains reviewable after account is hidden', (await decision(paidBeforeHide.data.id, 'approve')).status === 200 && await bal(depositor) === 13.4);
 	await call('PUT', `/api/funding-accounts/${fa.data.id}`, { token: admin.token, body: { active: true } });
+
+	// ---- device-aware sessions + the super admin
+	const UA = {
+		chromeWin: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+		iphone: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+		firefoxLinux: "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0",
+	};
+	const signIn = async (email, ua, xff, password = "secret123") => {
+		const headers = { "user-agent": ua, "x-forwarded-for": xff };
+		const step1 = await call("POST", "/api/auth/login", { body: { email, password }, headers });
+		if (step1.status !== 200 || !OTP_ON) return step1;
+		return call("POST", "/api/auth/verify-otp", { body: { challenge: step1.data.challenge, code: step1.data.devOtp }, headers });
+	};
+	const devReg = await call("POST", "/api/auth/register", { body: profile("dev@x.com") });
+	const devId = devReg.data.userId;
+	await signIn("dev@x.com", UA.chromeWin, "203.0.113.5");
+	await signIn("dev@x.com", UA.chromeWin, "203.0.113.5");
+	await signIn("dev@x.com", UA.chromeWin, "6.6.6.6, 203.0.113.9"); // 6.6.6.6 is what a client typed; only the proxy's entry counts
+	await signIn("dev@x.com", UA.iphone, "198.51.100.7");
+	const devLast = await signIn("dev@x.com", UA.firefoxLinux, "198.51.100.8");
+	await signIn("dev@x.com", UA.chromeWin, "203.0.113.5", "wrong-password");
+	const mine = await call("GET", `/api/sessions/${devId}`, { token: devLast.data.token, headers: { "user-agent": UA.chromeWin } });
+	const byLabel = (label) => mine.data.devices?.find((d) => d.label === label);
+	check("5 sign-ins from 3 browsers are 3 devices, not 5 sessions", mine.status === 200 && mine.data.devices.length === 3, JSON.stringify(mine.data).slice(0, 200));
+	check("same browser, 3 sign-ins -> one device with signIns = 3", byLabel("Chrome on Windows")?.signIns === 3);
+	check("phone and Linux Firefox are their own devices", byLabel("Safari on iOS")?.deviceType === "mobile" && byLabel("Firefox on Linux")?.deviceType === "desktop");
+	check("a failed password is counted apart and creates no device", mine.data.failedAttempts.count === 1 && mine.data.devices.reduce((n, d) => n + d.signIns, 0) === 5);
+	check("only the device making the request is 'current'", mine.data.devices.filter((d) => d.current).map((d) => d.label).join() === "Chrome on Windows");
+	check("a device keeps every IP it signed in from", byLabel("Chrome on Windows")?.ips.slice().sort().join() === "203.0.113.5,203.0.113.9");
+	check("a forged X-Forwarded-For entry is ignored", !JSON.stringify(mine.data).includes("6.6.6.6"));
+
+	const seededAdmin = await signIn("admin@bancopt.com", UA.chromeWin, "203.0.113.20", "AdminPass123!");
+	await signIn("admin@bancopt.com", UA.firefoxLinux, "203.0.113.21", "AdminPass123!");
+	const seededId = seededAdmin.data.userId;
+	check("a customer cannot read someone else's sessions", (await call("GET", `/api/sessions/${devId}`, { token: bob.token })).status === 403);
+	check("an admin can read a customer's sessions", (await call("GET", `/api/sessions/${devId}`, { token: admin.token })).status === 200);
+	check("an admin cannot read another admin's sessions", (await call("GET", `/api/sessions/${seededId}`, { token: admin.token })).status === 403 && (await call("GET", `/api/security-logs/${seededId}`, { token: admin.token })).status === 403);
+	check("an admin can read their own sessions", (await call("GET", `/api/sessions/${seededId}`, { token: seededAdmin.data.token })).status === 200);
+
+	const sup = await signIn("super@x.com", UA.chromeWin, "203.0.113.30", "SuperPass123!");
+	check("the super admin signs in and has the superadmin role", sup.status === 200 && sup.data.user.userType === "superadmin", JSON.stringify(sup.data).slice(0, 120));
+	const superToken = sup.data.token, superId = sup.data.userId;
+	const roster = await call("GET", "/api/super/admins", { token: superToken });
+	check("super admin lists the administrators only", roster.status === 200 && roster.data.length >= 2 && roster.data.every((a) => a.email.includes("admin")) && !roster.data.some((a) => a.email === "super@x.com" || a.email === "dev@x.com"), JSON.stringify(roster.data).slice(0, 200));
+	const seededRow = roster.data.find?.((a) => a.id === seededId);
+	check("each admin shows last sign-in time, device and IP", seededRow?.devices === 2 && seededRow.signIns === 2 && !!seededRow.lastSignIn?.at && !!seededRow.lastSignIn?.ip && !!seededRow.lastSignIn?.device, JSON.stringify(seededRow));
+	const sessionsOfAdmin = await call("GET", `/api/super/admins/${seededId}/sessions`, { token: superToken });
+	check("super admin sees an admin's devices with IPs", sessionsOfAdmin.status === 200 && sessionsOfAdmin.data.devices.length === 2 && sessionsOfAdmin.data.devices.every((d) => d.ips.length && d.userAgent), JSON.stringify(sessionsOfAdmin.data).slice(0, 160));
+	const page1 = await call("GET", `/api/super/admins/${seededId}/logins?limit=1`, { token: superToken });
+	const page2 = await call("GET", `/api/super/admins/${seededId}/logins?limit=5&before=${encodeURIComponent(page1.data.nextBefore)}`, { token: superToken });
+	check("sign-in history is paged, newest first", page1.status === 200 && page1.data.events.length === 1 && !!page1.data.nextBefore && page2.data.events.length >= 1 && page2.data.events[0].createdAt < page1.data.events[0].createdAt);
+	check("history rows carry time, IP, device and outcome", ["createdAt", "ip", "action"].every((k) => page1.data.events[0][k]) && !!page1.data.events[0].device.label);
+	check("super admin endpoints are closed to admins, customers and anonymous callers", (await call("GET", "/api/super/admins", { token: admin.token })).status === 403 && (await call("GET", "/api/super/admins", { token: bob.token })).status === 403 && (await call("GET", "/api/super/admins")).status === 401);
+	check("super admin can only open administrators", (await call("GET", `/api/super/admins/${devId}/sessions`, { token: superToken })).status === 404);
+	check("super admin can read any user's sessions", (await call("GET", `/api/sessions/${devId}`, { token: superToken })).status === 200);
+
+	check("admins never see the super admin in the user list", !(await call("GET", "/api/users", { token: admin.token })).data.some((u) => u.email === "super@x.com"));
+	check("nobody can find the super admin by e-mail", (await call("POST", "/api/users/find", { token: bob.token, body: { email: "super@x.com" } })).status === 404);
+	check("an admin cannot open or edit the super admin", (await call("GET", `/api/users/${superId}`, { token: admin.token })).status === 404 && (await call("PUT", `/api/users/${superId}`, { token: admin.token, body: { status: "HOLD" } })).status === 404);
+	check("the super admin can open their own profile", (await call("GET", `/api/users/${superId}`, { token: superToken })).status === 200);
+	check("the super admin has no admin powers", (await call("PUT", "/api/account", { token: superToken, body: { userId: devId, accountLevel: 1 } })).status === 403);
+
 	check("unknown route -> 404 json", (await call("GET", "/api/nope", { token: alice.token })).status === 404);
 }
 

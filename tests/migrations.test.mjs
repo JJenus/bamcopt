@@ -18,6 +18,7 @@ async function fixture(existing = false) {
 	const qi = db.getQueryInterface();
 	for (const name of ['users', 'funding_accounts', 'transactions']) await qi.createTable(name, { id: { type: DataTypes.UUID, primaryKey: true } });
 	await qi.createTable('notifications', { id: { type: DataTypes.UUID, primaryKey: true }, user_id: DataTypes.UUID, status: DataTypes.STRING, created_at: DataTypes.DATE });
+	await qi.createTable('security_logs', { id: { type: DataTypes.UUID, primaryKey: true }, user_id: DataTypes.STRING, action: DataTypes.STRING, ip: DataTypes.STRING, device_info: DataTypes.STRING, reason: DataTypes.STRING, created_at: DataTypes.DATE, updated_at: DataTypes.DATE });
 	if (existing) await qi.createTable('deposit_requests', {
 		id: { type: DataTypes.UUID, primaryKey: true }, user_id: DataTypes.UUID, funding_account_id: DataTypes.UUID,
 		request_key: DataTypes.UUID, amount: DataTypes.DECIMAL(20, 2), currency: DataTypes.STRING,
@@ -32,13 +33,15 @@ test('official CLI applies all pending migrations, tracks SequelizeMeta and safe
 	const f = await fixture();
 	try {
 		const status = run(f.storage, ['db:migrate:status']); assert.equal(status.status, 0, status.stderr + status.stdout);
-		assert.match(status.stdout, /down.*notification/); assert.match(status.stdout, /down.*deposit/);
+		assert.match(status.stdout, /down.*notification/); assert.match(status.stdout, /down.*deposit/); assert.match(status.stdout, /down.*security-log-location/);
 		const first = run(f.storage, ['db:migrate']); assert.equal(first.status, 0, first.stderr + first.stdout);
 		assert.ok((await f.qi.describeTable('notifications')).entity_type);
 		assert.ok((await f.qi.describeTable('deposit_requests')).transaction_id);
-		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 2);
+		assert.ok((await f.qi.describeTable('security_logs')).location);
+		assert.ok((await f.qi.showIndex('security_logs')).some(i => i.name === 'security_logs_user_action_created_idx'));
+		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 3);
 		const second = run(f.storage, ['db:migrate']); assert.equal(second.status, 0, second.stderr + second.stdout);
-		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 2);
+		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 3);
 	} finally { await f.cleanup(); }
 });
 

@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
-import { Transaction as DbTx } from "sequelize";
+import { Op, Transaction as DbTx } from "sequelize";
 import { Account, User } from "../models";
 import { conflict, notFound } from "../utils/errors";
 
@@ -12,6 +12,13 @@ const SELF_FIELDS = ["name", "phone", "imgUrl", "idUrl", "address", "city", "cou
 /** Admins may additionally change these. */
 const ADMIN_FIELDS = [...SELF_FIELDS, "verified", "emailVerified", "status", "cot", "imf", "tax"];
 
+/** For endpoints that act on someone else: the super admin does not exist for anyone but themself. */
+export const getUserFor = async (id: string, callerId: string) => {
+	const user = await getUser(id);
+	if (user.userType === "superadmin" && user.id !== callerId) throw notFound("User not found");
+	return user;
+};
+
 export const getUser = async (id: string) => {
 	const user = await User.findByPk(id);
 	if (!user) throw notFound("User not found");
@@ -20,7 +27,8 @@ export const getUser = async (id: string) => {
 
 export const getUserByEmail = async (email: string) => {
 	const user = await User.findOne({ where: { email: normalizeEmail(email) } });
-	if (!user) throw notFound("User not found");
+	// the super admin is invisible to lookups
+	if (!user || user.userType === "superadmin") throw notFound("User not found");
 	return user;
 };
 
@@ -51,7 +59,7 @@ export const withAccount = async (user: User, admin = false) => ({
 });
 
 export const listWithAccounts = async () => {
-	const users = await User.findAll();
+	const users = await User.findAll({ where: { userType: { [Op.ne]: "superadmin" } } });
 	const accounts = await Account.findAll({ where: { userId: users.map((u) => u.id) } });
 	const byUser = new Map(accounts.map((a) => [a.userId, a.toJSON()]));
 	return users.map((u) => ({ ...u.toAdminJSON(), account: byUser.get(u.id) ?? null }));

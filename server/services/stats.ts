@@ -7,7 +7,7 @@ const num = (n: unknown) => Number(n ?? 0);
 
 /** Dashboard numbers for admins. All sums are DB-level; amounts are in major units. */
 export const getAdminStats = async () => {
-	const people = await User.findAll({ where: { userType: { [Op.ne]: "admin" } }, attributes: ["id", "status", "name", "email", "createdAt"], order: [["createdAt", "DESC"]] });
+	const people = await User.findAll({ where: { userType: { [Op.notIn]: ["admin", "superadmin"] } }, attributes: ["id", "status", "name", "email", "createdAt"], order: [["createdAt", "DESC"]] });
 	const ids = people.map((u) => u.id);
 	const names = new Map(people.map((u) => [u.id, u.name]));
 
