@@ -5,6 +5,8 @@ export default defineNuxtRouteMiddleware(() => {
 		return auth.logout();
 	}
 
+	if (auth.userData.value?.user?.userType === "superadmin") return navigateTo("/super");
+
 	if (
 		!auth.isAuthenticated.value ||
 		auth.userData.value?.user?.userType !== "admin"

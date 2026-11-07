@@ -72,7 +72,7 @@ export const useAuth = () => {
 		userAuth.value = auth;
 		hydrate(auth);
 
-		return redirect(userType.value === "admin" ? "/admin" : "/app");
+		return redirect(userType.value === "admin" ? "/admin" : userType.value === "superadmin" ? "/super" : "/app");
 	};
 
 	const logout = () => {
