@@ -1,0 +1,29 @@
+name: Server info
+
+# Manual, read-only: prints the layout and recent site logs on alwaysdata as an annotation.
+on:
+  workflow_dispatch:
+
+jobs:
+  info:
+    runs-on: ubuntu-latest
+    env:
+      SSH_HOST: ${{ secrets.ALWAYSDATA_SSH_HOST }}
+      SSH_USER: ${{ secrets.ALWAYSDATA_SSH_USER }}
+      APP_DIR: ${{ vars.ALWAYSDATA_APP_DIR || 'bamcopt' }}
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.ALWAYSDATA_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.ALWAYSDATA_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          if [ -n "$KNOWN_HOSTS" ]; then printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts; else ssh-keyscan -t ed25519,rsa "$SSH_HOST" > ~/.ssh/known_hosts; fi
+
+      - name: Report
+        run: |
+          report=$(ssh "$SSH_USER@$SSH_HOST" 'cd "$HOME"; echo "--- ~"; ls -la | cut -c1-120; echo "--- www"; ls -la www | head -15; echo "--- bamcopt"; ls -la bamcopt bamcopt/current | head -25; echo "--- admin/log"; ls -R admin/log 2>&1 | head -30; echo "--- recent site logs"; for f in $(ls -t admin/log/site/*.log admin/log/site/*/* 2>/dev/null | head -4); do echo "## $f"; tail -n 12 "$f" | cut -c1-220; done' 2>&1 || true)
+          msg="${report//'%'/'%25'}"; msg="${msg//$'\n'/'%0A'}"
+          echo "::notice title=server-info::$msg"
