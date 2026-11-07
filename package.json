@@ -15,6 +15,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "node tests/smoke.mjs",
+    "test:super": "node tests/super-browser.cjs",
     "test:signin": "node tests/signin-browser.cjs",
     "test:signin-otp-off": "OTP_ON=false node tests/signin-browser.cjs",
     "test:otp-off": "OTP_ON=false node tests/smoke.mjs",
