@@ -145,15 +145,20 @@ jobs:
           echo "Deployed $SHA"
           REMOTE
 
-      - name: Health check
+      - name: Health check (API up and serving this build)
         env:
           HEALTH_URL: ${{ vars.HEALTH_URL }}
         run: |
           if [ -z "$HEALTH_URL" ]; then echo "HEALTH_URL not set, skipping"; exit 0; fi
-          for i in $(seq 1 15); do
-            if curl -fsS --max-time 10 "$HEALTH_URL" | grep -q 'api - v1'; then
-              echo "healthy"; exit 0
-            fi
-            echo "attempt $i: not ready"; sleep 6
+          SITE="${HEALTH_URL%/api}"
+          expected=$(tar -xzOf release.tgz ./.output/public/_nuxt/builds/latest.json | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
+          echo "expected build id: $expected"
+          for i in $(seq 1 20); do
+            api=$(curl -fsS --max-time 10 "$HEALTH_URL" 2>/dev/null || true)
+            live=$(curl -fsS --max-time 10 "$SITE/_nuxt/builds/latest.json" 2>/dev/null | python3 -c 'import sys,json;print(json.load(sys.stdin).get("id",""))' 2>/dev/null || true)
+            echo "attempt $i: api='${api:-none}' live build='${live:-none}'"
+            if echo "$api" | grep -q 'api - v1' && [ "$live" = "$expected" ]; then echo "healthy: new build is live"; exit 0; fi
+            sleep 6
           done
-          echo "Health check failed for $HEALTH_URL"; exit 1
+          echo "The site is not serving the new build. If api is ok but the build id differs, the old process is still running: restart the site from the alwaysdata dashboard."
+          exit 1
