@@ -65,6 +65,20 @@
 		} catch { error.value = ''; historyError.value = 'We could not sign out. Please try again.'; }
 		finally { busy.value = ''; }
 	};
+	const suspended = computed(() => detail.value?.admin.status?.toUpperCase() === 'SUSPENDED');
+	const toggleSuspension = async () => {
+		if (busy.value || !detail.value) return;
+		const next = suspended.value ? 'ACTIVE' : 'SUSPENDED';
+		if (!window.confirm(next === 'SUSPENDED' ? 'Suspend this administrator? They are signed out everywhere and cannot sign in until you restore them.' : 'Restore this administrator? They can sign in again.')) return;
+		busy.value = 'status';
+		notice.value = '';
+		try {
+			const { sessionsEnded } = await superService.setAdminStatus(id, next);
+			notice.value = next === 'SUSPENDED' ? `Suspended. ${sessionsEnded} session${sessionsEnded === 1 ? '' : 's'} ended.` : 'Restored. They can sign in again.';
+			await load();
+		} catch { historyError.value = 'We could not change the status. Please try again.'; }
+		finally { busy.value = ''; }
+	};
 	const signOutDevice = (device: DeviceSession) => signOut({ deviceKey: device.key }, device.key, `Sign out ${device.label} for this administrator?`);
 	const signOutEverywhere = () => signOut({ all: true }, 'all', 'Sign this administrator out of every device? They can sign in again with their password.');
 	watch(filter, reload);
@@ -77,7 +91,7 @@
 		<NuxtLink to="/super" class="d-inline-block mb-6 fw-semibold">← All administrators</NuxtLink>
 		<AppLoadState :loading="loading && !detail" :error="error" :empty="!detail" title="Administrator unavailable" @retry="load">
 			<template v-if="detail">
-				<AppPageHeader :title="detail.admin.name || detail.admin.email" :description="detail.admin.email"><span class="badge fs-7" :class="detail.admin.status === 'ACTIVE' ? 'badge-light-success' : 'badge-light-warning'">{{ detail.admin.status }}</span><button type="button" class="btn btn-light" :disabled="loading" @click="load">Refresh</button></AppPageHeader>
+				<AppPageHeader :title="detail.admin.name || detail.admin.email" :description="detail.admin.email"><span class="badge fs-7" :class="detail.admin.status === 'ACTIVE' ? 'badge-light-success' : suspended ? 'badge-light-danger' : 'badge-light-warning'">{{ detail.admin.status }}</span><button type="button" class="btn" :class="suspended ? 'btn-light-success' : 'btn-light-danger'" :disabled="!!busy" @click="toggleSuspension">{{ busy === 'status' ? 'Working…' : suspended ? 'Restore administrator' : 'Suspend administrator' }}</button><button type="button" class="btn btn-light" :disabled="loading" @click="load">Refresh</button></AppPageHeader>
 
 				<section class="card border mb-7"><div class="card-header border-bottom align-items-center"><h2 class="card-title fs-3 fw-bold">Devices</h2><button v-if="detail.activeSessions" type="button" class="btn btn-sm btn-light-danger" :disabled="!!busy" @click="signOutEverywhere">{{ busy === 'all' ? 'Signing out…' : `Sign out everywhere (${detail.activeSessions})` }}</button></div><div class="card-body">
 					<div v-if="notice" role="status" class="alert alert-success">{{ notice }}</div>

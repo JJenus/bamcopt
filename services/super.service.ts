@@ -26,4 +26,7 @@ export const superService = {
 		apiRequest<ActionPage>(`/super/admins/${id}/actions`, { query }),
 	maintenance: () => apiRequest<MaintenanceReport>("/super/maintenance"),
 	prune: () => apiRequest<{ removed: { securityLogs: number; auditLogs: number; sessions: number } }>("/super/maintenance/prune", { method: "POST" }),
+	/** Switch an administrator off (their sessions end and they cannot sign in) or back on. */
+	setAdminStatus: (id: string, status: "ACTIVE" | "SUSPENDED") =>
+		apiRequest<{ status: string; sessionsEnded: number }>(`/super/admins/${id}/status`, { method: "POST", body: { status } }),
 };
