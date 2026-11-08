@@ -92,3 +92,9 @@ export const AccountLevelBody = z.object({
 export const SessionRevokeBody = z.object({
 	deviceKey: z.string().min(1).max(200).optional(), others: z.boolean().optional(), all: z.boolean().optional(),
 }).strict().refine((body) => [body.deviceKey, body.others, body.all].filter(Boolean).length === 1, "Choose one of deviceKey, others or all");
+
+/** The super admin switches an administrator off or back on. */
+export const AdminStatusBody = z.object({ status: z.enum(["ACTIVE", "SUSPENDED"]) }).strict();
+
+/** What an administrator may set as a user's status (any casing, stored upper-case). */
+export const UserStatusValue = z.string().trim().transform((value) => value.toUpperCase()).pipe(z.enum(["ACTIVE", "HOLD", "SUSPENDED"]));

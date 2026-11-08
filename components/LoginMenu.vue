@@ -146,7 +146,8 @@
 				if (err.status === 401 || err.status === 404) {
 					isInvalidCredentials.value = true;
 					invalidMessage.value = err.message;
-				} else errorAlert("Error occurred, check your internet!");
+				} else if (err.status === 403) errorAlert(err.message); // e.g. the account is suspended
+				else errorAlert("Error occurred, check your internet!");
 			})
 			.finally(() => {
 				loading.value = false;

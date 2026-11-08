@@ -15,7 +15,7 @@
 			for (const key of ['cot', 'imf', 'tax'] as const) if (!draft[key].trim()) errors.value[key] = 'Enter a code.';
 			if (Object.keys(errors.value).length) return;
 			pending.value = { label: 'Replace transfer verification codes? Existing codes will no longer work for subsequent verification.', body: { cot: draft.cot.trim(), imf: draft.imf.trim(), tax: draft.tax.trim() } };
-		} else if (kind === 'status') pending.value = { label: `Change user status from ${props.user.status} to ${draft.status}? HOLD prevents transfers. Other restrictions remain server-defined.`, body: { status: draft.status } };
+		} else if (kind === 'status') pending.value = { label: `Change user status from ${props.user.status} to ${draft.status}? HOLD prevents transfers. SUSPENDED signs the user out everywhere and blocks sign-in until it is set back to ACTIVE.`, body: { status: draft.status } };
 		else if (kind === 'level') {
 			if (!tiers.value.some(tier => tier.accountLevel === Number(draft.level))) { errors.value.level = 'Choose an available tier.'; return; }
 			pending.value = { label: 'Change the account tier? Its balance and daily transfer limits will apply to subsequent operations.', body: { userId: props.user.id, accountLevel: Number(draft.level) }, account: true };

@@ -4,6 +4,7 @@ import { dbReady } from "../utils/db";
 import "../models";
 import { unauthorized } from "../utils/errors";
 import { assertSessionActive } from "../services/user-sessions";
+import { assertUserAllowed } from "../utils/access";
 
 /** Everything under /api needs a valid session token, except the few public routes. */
 export default defineEventHandler(async (event) => {
@@ -18,5 +19,7 @@ export default defineEventHandler(async (event) => {
 	const auth = verifySession(token);
 	// a revoked or expired session ends on the next request, whatever the token's own expiry says
 	if (auth.sid) await assertSessionActive(auth.sid);
+	// suspended accounts and changed roles stop at once, for every token including older ones
+	await assertUserAllowed(auth);
 	event.context.auth = auth;
 });

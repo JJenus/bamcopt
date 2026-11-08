@@ -5,13 +5,14 @@ import { sequelize } from "../utils/db";
 import { signOtpChallenge, signPurposeToken, signSession, verifyOtpChallenge, verifyPurposeToken } from "../utils/auth";
 import { env } from "../utils/env";
 import { lookupLocation } from "../utils/geo";
-import { badRequest, unauthorized } from "../utils/errors";
+import { badRequest, forbidden, unauthorized } from "../utils/errors";
 import { AppName, mailEnabled, sendNewDeviceEmail, sendOtpEmail, sendPasswordEmail, sendWelcomeEmail } from "../utils/mail";
 import { parseDevice } from "../utils/device";
 import { createAccount } from "./accounts";
 import { getAppSettings } from "./catalog";
 import { notifySafe } from "./notifications";
 import { createSession, revokeSessions } from "./user-sessions";
+import { isSuspended, SUSPENDED_MESSAGE } from "../utils/access";
 import { createUser, getUser, normalizeEmail, withAccount } from "./users";
 
 export type RequestInfo = { ip: string; device: string };
@@ -90,6 +91,10 @@ export const login = async (email: string, password: string, info?: RequestInfo)
 		if (user) await logAccess(user.id, SecurityLogAction.ATTEMPT_FAILED, info, "Wrong password");
 		throw unauthorized("Invalid credentials");
 	}
+	if (isSuspended(user)) {
+		await logAccess(user.id, SecurityLogAction.ATTEMPT_FAILED, info, "Account suspended");
+		throw forbidden(SUSPENDED_MESSAGE);
+	}
 
 	if (!otpRequiredFor(user)) {
 		await announceNewDevice(user, info);
@@ -111,6 +116,10 @@ export const login = async (email: string, password: string, info?: RequestInfo)
 /** Step 2: the code from the e-mail. Returns the session. */
 export const verifyOtp = async (challenge: string, code: string, info?: RequestInfo) => {
 	const user = await getUser(verifyOtpChallenge(challenge, code));
+	if (isSuspended(user)) {
+		await logAccess(user.id, SecurityLogAction.ATTEMPT_FAILED, info, "Account suspended");
+		throw forbidden(SUSPENDED_MESSAGE);
+	}
 	if (!otpRequiredFor(user)) throw badRequest("OTP sign-in is disabled. Sign in with your password.");
 	await announceNewDevice(user, info);
 	await logAccess(user.id, SecurityLogAction.LOGIN, info);
