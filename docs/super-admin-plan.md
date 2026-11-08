@@ -15,10 +15,10 @@
 ## Phases
 | # | Scope | Status |
 |---|---|---|
-| 1 | Device grouping, user agent parser, client IP fix, location column + migration, `GET /api/sessions/:userId`, new Security page, tighter `security-logs` access | this change |
-| 2 | `superadmin` role, seed from env, hidden from admin views, `/api/super/admins*`, `/super` layout: administrators table, per-admin devices and full sign-in history (time, device, IP, location, outcome) | this change |
-| 3 | **Admin actions**: `audit_logs` table (actor, action, target type/id, summary, ip, device, time) written by one helper from every mutating admin endpoint (credit/debit, user edits, funding accounts, deposits, settings); "Actions" tab per admin in `/super`, filters by action and date | next |
-| 4 | Hardening: server-side session list with revoke ("sign out this device"), alert on first sign-in from a new device, require OTP for the super admin whatever `OTP_ON` says (needs mail configured), retention/pruning of old events | later |
+| 1 (done) | Device grouping, user agent parser, client IP fix, location column + migration, `GET /api/sessions/:userId`, new Security page, tighter `security-logs` access | this change |
+| 2 (done) | `superadmin` role, seed from env, hidden from admin views, `/api/super/admins*`, `/super` layout: administrators table, per-admin devices and full sign-in history (time, device, IP, location, outcome) | this change |
+| 3 (done) | **Admin actions**: `audit_logs` table (actor, action, target type/id, summary, ip, device, time) written by one helper from every mutating admin endpoint (credit/debit, user edits, funding accounts, deposits, settings); "Actions" tab per admin in `/super`, filters by action and date | done |
+| 4 (done) | Hardening: server-side session list with revoke ("sign out this device"), alert on first sign-in from a new device, require OTP for the super admin whatever `OTP_ON` says (needs mail configured), retention/pruning of old events | done |
 
 ## Acceptance (phases 1 and 2)
 - Three sign-ins from the same browser show **one** device with `signIns = 3`; another browser shows a second device; wrong passwords never create a device.
@@ -29,3 +29,15 @@
 
 ## Setup on alwaysdata (after deploy)
 Add `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD` (and optionally `SUPERADMIN_NAME`) to the site environment and restart. The deploy pipeline runs the migration that adds `security_logs.location`.
+
+## What phases 3 and 4 turned into
+- **Admin actions** (`audit_logs`): every successful admin change records who, what and the real values (amounts, reasons, new status), plus IP and device. Covered: balance credits/debits/top-ups, account settings, transaction updates and reversals, deposit approve/reject, funding accounts, user edits, notifications sent, account levels, currencies, app defaults. Self-edits and customer actions are not recorded. Never stored: account numbers, codes, passwords. `meta` keeps only a few safe fields.
+- **Sessions you can end**: each sign-in is a row (`user_sessions`) and its id is in the token. Revoking (a device, all other devices, everything) takes effect on the next request. Sign-out, a password reset and the super admin's "sign out everywhere" end sessions. If the table cannot be read the check fails open so a database error cannot lock everyone out; tokens issued before this change have no session id and run until they expire (5 days).
+- **New-device alerts**: a notification (and an e-mail when mail is configured) the first time a browser/device signs in, never on the very first sign-in; the administrators list shows new devices this week.
+- **Super admin code step**: `SUPERADMIN_OTP` (auto/on/off), see the deploy doc.
+- **Retention**: sign-in history 365 days, ended sessions 30, audit trail forever by default; daily job plus "Clean up now".
+
+## Known limits
+- Two identical browsers on different machines look like one device (grouping is by browser, OS and type).
+- Account status is not checked at sign-in, so a suspended customer can still sign in; ending their sessions when an admin suspends them is not wired yet.
+- Revocation cache and session checks assume a single server process (true on alwaysdata); behind several instances a revoked session could live a few seconds longer.

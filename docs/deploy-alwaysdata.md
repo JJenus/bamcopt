@@ -44,6 +44,8 @@ Create an environment named `production`, then:
 | `DB_SYNC` | `true` for the FIRST start on an empty database only, then `false`. On an empty database the migrate step is skipped; the next deploy adopts the tables via the migrations |
 | `OTP_ON` | `true` (default) asks for the e-mailed login code; `false` signs in with the password alone. Restart the site after changing it |
 | `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD`, `SUPERADMIN_NAME` | optional. Creates the owner account that signs in to `/super`. Both e-mail and password are needed and the e-mail must differ from `ADMIN_EMAIL`. There is no default super admin |
+| `SUPERADMIN_OTP` | `auto` (default): the super admin must enter the e-mailed code even when `OTP_ON=false`, as soon as mail (`SMTP_PASS`) is configured. `on` forces it but, in production, only if mail works (otherwise the owner would be locked out). `off` never forces it |
+| `SECURITY_LOG_RETENTION_DAYS`, `SESSION_RETENTION_DAYS`, `AUDIT_RETENTION_DAYS` | days to keep sign-in history (365), ended sessions (30) and the administrator action trail (0 = forever). A daily job prunes; `/super` has a "Clean up now" button |
 | `TRUST_PROXY_HOPS` | `1` (default). Reverse proxies in front of the app; the client IP is the entry they appended to `X-Forwarded-For` |
 | `GEOIP` / `GEOIP_URL` | `GEOIP=off` stops the background IP-to-city lookup (the IP is then sent to no third party). Default provider `https://ipwho.is/{ip}` |
 | `APP_URL` | public site URL, used in e-mail links |
