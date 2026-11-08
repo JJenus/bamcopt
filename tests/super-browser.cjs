@@ -53,6 +53,10 @@ async function signIn(page, email, password) {
 		assert.ok(await page.locator('tbody tr').first().innerText().then((t) => /Chrome on Windows/.test(t) && /203\.0\.113\.21/.test(t)));
 		await page.screenshot({ path: `${SHOTS}/super-admins-desktop.png` });
 		ok('administrators table shows last device and IP');
+		await page.waitForSelector('h2:text-is("Housekeeping")', { timeout: 15000 });
+		await page.click('button:has-text("Clean up now")');
+		await page.waitForSelector('[role=status]:has-text("Nothing was past its retention")', { timeout: 15000 });
+		ok('Housekeeping shows retention and cleans up on demand');
 
 		await page.click('tbody tr a:has-text("Open")');
 		await page.waitForURL(/\/super\/admins\//, { timeout: 20000 });

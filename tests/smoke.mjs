@@ -644,6 +644,36 @@ async function main() {
 		check("the administrators list counts devices first seen this week", row.newDevices7d === 1 && row.devices === 2, JSON.stringify(row));
 	}
 
+
+	// ---- retention: old history is pruned, recent history is not
+	{
+		const stamp = (daysAgo) => new Date(Date.now() - daysAgo * 86400000).toISOString().replace("T", " ").replace("Z", " +00:00");
+		const old400 = stamp(400), old40 = stamp(40), recent = stamp(1);
+		const statements = [
+			["INSERT INTO security_logs (id,user_id,action,ip,device_info,reason,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)", [crypto.randomUUID(), seededId, "login", "203.0.113.99", UA.chromeWin, "", old400, old400]],
+			["INSERT INTO security_logs (id,user_id,action,ip,device_info,reason,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)", [crypto.randomUUID(), seededId, "login", "203.0.113.98", UA.chromeWin, "", recent, recent]],
+			["INSERT INTO user_sessions (id,user_id,user_agent,ip,last_seen_at,expires_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)", [crypto.randomUUID(), seededId, UA.chromeWin, "203.0.113.97", old40, old40, old40, old40]],
+		];
+		if (PG_URL) {
+			const c = new pg.Client({ connectionString: PG_URL }); await c.connect();
+			for (const [sql, params] of statements) await c.query(sql.replace(/\?/g, (() => { let i = 0; return () => `$${++i}`; })()), params);
+			await c.end();
+		} else {
+			await new Promise((resolve, reject) => {
+				const db = new sqlite3.Database(DB);
+				db.serialize(() => { for (const [sql, params] of statements) db.run(sql, params, (e) => e && reject(e)); db.close((e) => (e ? reject(e) : resolve())); });
+			});
+		}
+		const report = await call("GET", "/api/super/maintenance", { token: superToken });
+		check("the super admin sees retention settings and row counts", report.status === 200 && report.data.settings.securityLogDays === 365 && report.data.settings.auditLogDays === 0 && report.data.rows.securityLogs > 0 && report.data.rows.sessions > 0, JSON.stringify(report.data));
+		const pruned = await call("POST", "/api/super/maintenance/prune", { token: superToken });
+		check("pruning removes history past its retention", pruned.status === 200 && pruned.data.removed.securityLogs === 1 && pruned.data.removed.sessions === 1 && pruned.data.removed.auditLogs === 0, JSON.stringify(pruned.data));
+		const afterReport = await call("GET", "/api/super/maintenance", { token: superToken });
+		check("recent history and the audit trail are kept", afterReport.data.rows.securityLogs === report.data.rows.securityLogs - 1 && afterReport.data.rows.auditLogs === report.data.rows.auditLogs);
+		check("pruning twice removes nothing more", (await call("POST", "/api/super/maintenance/prune", { token: superToken })).data.removed.securityLogs === 0);
+		check("maintenance is closed to admins and customers", (await call("GET", "/api/super/maintenance", { token: admin.token })).status === 403 && (await call("POST", "/api/super/maintenance/prune", { token: bob.token })).status === 403);
+	}
+
 	check("admins never see the super admin in the user list", !(await call("GET", "/api/users", { token: admin.token })).data.some((u) => u.email === "super@x.com"));
 	check("nobody can find the super admin by e-mail", (await call("POST", "/api/users/find", { token: bob.token, body: { email: "super@x.com" } })).status === 404);
 	check("an admin cannot open or edit the super admin", (await call("GET", `/api/users/${superId}`, { token: admin.token })).status === 404 && (await call("PUT", `/api/users/${superId}`, { token: admin.token, body: { status: "HOLD" } })).status === 404);
