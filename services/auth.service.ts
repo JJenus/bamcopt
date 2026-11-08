@@ -16,6 +16,9 @@ export const authService = {
 	register: (data: Record<string, unknown>) =>
 		apiRequest<AuthToken & { otpRequired?: boolean }>("/auth/register", { method: "POST", body: data, auth: false, timeout: 30000 }),
 
+	/** Ends this session on the server. Best effort: the caller signs out locally either way. */
+	logout: () => apiRequest("/auth/logout", { method: "POST" }),
+
 	verifyEmail: (token: string) => apiRequest("/auth/verify-email", { method: "POST", body: { token }, auth: false }),
 	requestPasswordReset: (email: string) =>
 		apiRequest("/auth/request-password-reset", { method: "POST", body: { email }, auth: false }),

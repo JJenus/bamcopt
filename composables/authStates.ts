@@ -76,6 +76,9 @@ export const useAuth = () => {
 	};
 
 	const logout = () => {
+		// end the session on the server first (the request reads the token right now); once the token is
+		// cleared a repeat call, e.g. from that request's own 401, does nothing, so this cannot loop
+		if (import.meta.client && token.value) void authService.logout().catch(() => {});
 		userAuth.value = null;
 		hydrate(null);
 
