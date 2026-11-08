@@ -16,6 +16,17 @@ export const env = {
 	get otpOn() {
 		return !/^(false|0|off|no)$/i.test((process.env.OTP_ON || "").trim());
 	},
+	/**
+	 * Whether the super admin must use the e-mailed code even when OTP_ON=false.
+	 * SUPERADMIN_OTP=off never forces it; unset ("auto") forces it whenever mail is configured, so the code can actually
+	 * reach the owner; =on forces it too, but in production only if mail works (a code that cannot be delivered would
+	 * lock the owner out).
+	 */
+	get superOtpMode(): "on" | "off" | "auto" {
+		const value = (process.env.SUPERADMIN_OTP || "").trim().toLowerCase();
+		if (/^(false|0|off|no)$/.test(value)) return "off";
+		return /^(true|1|on|yes)$/.test(value) ? "on" : "auto";
+	},
 	get isProd() {
 		return process.env.NODE_ENV === "production";
 	},

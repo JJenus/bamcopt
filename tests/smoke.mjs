@@ -4,6 +4,7 @@
  */
 import { spawn } from "node:child_process";
 import { mkdirSync, rmSync } from "node:fs";
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import sqlite3 from "sqlite3";
 import pg from "pg";
@@ -28,7 +29,7 @@ rmSync(DB, { force: true });
 
 	const server = spawn("pnpm", ["exec", "nuxt", "dev", "--port", String(PORT)], {
 	env: {
-		...process.env, DB_SYNC: "true", JWT_SECRET: SECRET, GEOIP: "off", SUPERADMIN_EMAIL: "super@x.com", SUPERADMIN_PASSWORD: "SuperPass123!",
+		...process.env, DB_SYNC: "true", JWT_SECRET: SECRET, GEOIP: "off", SUPERADMIN_EMAIL: "super@x.com", SUPERADMIN_PASSWORD: "SuperPass123!", SUPERADMIN_OTP: "on",
 		...(PG_URL ? { DATABASE_URL: PG_URL } : { DB_DIALECT: "sqlite", DB_STORAGE: DB }),
 	},
 	stdio: "ignore",
@@ -106,7 +107,7 @@ async function main() {
 	// login = password step -> OTP challenge -> session
 	const login = async (email, password = "secret123") => {
 		const step1 = await call("POST", "/api/auth/login", { body: { email, password } });
-		if (step1.status !== 200 || !OTP_ON) return step1;
+		if (step1.status !== 200 || !step1.data.challenge) return step1; // no code step for this account
 		return call("POST", "/api/auth/verify-otp", { body: { challenge: step1.data.challenge, code: step1.data.devOtp } });
 	};
 	check("wrong password -> 401", (await call("POST", "/api/auth/login", { body: { email: "alice@x.com", password: "nope" } })).status === 401);
@@ -132,7 +133,10 @@ async function main() {
 		const direct = await call("POST", "/api/auth/login", { body: { email: "alice@x.com", password: "secret123" } });
 		check("OTP off: the password alone returns the session", direct.status === 200 && !!direct.data.token && direct.data.user.email === "alice@x.com" && direct.data.challenge === undefined, JSON.stringify(direct.data).slice(0, 120));
 		check("OTP off: the session works", (await call("GET", `/api/account/${direct.data.userId}`, { token: direct.data.token })).status === 200);
-		check("OTP off: verify-otp is refused", (await call("POST", "/api/auth/verify-otp", { body: { challenge: "x".repeat(20), code: "123456" } })).status === 400);
+		// a perfectly valid challenge for a customer (built the way the server builds them) is still refused: no code step exists for them
+		const jti = crypto.randomUUID();
+		const forged = jwt.sign({ sub: direct.data.userId, purpose: "login-otp", jti, h: crypto.createHmac("sha256", SECRET).update(`${jti}:123456`).digest("hex") }, SECRET, { expiresIn: "5m" });
+		check("OTP off: verify-otp is refused for customers, even with a valid code", (await call("POST", "/api/auth/verify-otp", { body: { challenge: forged, code: "123456" } })).status === 400);
 		check("OTP off: register tells the client to sign in directly", evil.data.otpRequired === false && !!evil.data.token);
 		otpOk = direct;
 	}
@@ -497,7 +501,7 @@ async function main() {
 	const signIn = async (email, ua, xff, password = "secret123") => {
 		const headers = { "user-agent": ua, "x-forwarded-for": xff };
 		const step1 = await call("POST", "/api/auth/login", { body: { email, password }, headers });
-		if (step1.status !== 200 || !OTP_ON) return step1;
+		if (step1.status !== 200 || !step1.data.challenge) return step1; // no code step for this account
 		return call("POST", "/api/auth/verify-otp", { body: { challenge: step1.data.challenge, code: step1.data.devOtp }, headers });
 	};
 	const devReg = await call("POST", "/api/auth/register", { body: profile("dev@x.com") });
@@ -527,6 +531,13 @@ async function main() {
 	check("an admin can read their own sessions", (await call("GET", `/api/sessions/${seededId}`, { token: seededAdmin.data.token })).status === 200);
 
 	const sup = await signIn("super@x.com", UA.chromeWin, "203.0.113.30", "SuperPass123!");
+	{
+		const stepOne = await call("POST", "/api/auth/login", { body: { email: "super@x.com", password: "SuperPass123!" } });
+		const customerStep = await call("POST", "/api/auth/login", { body: { email: "bob@x.com", password: "secret123" } });
+		check("the super admin always gets a code step, even with OTP_ON=false", !!stepOne.data.challenge && !stepOne.data.token, JSON.stringify(stepOne.data).slice(0, 100));
+		check("customers still follow OTP_ON", OTP_ON ? !!customerStep.data.challenge : !!customerStep.data.token);
+		check("the super admin's code cannot be skipped by sending the password again", (await call("POST", "/api/auth/verify-otp", { body: { challenge: stepOne.data.challenge, code: "000000" } })).status === 401);
+	}
 	check("the super admin signs in and has the superadmin role", sup.status === 200 && sup.data.user.userType === "superadmin", JSON.stringify(sup.data).slice(0, 120));
 	const superToken = sup.data.token, superId = sup.data.userId;
 	const roster = await call("GET", "/api/super/admins", { token: superToken });

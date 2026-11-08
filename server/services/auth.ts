@@ -16,6 +16,14 @@ import { createUser, getUser, normalizeEmail, withAccount } from "./users";
 
 export type RequestInfo = { ip: string; device: string };
 
+/** Everyone follows OTP_ON; the super admin can be held to the code regardless (see env.superOtpMode). */
+const otpRequiredFor = (user: { userType: string }) => {
+	if (env.otpOn) return true;
+	if (user.userType !== "superadmin") return false;
+	const mode = env.superOtpMode;
+	return mode === "off" ? false : mailEnabled() || (mode === "on" && !env.isProd);
+};
+
 /** Best effort: a failing audit row must never block a login. */
 const logAccess = async (userId: string, action: SecurityLogAction, info?: RequestInfo, reason = "") => {
 	try {
@@ -83,7 +91,7 @@ export const login = async (email: string, password: string, info?: RequestInfo)
 		throw unauthorized("Invalid credentials");
 	}
 
-	if (!env.otpOn) {
+	if (!otpRequiredFor(user)) {
 		await announceNewDevice(user, info);
 		await logAccess(user.id, SecurityLogAction.LOGIN, info);
 		return session(user, info);
@@ -102,8 +110,8 @@ export const login = async (email: string, password: string, info?: RequestInfo)
 
 /** Step 2: the code from the e-mail. Returns the session. */
 export const verifyOtp = async (challenge: string, code: string, info?: RequestInfo) => {
-	if (!env.otpOn) throw badRequest("OTP sign-in is disabled. Sign in with your password.");
 	const user = await getUser(verifyOtpChallenge(challenge, code));
+	if (!otpRequiredFor(user)) throw badRequest("OTP sign-in is disabled. Sign in with your password.");
 	await announceNewDevice(user, info);
 	await logAccess(user.id, SecurityLogAction.LOGIN, info);
 	return session(user, info);
