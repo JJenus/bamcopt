@@ -4,6 +4,7 @@ import type { AuthContext } from "../utils/auth";
 import { parseDevice, type DeviceType } from "../utils/device";
 import { forbidden, notFound } from "../utils/errors";
 import { verifySuperAdmin } from "../utils/superadmin";
+import { countAdminActions } from "./audit";
 
 /** How many recent successful sign-ins are grouped into devices. */
 const WINDOW = 1000;
@@ -92,12 +93,12 @@ export const loginEvents = async (userId: string, opts: { limit?: number; before
 export const adminOverview = async () => {
 	const admins = await User.findAll({ where: { userType: "admin" }, order: [["createdAt", "ASC"]] });
 	return Promise.all(admins.map(async (admin) => {
-		const { devices, failedAttempts } = await deviceSessions(admin.id);
+		const [{ devices, failedAttempts }, actions7d] = await Promise.all([deviceSessions(admin.id), countAdminActions(admin.id, 7)]);
 		const latest = devices[0];
 		return {
 			id: admin.id, name: admin.name, email: admin.email, status: admin.status, createdAt: admin.createdAt,
 			lastSignIn: latest ? { at: latest.lastSeen, ip: latest.lastIp, location: latest.lastLocation, device: latest.label } : null,
-			devices: devices.length, signIns: devices.reduce((sum, d) => sum + d.signIns, 0), failedAttempts: failedAttempts.count,
+			devices: devices.length, signIns: devices.reduce((sum, d) => sum + d.signIns, 0), failedAttempts: failedAttempts.count, actions7d,
 		};
 	}));
 };

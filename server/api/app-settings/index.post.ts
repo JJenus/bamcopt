@@ -2,8 +2,12 @@ import { parseBody, uuidParam } from "../../utils/validate";
 import { requireAdmin, requireAuth, requireSelfOrAdmin, isAdmin } from "../../utils/auth";
 import * as S from "../../utils/schemas";
 import { createAppSettings } from "../../services/catalog";
+import { pick, recordAdminAction } from "../../services/audit";
 
 export default defineEventHandler(async (event) => {
-	requireAdmin(event);
-	return createAppSettings(await parseBody(event, S.AppSettingsBody));
+	const auth = requireAdmin(event);
+	const body = await parseBody(event, S.AppSettingsBody);
+	const created: any = await createAppSettings(body);
+	await recordAdminAction(event, auth, { action: "settings.app.create", targetType: "app-settings", targetId: created?.id, summary: `Created app defaults (language ${body.defaultLanguage}, base currency ${body.defaultBaseCurrency})`, meta: pick(body, ["defaultLanguage", "defaultBaseCurrency", "currencySymbol"]) });
+	return created;
 });

@@ -143,6 +143,23 @@ SecurityLog.init(
 	{ sequelize, modelName: "SecurityLog", indexes: [{ name: "security_logs_user_action_created_idx", fields: ["user_id", "action", "created_at"] }] }
 );
 
+/** What administrators did (money, users, settings). One row per successful change; never edited. */
+export class AuditLog extends Model {}
+AuditLog.init(
+	{
+		id,
+		// plain ids (no foreign keys): the trail must outlive any change to the accounts it describes
+		actorId: { type: DataTypes.STRING, allowNull: false },
+		action: { type: DataTypes.STRING, allowNull: false },
+		targetType: { type: DataTypes.STRING, allowNull: true },
+		targetId: { type: DataTypes.STRING, allowNull: true },
+		summary: { type: DataTypes.STRING(500), allowNull: false, defaultValue: "" },
+		meta: { type: DataTypes.JSON, allowNull: true },
+		ip: DataTypes.STRING, deviceInfo: DataTypes.STRING,
+	},
+	{ sequelize, modelName: "AuditLog", indexes: [{ name: "audit_logs_actor_created_idx", fields: ["actor_id", "created_at"] }] }
+);
+
 export class AppSetting extends Model {
 	declare id: string; declare defaultLanguage: string; declare defaultBaseCurrency: string; declare currencySymbol: string;
 }
