@@ -91,6 +91,20 @@ async function signIn(page, email, password) {
 		await page.waitForFunction(() => /Signed out/.test(document.querySelector('tbody')?.innerText || ''));
 		ok('the forced sign-outs appear in the history');
 
+		// suspending an administrator: they cannot sign in and are told why; restoring lets them back in
+		page.once('dialog', (d) => d.accept());
+		await page.click('button:has-text("Suspend administrator")');
+		await page.waitForSelector('[role=status]:has-text("Suspended")', { timeout: 15000 });
+		const blocked = await (await browser.newContext()).newPage();
+		await signIn(blocked, 'admin@bancopt.com', 'AdminPass123!');
+		await blocked.waitForSelector('text=suspended', { timeout: 15000 });
+		assert.ok(new URL(blocked.url()).pathname.startsWith('/sign-in'), 'stays on the sign-in page');
+		ok('a suspended administrator is refused with the reason');
+		page.once('dialog', (d) => d.accept());
+		await page.click('button:has-text("Restore administrator")');
+		await page.waitForSelector('[role=status]:has-text("Restored")', { timeout: 15000 });
+		ok('the super admin suspends and restores an administrator');
+
 		await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
 		await page.waitForURL((u) => u.pathname === '/super', { timeout: 15000 });
 		ok('super admin opening /admin is sent back to /super');

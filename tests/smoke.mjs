@@ -674,6 +674,60 @@ async function main() {
 		check("maintenance is closed to admins and customers", (await call("GET", "/api/super/maintenance", { token: admin.token })).status === 403 && (await call("POST", "/api/super/maintenance/prune", { token: bob.token })).status === 403);
 	}
 
+
+	// ---- suspended accounts cannot get in, by any route
+	{
+		const sus = await call("POST", "/api/auth/register", { body: profile("sus@x.com") });
+		const susId = sus.data.userId;
+		const live = await signIn("sus@x.com", UA.chromeWin, "203.0.113.90");
+		const legacy = jwt.sign({ userId: susId, name: "Sus", userType: "user" }, SECRET, { expiresIn: "1h" }); // a token from before sessions were stored
+		const me = (t) => call("GET", `/api/users/${susId}`, { token: t }).then((r) => r.status);
+		check("before the suspension every token works", (await me(live.data.token)) === 200 && (await me(legacy)) === 200);
+
+		check("an unknown status is refused instead of silently doing nothing", (await call("PUT", `/api/users/${susId}`, { token: admin.token, body: { status: "SUSPENDD" } })).status >= 400);
+		check("HOLD still signs in (it only stops transfers)", (await call("PUT", `/api/users/${susId}`, { token: admin.token, body: { status: "hold" } })).data.status === "HOLD" && (await signIn("sus@x.com", UA.chromeWin, "203.0.113.90")).status === 200);
+
+		const done = await call("PUT", `/api/users/${susId}`, { token: admin.token, body: { status: "suspended" } });
+		check("the status is stored in upper case whatever was typed", done.status === 200 && done.data.status === "SUSPENDED", JSON.stringify(done.data).slice(0, 80));
+		check("a live session stops at once", (await me(live.data.token)) === 401);
+		check("so does an older token that has no session", (await me(legacy)) === 401);
+		const denied = await call("POST", "/api/auth/login", { body: { email: "sus@x.com", password: "secret123" } });
+		check("the right password no longer signs in, and says why", denied.status === 403 && /suspended/i.test(denied.data.message || ""), JSON.stringify(denied.data).slice(0, 100));
+		check("a wrong password still looks like any other wrong password", (await call("POST", "/api/auth/login", { body: { email: "sus@x.com", password: "nope" } })).status === 401);
+		const attempts = (await call("GET", `/api/sessions/${susId}`, { token: admin.token })).data.failedAttempts.recent.map((e) => e.reason);
+		check("the blocked attempt is in the history", attempts.includes("Account suspended"), JSON.stringify(attempts));
+
+		// a code step issued before the suspension cannot be used afterwards
+		await call("PUT", `/api/users/${susId}`, { token: admin.token, body: { status: "ACTIVE" } });
+		const jti = crypto.randomUUID();
+		const staleChallenge = jwt.sign({ sub: susId, purpose: "login-otp", jti, h: crypto.createHmac("sha256", SECRET).update(`${jti}:123456`).digest("hex") }, SECRET, { expiresIn: "5m" });
+		await call("PUT", `/api/users/${susId}`, { token: admin.token, body: { status: "SUSPENDED" } });
+		if (OTP_ON) check("an OTP issued before the suspension is useless afterwards", (await call("POST", "/api/auth/verify-otp", { body: { challenge: staleChallenge, code: "123456" } })).status === 403);
+
+		const back = await call("PUT", `/api/users/${susId}`, { token: admin.token, body: { status: "ACTIVE" } });
+		check("restoring the account lets them sign in again", back.status === 200 && (await signIn("sus@x.com", UA.chromeWin, "203.0.113.91")).status === 200 && (await me(legacy)) === 200);
+		check("a customer cannot change their own status", (await call("PUT", `/api/users/${susId}`, { token: live.data.token, body: { status: "ACTIVE" } })).status === 401);
+
+		// roles: a token that claims more than the account has is worthless
+		const forged = jwt.sign({ userId: susId, name: "Sus", userType: "admin" }, SECRET, { expiresIn: "1h" });
+		check("a token claiming a role the account does not have is rejected", (await call("GET", "/api/admin/stats", { token: forged })).status === 401);
+	}
+
+	// ---- the super admin switches an administrator off
+	{
+		const target = await signIn("admin@bancopt.com", UA.chromeWin, "203.0.113.92", "AdminPass123!");
+		check("before: the administrator works", (await call("GET", "/api/admin/stats", { token: target.data.token })).status === 200);
+		check("only the super admin can suspend an administrator", (await call("POST", `/api/super/admins/${seededId}/status`, { token: admin.token, body: { status: "SUSPENDED" } })).status === 403 && (await call("POST", `/api/super/admins/${seededId}/status`, { token: bob.token, body: { status: "SUSPENDED" } })).status === 403);
+		check("the status must be ACTIVE or SUSPENDED", (await call("POST", `/api/super/admins/${seededId}/status`, { token: superToken, body: { status: "HOLD" } })).status >= 400);
+		check("customers are not administrators", (await call("POST", `/api/super/admins/${devId}/status`, { token: superToken, body: { status: "SUSPENDED" } })).status === 404);
+		const off = await call("POST", `/api/super/admins/${seededId}/status`, { token: superToken, body: { status: "SUSPENDED" } });
+		check("suspending an administrator ends their sessions", off.status === 200 && off.data.sessionsEnded >= 1 && (await call("GET", "/api/admin/stats", { token: target.data.token })).status === 401, JSON.stringify(off.data));
+		check("and they cannot sign straight back in", (await call("POST", "/api/auth/login", { body: { email: "admin@bancopt.com", password: "AdminPass123!" } })).status === 403);
+		check("the roster shows the status", (await call("GET", "/api/super/admins", { token: superToken })).data.find((a) => a.id === seededId)?.status === "SUSPENDED");
+		const on = await call("POST", `/api/super/admins/${seededId}/status`, { token: superToken, body: { status: "ACTIVE" } });
+		check("restoring lets them sign in again", on.status === 200 && (await signIn("admin@bancopt.com", UA.chromeWin, "203.0.113.93", "AdminPass123!")).status === 200);
+	}
+
 	check("admins never see the super admin in the user list", !(await call("GET", "/api/users", { token: admin.token })).data.some((u) => u.email === "super@x.com"));
 	check("nobody can find the super admin by e-mail", (await call("POST", "/api/users/find", { token: bob.token, body: { email: "super@x.com" } })).status === 404);
 	check("an admin cannot open or edit the super admin", (await call("GET", `/api/users/${superId}`, { token: admin.token })).status === 404 && (await call("PUT", `/api/users/${superId}`, { token: admin.token, body: { status: "HOLD" } })).status === 404);
