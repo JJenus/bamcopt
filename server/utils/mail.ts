@@ -65,3 +65,17 @@ export const sendOtpEmail = (user: Recipient, otp: string) =>
 		otpEmail.replace("{{ name }}", user.name || "").replace("{{ otp }}", String(otp)),
 		`${AppName} OTP ${otp}. Expires in 15 minutes.`
 	);
+
+const esc = (value: string) => value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+export const sendNewDeviceEmail = (user: Recipient, details: { device: string; ip: string }) =>
+	send(
+		user.email,
+		`New sign-in to your ${AppName} account`,
+		`<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2f3044;max-width:560px;margin:0 auto;padding:24px">
+<p style="font-size:20px;font-weight:700;color:#181c32">New sign-in to your account</p>
+<p>Hello ${esc(user.name || "")}, your ${AppName} account was just signed in to from a device we have not seen before.</p>
+<p style="background:#f5f8fa;border-radius:8px;padding:12px 16px"><strong>${esc(details.device)}</strong><br />IP address ${esc(details.ip)}</p>
+<p>If this was you, there is nothing to do. If it was not, open <a href="${env.appUrl}">${env.appUrl}</a>, go to Settings, Security, sign that device out and reset your password.</p></div>`,
+		`New sign-in to your ${AppName} account from ${details.device} (IP ${details.ip}). If this was not you, sign that device out under Settings > Security and reset your password.`
+	);

@@ -111,10 +111,14 @@ export const adminOverview = async () => {
 	return Promise.all(admins.map(async (admin) => {
 		const [{ devices, failedAttempts, activeSessions }, actions7d] = await Promise.all([deviceSessions(admin.id), countAdminActions(admin.id, 7)]);
 		const latest = devices[0];
+		// devices first seen this week, not counting the very first device the account ever used
+		const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+		const firstEver = devices.reduce((min, d) => (d.firstSeen < min ? d.firstSeen : min), "9999");
+		const newDevices7d = Math.max(0, devices.filter((d) => d.firstSeen >= weekAgo).length - (firstEver >= weekAgo ? 1 : 0));
 		return {
 			id: admin.id, name: admin.name, email: admin.email, status: admin.status, createdAt: admin.createdAt,
 			lastSignIn: latest ? { at: latest.lastSeen, ip: latest.lastIp, location: latest.lastLocation, device: latest.label } : null,
-			devices: devices.length, signIns: devices.reduce((sum, d) => sum + d.signIns, 0), failedAttempts: failedAttempts.count, actions7d, activeSessions, online: devices.some((d) => d.online),
+			devices: devices.length, signIns: devices.reduce((sum, d) => sum + d.signIns, 0), failedAttempts: failedAttempts.count, actions7d, newDevices7d, activeSessions, online: devices.some((d) => d.online),
 		};
 	}));
 };

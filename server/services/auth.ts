@@ -6,7 +6,8 @@ import { signOtpChallenge, signPurposeToken, signSession, verifyOtpChallenge, ve
 import { env } from "../utils/env";
 import { lookupLocation } from "../utils/geo";
 import { badRequest, unauthorized } from "../utils/errors";
-import { AppName, mailEnabled, sendOtpEmail, sendPasswordEmail, sendWelcomeEmail } from "../utils/mail";
+import { AppName, mailEnabled, sendNewDeviceEmail, sendOtpEmail, sendPasswordEmail, sendWelcomeEmail } from "../utils/mail";
+import { parseDevice } from "../utils/device";
 import { createAccount } from "./accounts";
 import { getAppSettings } from "./catalog";
 import { notifySafe } from "./notifications";
@@ -22,6 +23,26 @@ const logAccess = async (userId: string, action: SecurityLogAction, info?: Reque
 		// never delays or fails the sign-in: the location is filled in when the lookup returns
 		void lookupLocation(info?.ip).then((location) => location && row.update({ location })).catch(() => {});
 	} catch {}
+};
+
+/**
+ * Tells the account owner when a browser/device they have never used before signs in (not on the very first sign-in,
+ * when there is nothing to compare with). A notification always; an e-mail too when mail is configured. Never blocks a sign-in.
+ */
+const announceNewDevice = async (user: User, info?: RequestInfo) => {
+	try {
+		const device = parseDevice(info?.device);
+		const prior = await SecurityLog.findAll({ where: { userId: user.id, action: SecurityLogAction.LOGIN }, attributes: ["deviceInfo"], order: [["createdAt", "DESC"]], limit: 500, raw: true });
+		if (!prior.length || prior.some((row: any) => parseDevice(row.deviceInfo).key === device.key)) return;
+		const ip = info?.ip || "unknown";
+		await notifySafe({
+			userId: user.id, title: "New sign-in from a new device", type: NotificationType.INFO,
+			message: `${device.label} (IP ${ip}) just signed in. If this was not you, open Settings > Security, sign that device out and reset your password.`,
+		});
+		sendNewDeviceEmail(user, { device: device.label, ip });
+	} catch (error) {
+		console.error("[security] new-device check failed:", (error as Error).message);
+	}
 };
 
 const session = async (user: User, info?: RequestInfo) => ({
@@ -63,6 +84,7 @@ export const login = async (email: string, password: string, info?: RequestInfo)
 	}
 
 	if (!env.otpOn) {
+		await announceNewDevice(user, info);
 		await logAccess(user.id, SecurityLogAction.LOGIN, info);
 		return session(user, info);
 	}
@@ -82,6 +104,7 @@ export const login = async (email: string, password: string, info?: RequestInfo)
 export const verifyOtp = async (challenge: string, code: string, info?: RequestInfo) => {
 	if (!env.otpOn) throw badRequest("OTP sign-in is disabled. Sign in with your password.");
 	const user = await getUser(verifyOtpChallenge(challenge, code));
+	await announceNewDevice(user, info);
 	await logAccess(user.id, SecurityLogAction.LOGIN, info);
 	return session(user, info);
 };
