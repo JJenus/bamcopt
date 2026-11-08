@@ -5,6 +5,7 @@ import { parseDevice, type DeviceType } from "../utils/device";
 import { forbidden, notFound } from "../utils/errors";
 import { verifySuperAdmin } from "../utils/superadmin";
 import { countAdminActions } from "./audit";
+import { activeSessionsOf } from "./user-sessions";
 
 /** How many recent successful sign-ins are grouped into devices. */
 const WINDOW = 1000;
@@ -13,6 +14,8 @@ const FAILED_DAYS = 30;
 export type DeviceSession = {
 	key: string; label: string; browser: string; os: string; deviceType: DeviceType;
 	signIns: number; firstSeen: string; lastSeen: string;
+	/** sessions that are still signed in on this device, and when one of them last made a request */
+	activeSessions: number; lastActive: string | null; online: boolean;
 	lastIp: string; lastLocation: string; ips: string[]; locations: string[]; userAgent: string; current: boolean;
 };
 
@@ -54,7 +57,7 @@ export const deviceSessions = async (userId: string, currentKey?: string) => {
 		const event = toEvent(row);
 		let g = groups.get(event.device.key);
 		if (!g) {
-			g = { ...event.device, signIns: 0, firstSeen: event.createdAt, lastSeen: event.createdAt, lastIp: event.ip, lastLocation: event.location, ips: [], locations: [], userAgent: event.userAgent, current: event.device.key === currentKey };
+			g = { ...event.device, signIns: 0, firstSeen: event.createdAt, lastSeen: event.createdAt, lastIp: event.ip, lastLocation: event.location, ips: [], locations: [], userAgent: event.userAgent, current: event.device.key === currentKey, activeSessions: 0, lastActive: null, online: false };
 			groups.set(event.device.key, g);
 		}
 		g.signIns++;
@@ -62,6 +65,18 @@ export const deviceSessions = async (userId: string, currentKey?: string) => {
 		if (!g.lastLocation && event.location) g.lastLocation = event.location;
 		if (event.ip && !g.ips.includes(event.ip)) g.ips.push(event.ip);
 		if (event.location && !g.locations.includes(event.location)) g.locations.push(event.location);
+	}
+
+	// which devices are signed in right now (server-side sessions that were not revoked and have not expired)
+	const active = await activeSessionsOf(userId);
+	const ONLINE_MS = 5 * 60 * 1000;
+	for (const row of active) {
+		const g = groups.get(parseDevice(row.userAgent).key);
+		if (!g) continue;
+		g.activeSessions++;
+		const seen = new Date(row.lastSeenAt).toISOString();
+		if (!g.lastActive || seen > g.lastActive) g.lastActive = seen;
+		if (Date.now() - new Date(row.lastSeenAt).getTime() < ONLINE_MS) g.online = true;
 	}
 
 	const since = new Date(Date.now() - FAILED_DAYS * 86400000);
@@ -73,13 +88,14 @@ export const deviceSessions = async (userId: string, currentKey?: string) => {
 
 	return {
 		devices: [...groups.values()].sort((a, b) => b.lastSeen.localeCompare(a.lastSeen)),
+		activeSessions: active.length,
 		failedAttempts: { days: FAILED_DAYS, count: failedCount, recent: failedRecent.map(toEvent) },
 		truncated: logins.length === WINDOW,
 	};
 };
 
 /** The raw audit trail, newest first, paged with `before` (the createdAt of the last row you have). */
-export const loginEvents = async (userId: string, opts: { limit?: number; before?: string; action?: "login" | "attempt_failed" } = {}) => {
+export const loginEvents = async (userId: string, opts: { limit?: number; before?: string; action?: "login" | "attempt_failed" | "logout" } = {}) => {
 	const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 200);
 	const where: Record<string, unknown> = { userId };
 	if (opts.action) where.action = opts.action;
@@ -93,12 +109,12 @@ export const loginEvents = async (userId: string, opts: { limit?: number; before
 export const adminOverview = async () => {
 	const admins = await User.findAll({ where: { userType: "admin" }, order: [["createdAt", "ASC"]] });
 	return Promise.all(admins.map(async (admin) => {
-		const [{ devices, failedAttempts }, actions7d] = await Promise.all([deviceSessions(admin.id), countAdminActions(admin.id, 7)]);
+		const [{ devices, failedAttempts, activeSessions }, actions7d] = await Promise.all([deviceSessions(admin.id), countAdminActions(admin.id, 7)]);
 		const latest = devices[0];
 		return {
 			id: admin.id, name: admin.name, email: admin.email, status: admin.status, createdAt: admin.createdAt,
 			lastSignIn: latest ? { at: latest.lastSeen, ip: latest.lastIp, location: latest.lastLocation, device: latest.label } : null,
-			devices: devices.length, signIns: devices.reduce((sum, d) => sum + d.signIns, 0), failedAttempts: failedAttempts.count, actions7d,
+			devices: devices.length, signIns: devices.reduce((sum, d) => sum + d.signIns, 0), failedAttempts: failedAttempts.count, actions7d, activeSessions, online: devices.some((d) => d.online),
 		};
 	}));
 };

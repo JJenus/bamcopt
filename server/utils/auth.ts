@@ -4,11 +4,11 @@ import { getHeader, H3Event } from "h3";
 import { env } from "./env";
 import { forbidden, unauthorized } from "./errors";
 
-export type AuthContext = { userId: string; userType: string };
+export type AuthContext = { userId: string; userType: string; /** id of the server-side session row; absent on tokens issued before sessions were stored */ sid?: string };
 type Purpose = "verify-email" | "reset-password";
 
-export const signSession = (user: { id: string; name: string; userType?: string }) =>
-	jwt.sign({ userId: user.id, name: user.name, userType: user.userType || "user" }, env.jwtSecret, {
+export const signSession = (user: { id: string; name: string; userType?: string }, sid?: string) =>
+	jwt.sign({ userId: user.id, name: user.name, userType: user.userType || "user", ...(sid && { sid }) }, env.jwtSecret, {
 		expiresIn: "5d",
 	});
 
@@ -17,7 +17,7 @@ export const verifySession = (token: string): AuthContext => {
 		const p = jwt.verify(token, env.jwtSecret) as any;
 		if (!p.userId || p.purpose) throw new Error("not a session token");
 		// tokens issued before roles were added carry no userType: least privilege
-		return { userId: p.userId, userType: p.userType || "user" };
+		return { userId: p.userId, userType: p.userType || "user", ...(p.sid && { sid: String(p.sid) }) };
 	} catch {
 		throw unauthorized("Invalid token");
 	}

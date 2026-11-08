@@ -160,6 +160,28 @@ AuditLog.init(
 	{ sequelize, modelName: "AuditLog", indexes: [{ name: "audit_logs_actor_created_idx", fields: ["actor_id", "created_at"] }] }
 );
 
+/**
+ * One row per sign-in. The session token carries its id (`sid`), so a row that is revoked or expired ends the session
+ * on the very next request. Tokens issued before this table existed have no sid and simply run until they expire.
+ */
+export class UserSession extends Model {
+	declare id: string; declare userId: string; declare userAgent: string; declare ip: string;
+	declare lastSeenAt: Date; declare expiresAt: Date; declare revokedAt: Date | null; declare createdAt: Date;
+}
+UserSession.init(
+	{
+		id,
+		userId: { type: DataTypes.STRING, allowNull: false },
+		userAgent: { type: DataTypes.STRING, allowNull: true }, ip: { type: DataTypes.STRING, allowNull: true },
+		lastSeenAt: { type: DataTypes.DATE, allowNull: false },
+		expiresAt: { type: DataTypes.DATE, allowNull: false },
+		revokedAt: { type: DataTypes.DATE, allowNull: true },
+		revokedBy: { type: DataTypes.STRING, allowNull: true },
+		revokeReason: { type: DataTypes.STRING, allowNull: true },
+	},
+	{ sequelize, modelName: "UserSession", indexes: [{ name: "user_sessions_user_created_idx", fields: ["user_id", "created_at"] }] }
+);
+
 export class AppSetting extends Model {
 	declare id: string; declare defaultLanguage: string; declare defaultBaseCurrency: string; declare currencySymbol: string;
 }

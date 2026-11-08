@@ -3,6 +3,7 @@ import { verifySession } from "../utils/auth";
 import { dbReady } from "../utils/db";
 import "../models";
 import { unauthorized } from "../utils/errors";
+import { assertSessionActive } from "../services/user-sessions";
 
 /** Everything under /api needs a valid session token, except the few public routes. */
 export default defineEventHandler(async (event) => {
@@ -14,5 +15,8 @@ export default defineEventHandler(async (event) => {
 
 	const token = getHeader(event, "authorization")?.split(" ")[1];
 	if (!token) throw unauthorized();
-	event.context.auth = verifySession(token);
+	const auth = verifySession(token);
+	// a revoked or expired session ends on the next request, whatever the token's own expiry says
+	if (auth.sid) await assertSessionActive(auth.sid);
+	event.context.auth = auth;
 });

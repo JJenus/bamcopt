@@ -87,3 +87,8 @@ export const CurrencyBody = z.object({ id: uuid.optional(), country: z.string().
 export const AccountLevelBody = z.object({
 	id: uuid.optional(), title: z.string().min(2), dailyLimit: z.number(), maxBalanceLimit: z.number(), accountLevel: z.number(),
 });
+
+/** Sign out one device, every other device, or everything. Exactly one of the three. */
+export const SessionRevokeBody = z.object({
+	deviceKey: z.string().min(1).max(200).optional(), others: z.boolean().optional(), all: z.boolean().optional(),
+}).strict().refine((body) => [body.deviceKey, body.others, body.all].filter(Boolean).length === 1, "Choose one of deviceKey, others or all");

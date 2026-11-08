@@ -10,6 +10,7 @@ import { AppName, mailEnabled, sendOtpEmail, sendPasswordEmail, sendWelcomeEmail
 import { createAccount } from "./accounts";
 import { getAppSettings } from "./catalog";
 import { notifySafe } from "./notifications";
+import { createSession, revokeSessions } from "./user-sessions";
 import { createUser, getUser, normalizeEmail, withAccount } from "./users";
 
 export type RequestInfo = { ip: string; device: string };
@@ -23,13 +24,13 @@ const logAccess = async (userId: string, action: SecurityLogAction, info?: Reque
 	} catch {}
 };
 
-const session = async (user: User) => ({
+const session = async (user: User, info?: RequestInfo) => ({
 	userId: user.id,
 	user: await withAccount(user),
-	token: signSession(user),
+	token: signSession(user, await createSession(user.id, info)),
 });
 
-export const register = async (input: Parameters<typeof createUser>[0]) => {
+export const register = async (input: Parameters<typeof createUser>[0], info?: RequestInfo) => {
 	const settings = await getAppSettings();
 	// user + account are created together or not at all
 	const user = await sequelize.transaction(async (t) => {
@@ -46,7 +47,7 @@ export const register = async (input: Parameters<typeof createUser>[0]) => {
 		type: NotificationType.INFO,
 	});
 	// otpRequired tells the client whether it should go on to the OTP step (it never does after registering)
-	return { ...(await session(user)), otpRequired: env.otpOn };
+	return { ...(await session(user, info)), otpRequired: env.otpOn };
 };
 
 // compared against when the e-mail is unknown, so both failures cost the same
@@ -63,7 +64,7 @@ export const login = async (email: string, password: string, info?: RequestInfo)
 
 	if (!env.otpOn) {
 		await logAccess(user.id, SecurityLogAction.LOGIN, info);
-		return session(user);
+		return session(user, info);
 	}
 
 	const code = String(crypto.randomInt(100000, 1000000));
@@ -82,7 +83,7 @@ export const verifyOtp = async (challenge: string, code: string, info?: RequestI
 	if (!env.otpOn) throw badRequest("OTP sign-in is disabled. Sign in with your password.");
 	const user = await getUser(verifyOtpChallenge(challenge, code));
 	await logAccess(user.id, SecurityLogAction.LOGIN, info);
-	return session(user);
+	return session(user, info);
 };
 
 export const verifyEmail = async (token: string) => {
@@ -101,5 +102,7 @@ export const requestPasswordReset = async (email: string) => {
 export const resetPassword = async (token: string, password: string) => {
 	const user = await getUser(verifyPurposeToken(token, "reset-password"));
 	await user.update({ password: await bcrypt.hash(password, 10) });
+	// whoever held a session (possibly the reason for the reset) is signed out
+	await revokeSessions(user.id, { by: user.id, reason: "Password was reset" }).catch(() => {});
 	await notifySafe({ userId: user.id, title: "Password update", message: "Your password has been changed.", type: NotificationType.INFO });
 };
