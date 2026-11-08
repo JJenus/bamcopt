@@ -33,15 +33,16 @@ test('official CLI applies all pending migrations, tracks SequelizeMeta and safe
 	const f = await fixture();
 	try {
 		const status = run(f.storage, ['db:migrate:status']); assert.equal(status.status, 0, status.stderr + status.stdout);
-		assert.match(status.stdout, /down.*notification/); assert.match(status.stdout, /down.*deposit/); assert.match(status.stdout, /down.*security-log-location/);
+		assert.match(status.stdout, /down.*notification/); assert.match(status.stdout, /down.*deposit/); assert.match(status.stdout, /down.*security-log-location/); assert.match(status.stdout, /down.*audit-logs/);
 		const first = run(f.storage, ['db:migrate']); assert.equal(first.status, 0, first.stderr + first.stdout);
 		assert.ok((await f.qi.describeTable('notifications')).entity_type);
 		assert.ok((await f.qi.describeTable('deposit_requests')).transaction_id);
 		assert.ok((await f.qi.describeTable('security_logs')).location);
+		assert.ok((await f.qi.describeTable('audit_logs')).actor_id);
 		assert.ok((await f.qi.showIndex('security_logs')).some(i => i.name === 'security_logs_user_action_created_idx'));
-		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 3);
+		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 4);
 		const second = run(f.storage, ['db:migrate']); assert.equal(second.status, 0, second.stderr + second.stdout);
-		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 3);
+		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 4);
 	} finally { await f.cleanup(); }
 });
 

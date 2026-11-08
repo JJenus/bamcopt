@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import type { AdminDetail } from '~/services/super.service';
+	import type { AdminAction, AdminDetail } from '~/services/super.service';
 	import type { LoginEvent } from '~/services/security.service';
 	import { exactTime, timeAgo } from '~/utils/session-ui';
 	const id = String(useRoute().params.id);
@@ -7,6 +7,13 @@
 	const events = ref<LoginEvent[]>([]);
 	const nextBefore = ref<string | null>(null);
 	const filter = ref<'' | 'login' | 'attempt_failed'>('');
+	const actions = ref<AdminAction[]>([]);
+	const actionsNext = ref<string | null>(null);
+	const area = ref('');
+	const actionsError = ref('');
+	const actionsMore = ref(false);
+	const areas = [{ value: '', label: 'All actions' }, { value: 'account', label: 'Balances' }, { value: 'deposit', label: 'Deposits' }, { value: 'transaction', label: 'Transactions' }, { value: 'user', label: 'Users' }, { value: 'funding', label: 'Funding accounts' }, { value: 'notification', label: 'Notifications' }, { value: 'settings', label: 'Settings' }];
+	const actionPage = async (before?: string) => superService.adminActions(id, { limit: 25, before, area: area.value || undefined });
 	const loading = ref(true);
 	const moreLoading = ref(false);
 	const error = ref('');
@@ -15,7 +22,7 @@
 	const load = async () => {
 		loading.value = true;
 		error.value = '';
-		try { [detail.value, { events: events.value, nextBefore: nextBefore.value }] = await Promise.all([superService.adminSessions(id), page()]); }
+		try { const [d, h, a] = await Promise.all([superService.adminSessions(id), page(), actionPage()]); detail.value = d; ({ events: events.value, nextBefore: nextBefore.value } = h); ({ actions: actions.value, nextBefore: actionsNext.value } = a); }
 		catch (e) { error.value = (e as { status?: number }).status === 404 ? 'This administrator does not exist.' : 'We could not load this administrator. Please try again.'; }
 		finally { loading.value = false; }
 	};
@@ -32,7 +39,21 @@
 		catch { historyError.value = 'We could not load more.'; }
 		finally { moreLoading.value = false; }
 	};
+	const reloadActions = async () => {
+		actionsError.value = '';
+		try { ({ actions: actions.value, nextBefore: actionsNext.value } = await actionPage()); }
+		catch { actionsError.value = 'We could not load the actions.'; }
+	};
+	const moreActions = async () => {
+		if (!actionsNext.value || actionsMore.value) return;
+		actionsMore.value = true;
+		actionsError.value = '';
+		try { const next = await actionPage(actionsNext.value); actions.value = [...actions.value, ...next.actions]; actionsNext.value = next.nextBefore; }
+		catch { actionsError.value = 'We could not load more.'; }
+		finally { actionsMore.value = false; }
+	};
 	watch(filter, reload);
+	watch(area, reloadActions);
 	onMounted(load);
 </script>
 
@@ -61,7 +82,14 @@
 					</div>
 				</div></section>
 
-				<section class="card border"><div class="card-body"><h2 class="fs-4 mb-2">Actions</h2><p class="text-gray-600 mb-0">What this administrator does (credits, edits, approvals) will be listed here in a later update.</p></div></section>
+				<section class="card border"><div class="card-header border-bottom align-items-center flex-wrap gap-3"><h2 class="card-title fs-3 fw-bold">Actions</h2><div><label for="actions-area" class="visually-hidden">Show</label><select id="actions-area" v-model="area" class="form-select form-select-sm"><option v-for="item in areas" :key="item.value" :value="item.value">{{ item.label }}</option></select></div></div><div class="card-body">
+					<div v-if="actionsError" role="alert" class="alert alert-warning">{{ actionsError }}</div>
+					<p v-if="!actions.length" class="text-gray-600 mb-0">No recorded actions{{ area ? ' in this area' : ' yet' }}.</p>
+					<div v-else>
+						<article v-for="entry in actions" :key="entry.id" class="py-5 border-bottom"><div class="d-flex flex-wrap justify-content-between gap-3 mb-2"><span class="badge badge-light-primary">{{ entry.action }}</span><time :datetime="entry.createdAt" class="fs-8 text-gray-600" :title="timeAgo(entry.createdAt)">{{ exactTime(entry.createdAt) }}</time></div><p class="text-gray-900 mb-1 text-break">{{ entry.summary }}</p><span class="text-gray-600 fs-8">IP {{ entry.ip }}</span></article>
+						<div v-if="actionsNext" class="text-center mt-6"><button type="button" class="btn btn-light" :disabled="actionsMore" @click="moreActions">{{ actionsMore ? 'Loading…' : 'Load more' }}</button></div>
+					</div>
+				</div></section>
 			</template>
 		</AppLoadState>
 	</div>

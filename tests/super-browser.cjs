@@ -33,6 +33,10 @@ async function signIn(page, email, password) {
 		// administrators with history: 3 sign-ins on Windows Chrome, 1 on Linux Firefox, 1 wrong password
 		for (const [ua, xff] of [[UA.win, '203.0.113.20'], [UA.win, '203.0.113.20'], [UA.win, '203.0.113.21'], [UA.ff, '198.51.100.9']]) await api('/auth/login', { email: 'admin@bancopt.com', password: 'AdminPass123!' }, ua, xff);
 		await api('/auth/login', { email: 'admin@bancopt.com', password: 'nope' }, UA.ff, '198.51.100.9');
+		// the administrator does something: it must show up under Actions
+		const adminLogin = await (await api('/auth/login', { email: 'admin@bancopt.com', password: 'AdminPass123!' }, UA.win, '203.0.113.21')).json();
+		const made = await fetch(BASE + '/api/account-levels', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${adminLogin.token}` }, body: JSON.stringify({ title: 'QA level', dailyLimit: 100, maxBalanceLimit: 1000, accountLevel: 50 }) });
+		assert.equal(made.status, 200);
 
 		browser = await chromium.launch();
 
@@ -46,7 +50,7 @@ async function signIn(page, email, password) {
 		await page.waitForSelector('text=admin@bancopt.com', { timeout: 20000 });
 		assert.equal(await page.locator('text=owner@example.test').count() > 0, true); // own e-mail only in the top bar
 		assert.equal(await page.locator('tbody tr').count(), 1, 'only the administrator is listed');
-		assert.ok(await page.locator('tbody tr').first().innerText().then((t) => /Firefox on Linux/.test(t) && /198\.51\.100\.9/.test(t) && /2 devices|^|\n2\n/.test(t)));
+		assert.ok(await page.locator('tbody tr').first().innerText().then((t) => /Chrome on Windows/.test(t) && /203\.0\.113\.21/.test(t)));
 		await page.screenshot({ path: `${SHOTS}/super-admins-desktop.png` });
 		ok('administrators table shows last device and IP');
 
@@ -54,15 +58,22 @@ async function signIn(page, email, password) {
 		await page.waitForURL(/\/super\/admins\//, { timeout: 20000 });
 		await page.waitForSelector('text=Chrome on Windows', { timeout: 20000 });
 		assert.equal(await page.locator('section:has(h2:text-is("Devices")) article:has-text("Chrome on Windows")').count(), 1, 'one card for 3 sign-ins');
-		assert.ok(/3 sign-ins/.test(await page.locator('section:has(h2:text-is("Devices")) article:has-text("Chrome on Windows")').innerText()));
+		assert.ok(/4 sign-ins/.test(await page.locator('section:has(h2:text-is("Devices")) article:has-text("Chrome on Windows")').innerText()));
 		assert.ok(await page.locator('section:has(h2:text-is("Devices")) article:has-text("Firefox on Linux")').count() === 1);
-		ok('3 sign-ins from one browser are one device card');
+		ok('4 sign-ins from one browser are one device card');
 		assert.ok(await page.locator('tbody tr').count() >= 5, 'full history rows');
 		await page.selectOption('#history-filter', 'attempt_failed');
 		await page.waitForFunction(() => document.querySelectorAll('tbody tr').length === 1);
 		assert.ok(/Failed/.test(await page.locator('tbody tr').innerText()));
 		ok('history filter shows only failed attempts');
 		await page.selectOption('#history-filter', '');
+		await page.waitForSelector('text=Created account level "QA level"', { timeout: 15000 });
+		ok('the administrator\'s action is listed under Actions');
+		await page.selectOption('#actions-area', 'deposit');
+		await page.waitForSelector('text=No recorded actions in this area', { timeout: 15000 });
+		await page.selectOption('#actions-area', 'settings');
+		await page.waitForSelector('text=Created account level "QA level"', { timeout: 15000 });
+		ok('the Actions area filter works');
 		await page.screenshot({ path: `${SHOTS}/super-admin-detail-desktop.png`, fullPage: true });
 
 		await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });

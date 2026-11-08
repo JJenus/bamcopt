@@ -74,6 +74,12 @@ async function main() {
 		await new Promise((r) => setTimeout(r, 1000));
 		if (i === 179) throw new Error("server did not start");
 	}
+	// the server answers before its boot-time seeding (admin, then super admin) has finished writing: wait for it
+	for (let i = 0; i < 60; i++) {
+		const seeded = await fetch(BASE + "/api/auth/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: "super@x.com", password: "SuperPass123!" }) }).catch(() => null);
+		if (seeded?.status === 200) break;
+		await new Promise((r) => setTimeout(r, 500));
+	}
 
 	console.log("\nauth");
 	const evil = await call("POST", "/api/auth/register", { body: { ...profile("alice@x.com"), userType: "admin", verified: true, status: "VIP" } });
@@ -533,6 +539,31 @@ async function main() {
 	check("super admin endpoints are closed to admins, customers and anonymous callers", (await call("GET", "/api/super/admins", { token: admin.token })).status === 403 && (await call("GET", "/api/super/admins", { token: bob.token })).status === 403 && (await call("GET", "/api/super/admins")).status === 401);
 	check("super admin can only open administrators", (await call("GET", `/api/super/admins/${devId}/sessions`, { token: superToken })).status === 404);
 	check("super admin can read any user's sessions", (await call("GET", `/api/sessions/${devId}`, { token: superToken })).status === 200);
+
+
+	// ---- what administrators did (audit trail)
+	const trail = await call("GET", `/api/super/admins/${admin.id}/actions?limit=200`, { token: superToken });
+	const kinds = new Set((trail.data.actions || []).map((a) => a.action));
+	check("super admin sees what an administrator did", trail.status === 200 && trail.data.actions.length >= 8, `${trail.status} ${kinds.size} kinds`);
+	check("the trail names the kinds of action taken", ["deposit.approve", "deposit.reject", "settings.level.create", "account.settings", "funding.create", "funding.update", "user.update"].every((k) => kinds.has(k)), [...kinds].join(","));
+	check("entries are newest first and carry IP and device", trail.data.actions.every((a, i, all) => i === 0 || all[i - 1].createdAt >= a.createdAt) && trail.data.actions.every((a) => a.ip && a.summary && a.createdAt));
+	check("summaries carry the real values (who, what, why)", trail.data.actions.some((a) => a.action === "deposit.approve" && /Approved deposit request/.test(a.summary)) && trail.data.actions.some((a) => /Created account level "Deposit test cap"/.test(a.summary)));
+	check("the trail never stores funding account numbers", !JSON.stringify(trail.data).includes("0123456789"));
+	const depositsOnly = await call("GET", `/api/super/admins/${admin.id}/actions?area=deposit`, { token: superToken });
+	check("the area filter keeps one family of actions", depositsOnly.data.actions.length >= 2 && depositsOnly.data.actions.every((a) => a.action.startsWith("deposit.")));
+	const trailPage1 = await call("GET", `/api/super/admins/${admin.id}/actions?limit=2`, { token: superToken });
+	const trailPage2 = await call("GET", `/api/super/admins/${admin.id}/actions?limit=2&before=${encodeURIComponent(trailPage1.data.nextBefore)}`, { token: superToken });
+	check("the trail is paged", trailPage1.data.actions.length === 2 && !!trailPage1.data.nextBefore && trailPage2.data.actions.length >= 1 && trailPage2.data.actions[0].createdAt < trailPage1.data.actions[1].createdAt);
+	check("only the super admin can read the trail", (await call("GET", `/api/super/admins/${admin.id}/actions`, { token: admin.token })).status === 403 && (await call("GET", `/api/super/admins/${admin.id}/actions`, { token: bob.token })).status === 403);
+	const trailSize = async () => (await call("GET", `/api/super/admins/${admin.id}/actions?limit=200`, { token: superToken })).data.actions.length;
+	const trailBefore = await trailSize();
+	await call("PUT", `/api/users/${admin.id}`, { token: admin.token, body: { name: "Admin Renamed" } }); // an admin editing their own profile
+	await call("PUT", `/api/users/${bob.id}`, { token: bob.token, body: { name: "Bob Renamed" } }); // a customer editing their own profile
+	check("self-edits and customer actions add nothing to the admin trail", (await trailSize()) === trailBefore);
+	await call("PUT", `/api/users/${bob.id}`, { token: admin.token, body: { status: "ACTIVE" } });
+	check("an admin editing a customer is recorded", (await trailSize()) === trailBefore + 1);
+	const roster2 = await call("GET", "/api/super/admins", { token: superToken });
+	check("the administrators list counts recent actions", (roster2.data.find((a) => a.id === admin.id)?.actions7d || 0) >= 8);
 
 	check("admins never see the super admin in the user list", !(await call("GET", "/api/users", { token: admin.token })).data.some((u) => u.email === "super@x.com"));
 	check("nobody can find the super admin by e-mail", (await call("POST", "/api/users/find", { token: bob.token, body: { email: "super@x.com" } })).status === 404);
