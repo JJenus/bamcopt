@@ -39,5 +39,10 @@ Add `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD` (and optionally `SUPERADMIN_NAME`)
 
 ## Known limits
 - Two identical browsers on different machines look like one device (grouping is by browser, OS and type).
-- Account status is not checked at sign-in, so a suspended customer can still sign in; ending their sessions when an admin suspends them is not wired yet.
 - Revocation cache and session checks assume a single server process (true on alwaysdata); behind several instances a revoked session could live a few seconds longer.
+
+## Account status (SUSPENDED / HOLD)
+- `ACTIVE` normal · `HOLD` signs in but cannot send money · `SUSPENDED` cannot sign in and every session is dead at once.
+- Enforced on the server in three places: the password step and the OTP step refuse a suspended account (403, after the password was right, so status is never revealed to someone without it, and the attempt is logged); every authenticated request re-checks the account for every token, including ones issued before sessions were stored; and suspending ends all sessions immediately.
+- The same per-request check also rejects a token whose role differs from the account's (a demoted administrator no longer keeps admin powers for the rest of the token's life).
+- Administrators may only set `ACTIVE`, `HOLD` or `SUSPENDED` (any casing, stored upper-case); anything else is a 422. The super admin can suspend and restore administrators from `/super`.
