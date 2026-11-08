@@ -11,6 +11,10 @@ export type AdminAction = {
 	meta: Record<string, unknown> | null; ip: string; deviceInfo: string; createdAt: string;
 };
 export type ActionPage = { actions: AdminAction[]; nextBefore: string | null };
+export type MaintenanceReport = {
+	settings: { securityLogDays: number; auditLogDays: number; sessionDays: number };
+	rows: { securityLogs: number; auditLogs: number; sessions: number };
+};
 export type LoginPage = { events: LoginEvent[]; nextBefore: string | null };
 
 export const superService = {
@@ -20,4 +24,6 @@ export const superService = {
 		apiRequest<LoginPage>(`/super/admins/${id}/logins`, { query }),
 	adminActions: (id: string, query: { limit?: number; before?: string; area?: string } = {}) =>
 		apiRequest<ActionPage>(`/super/admins/${id}/actions`, { query }),
+	maintenance: () => apiRequest<MaintenanceReport>("/super/maintenance"),
+	prune: () => apiRequest<{ removed: { securityLogs: number; auditLogs: number; sessions: number } }>("/super/maintenance/prune", { method: "POST" }),
 };

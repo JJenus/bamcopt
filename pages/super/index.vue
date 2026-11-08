@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import type { AdminSummary } from '~/services/super.service';
+	import type { AdminSummary, MaintenanceReport } from '~/services/super.service';
 	import { exactTime, timeAgo } from '~/utils/session-ui';
 	const admins = ref<AdminSummary[]>([]);
 	const loading = ref(true);
@@ -11,7 +11,24 @@
 		catch { error.value = 'We could not load the administrators. Please try again.'; }
 		finally { loading.value = false; }
 	};
-	onMounted(load);
+	const report = ref<MaintenanceReport | null>(null);
+	const cleaning = ref(false);
+	const cleanMessage = ref('');
+	const keep = (days: number) => (days ? `${days} days` : 'forever');
+	const loadReport = async () => { try { report.value = await superService.maintenance(); } catch { /* the card simply stays hidden */ } };
+	const cleanUp = async () => {
+		if (cleaning.value) return;
+		cleaning.value = true;
+		cleanMessage.value = '';
+		try {
+			const { removed } = await superService.prune();
+			const total = removed.securityLogs + removed.auditLogs + removed.sessions;
+			cleanMessage.value = total ? `Removed ${removed.securityLogs} sign-in records, ${removed.sessions} ended sessions and ${removed.auditLogs} admin actions.` : 'Nothing was past its retention.';
+			await loadReport();
+		} catch { cleanMessage.value = 'The clean-up failed. Please try again.'; }
+		finally { cleaning.value = false; }
+	};
+	onMounted(() => { load(); loadReport(); });
 </script>
 
 <template>
@@ -34,6 +51,12 @@
 				</tbody></table></div>
 				<div class="d-md-none"><NuxtLink v-for="admin in admins" :key="admin.id" :to="`/super/admins/${admin.id}`" class="d-flex align-items-center gap-4 py-5 border-bottom"><div class="admin-identity"><strong class="d-block text-break">{{ admin.name || admin.email }}</strong><span class="d-block text-gray-600 fs-8 text-break">{{ admin.email }}</span><span class="d-block text-gray-700 fs-8 mt-2"><template v-if="admin.lastSignIn">{{ timeAgo(admin.lastSignIn.at) }} · {{ admin.lastSignIn.device }}<br />{{ admin.lastSignIn.location || 'Location unavailable' }} · IP {{ admin.lastSignIn.ip }}</template><template v-else>Never signed in</template></span><span class="d-block text-gray-600 fs-8 mt-1">{{ admin.devices }} device{{ admin.devices === 1 ? '' : 's' }}<template v-if="admin.newDevices7d"> (<span class="text-warning">{{ admin.newDevices7d }} new this week</span>)</template> · {{ admin.signIns }} sign-ins<template v-if="admin.failedAttempts"> · <span class="text-danger">{{ admin.failedAttempts }} failed</span></template> · {{ admin.actions7d }} action{{ admin.actions7d === 1 ? '' : 's' }} this week</span></div><i class="ki-outline ki-right ms-auto" aria-hidden="true"></i></NuxtLink></div>
 			</AppLoadState>
+		</div></section>
+		<section v-if="report" class="card border mt-7"><div class="card-header border-bottom"><h2 class="card-title fs-3 fw-bold">Housekeeping</h2></div><div class="card-body">
+			<p class="text-gray-700">Old records are removed once a day. Sign-in history is kept {{ keep(report.settings.securityLogDays) }}, ended sessions {{ keep(report.settings.sessionDays) }}, administrator actions {{ keep(report.settings.auditLogDays) }}.</p>
+			<p class="text-gray-600 fs-7">Stored now: {{ report.rows.securityLogs }} sign-in records · {{ report.rows.sessions }} sessions · {{ report.rows.auditLogs }} administrator actions.</p>
+			<div v-if="cleanMessage" role="status" class="alert alert-light mb-4">{{ cleanMessage }}</div>
+			<button type="button" class="btn btn-light" :disabled="cleaning" @click="cleanUp">{{ cleaning ? 'Cleaning…' : 'Clean up now' }}</button>
 		</div></section>
 	</div>
 </template>
