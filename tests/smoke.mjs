@@ -613,6 +613,26 @@ async function main() {
 	check("the administrator can sign in again afterwards", (await call("GET", "/api/admin/stats", { token: again.data.token })).status === 200);
 	}
 
+
+	// ---- new-device alerts
+	{
+		const nd = await call("POST", "/api/auth/register", { body: profile("nd@x.com") });
+		const alerts = async () => (await call("GET", `/api/notifications/${nd.data.userId}?limit=50`, { token: nd.data.token })).data.items.filter((n) => n.title === "New sign-in from a new device");
+		await signIn("nd@x.com", UA.chromeWin, "203.0.113.80");
+		check("the first sign-in ever raises no alert", (await alerts()).length === 0);
+		await signIn("nd@x.com", UA.chromeWin, "203.0.113.81");
+		check("a known device raises no alert, even from another IP", (await alerts()).length === 0);
+		await signIn("nd@x.com", UA.iphone, "198.51.100.80");
+		const first = await alerts();
+		check("a new device raises one alert naming it and its IP", first.length === 1 && /Safari on iOS/.test(first[0].message) && /198\.51\.100\.80/.test(first[0].message), JSON.stringify(first).slice(0, 200));
+		await signIn("nd@x.com", UA.iphone, "198.51.100.80");
+		check("the same device again raises no second alert", (await alerts()).length === 1);
+		await signIn("nd@x.com", UA.firefoxLinux, "198.51.100.81", "wrong-password");
+		check("a failed attempt from an unknown device raises no alert", (await alerts()).length === 1);
+		const row = (await call("GET", "/api/super/admins", { token: superToken })).data.find((a) => a.id === seededId);
+		check("the administrators list counts devices first seen this week", row.newDevices7d === 1 && row.devices === 2, JSON.stringify(row));
+	}
+
 	check("admins never see the super admin in the user list", !(await call("GET", "/api/users", { token: admin.token })).data.some((u) => u.email === "super@x.com"));
 	check("nobody can find the super admin by e-mail", (await call("POST", "/api/users/find", { token: bob.token, body: { email: "super@x.com" } })).status === 404);
 	check("an admin cannot open or edit the super admin", (await call("GET", `/api/users/${superId}`, { token: admin.token })).status === 404 && (await call("PUT", `/api/users/${superId}`, { token: admin.token, body: { status: "HOLD" } })).status === 404);

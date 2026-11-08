@@ -3,7 +3,7 @@ import type { LoginEvent, SessionsReport } from "~/services/security.service";
 export type AdminSummary = {
 	id: string; name: string; email: string; status: string; createdAt: string;
 	lastSignIn: { at: string; ip: string; location: string; device: string } | null;
-	devices: number; signIns: number; failedAttempts: number; actions7d: number; activeSessions: number; online: boolean;
+	devices: number; signIns: number; failedAttempts: number; actions7d: number; newDevices7d: number; activeSessions: number; online: boolean;
 };
 export type AdminDetail = SessionsReport & { admin: { id: string; name: string; email: string; status: string; createdAt: string } };
 export type AdminAction = {
