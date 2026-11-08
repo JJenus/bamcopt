@@ -76,6 +76,17 @@ async function signIn(page, email, password) {
 		ok('the Actions area filter works');
 		await page.screenshot({ path: `${SHOTS}/super-admin-detail-desktop.png`, fullPage: true });
 
+		const adminStats = () => fetch(BASE + '/api/admin/stats', { headers: { authorization: `Bearer ${adminLogin.token}` } }).then((r) => r.status);
+		assert.equal(await adminStats(), 200, 'administrator token works before');
+		page.once('dialog', (d) => d.accept());
+		await page.click('button:has-text("Sign out everywhere")');
+		await page.waitForSelector('[role=status]:has-text("Signed out")', { timeout: 15000 });
+		assert.equal(await adminStats(), 401, 'administrator token is dead after');
+		ok('super admin signs an administrator out everywhere');
+		await page.selectOption('#history-filter', 'logout');
+		await page.waitForFunction(() => /Signed out/.test(document.querySelector('tbody')?.innerText || ''));
+		ok('the forced sign-outs appear in the history');
+
 		await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
 		await page.waitForURL((u) => u.pathname === '/super', { timeout: 15000 });
 		ok('super admin opening /admin is sent back to /super');
@@ -114,6 +125,33 @@ async function signIn(page, email, password) {
 		assert.ok(/4 sign-ins/.test(await cp.locator('article:has-text("This device")').innerText()), '3 + 1 sign-ins on one card');
 		await cp.screenshot({ path: `${SHOTS}/security-customer.png`, fullPage: true });
 		ok('customer Security page: 4 sign-ins, one device, marked "This device"');
+
+		// another device signs in, then the customer signs it out from this page
+		const other = await (await api('/auth/login', { email, password: 'Secret-123!' }, UA.ff, '198.51.100.77')).json();
+		const alive = () => fetch(BASE + '/api/account/' + other.userId, { headers: { authorization: `Bearer ${other.token}` } }).then((r) => r.status);
+		assert.notEqual(await alive(), 401, 'other device is signed in');
+		await cp.reload({ waitUntil: 'networkidle' });
+		await cp.waitForSelector('article:has-text("Firefox on Linux")', { timeout: 20000 });
+		assert.equal(await cp.locator('button:has-text("Sign out all other devices")').count(), 1);
+		cp.once('dialog', (d) => d.accept());
+		await cp.click('article:has-text("Firefox on Linux") button:has-text("Sign out")');
+		await cp.waitForSelector('[role=status]:has-text("Signed out 1 session")', { timeout: 15000 });
+		assert.equal(await alive(), 401, 'other device was signed out');
+		assert.equal(await cp.locator('button:has-text("Sign out all other devices")').count(), 0, 'nothing left to sign out');
+		assert.ok(await cp.locator('article:has-text("This device")').count() === 1, 'this device is untouched');
+		await cp.screenshot({ path: `${SHOTS}/security-customer-after-signout.png`, fullPage: true });
+		ok('customer signs another device out from the Security page');
+		// signing out in the browser ends the session on the server too
+		const raw = (await ctx.cookies()).find((c) => c.name === 'auth');
+		const superToken = JSON.parse(decodeURIComponent(raw.value)).token;
+		const meStatus = () => fetch(BASE + '/api/admin/stats', { headers: { authorization: `Bearer ${superToken}` } }).then((r) => r.status);
+		assert.notEqual(await meStatus(), 401, 'super token is live before sign-out');
+		await page.goto(BASE + '/super', { waitUntil: 'networkidle' });
+		await page.click('button:has-text("Sign out")');
+		await page.waitForURL((u) => u.pathname === '/', { timeout: 15000 });
+		await sleep(500);
+		assert.equal(await meStatus(), 401, 'token is dead on the server after clicking Sign out');
+		ok('Sign out ends the session on the server');
 		console.log('super browser test passed');
 	} catch (error) {
 		console.error('FAIL', error.message);

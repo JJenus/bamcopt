@@ -304,7 +304,10 @@ async function main() {
 	check("session token is not a reset token", (await reset(alice.token)).status === 401);
 	const good = jwt.sign({ sub: alice.id, purpose: "reset-password" }, SECRET, { expiresIn: "30m" });
 	check("signed reset token works", (await reset(good)).status === 200);
-	check("login with new password", (await login("alice@x.com", "newpass123")).status === 200);
+	check("a password reset signs out the sessions that existed", (await call("GET", `/api/users/${alice.id}`, { token: alice.token })).status === 401);
+	const relog = await login("alice@x.com", "newpass123");
+	check("login with new password", relog.status === 200);
+	alice.token = relog.data.token;
 	check("old password rejected", (await login("alice@x.com")).status === 401);
 	check("expired reset token rejected", (await reset(jwt.sign({ sub: alice.id, purpose: "reset-password" }, SECRET, { expiresIn: -10 }))).status === 401);
 	check("reset request never reveals accounts", (await call("POST", "/api/auth/request-password-reset", { body: { email: "ghost@x.com" } })).status === 200);
@@ -564,6 +567,51 @@ async function main() {
 	check("an admin editing a customer is recorded", (await trailSize()) === trailBefore + 1);
 	const roster2 = await call("GET", "/api/super/admins", { token: superToken });
 	check("the administrators list counts recent actions", (roster2.data.find((a) => a.id === admin.id)?.actions7d || 0) >= 8);
+
+
+	{
+	// ---- server-side sessions: sign devices out
+	const rev = await call("POST", "/api/auth/register", { body: profile("rev@x.com") });
+	const revId = rev.data.userId;
+	const c1 = await signIn("rev@x.com", UA.chromeWin, "203.0.113.60");
+	const c2 = await signIn("rev@x.com", UA.chromeWin, "203.0.113.61");
+	const p1 = await signIn("rev@x.com", UA.iphone, "198.51.100.60");
+	const f1 = await signIn("rev@x.com", UA.firefoxLinux, "198.51.100.61");
+	const ok = async (t) => (await call("GET", `/api/users/${revId}`, { token: t })).status;
+	const repA = await call("GET", `/api/sessions/${revId}`, { token: p1.data.token, headers: { "user-agent": UA.iphone } });
+	const act = (label) => repA.data.devices?.find((d) => d.label === label)?.activeSessions;
+	check("each sign-in is a live session, counted per device", repA.data.activeSessions === 5 && act("Chrome on Windows") === 2 && act("Safari on iOS") === 1 && act("Firefox on Linux") === 1, JSON.stringify(repA.data.devices?.map((d) => [d.label, d.activeSessions])));
+	check("a device that just made a request is online", repA.data.devices.find((d) => d.label === "Safari on iOS")?.online === true);
+	check("a customer cannot sign out someone else's devices", (await call("POST", `/api/sessions/${revId}/revoke`, { token: bob.token, body: { all: true } })).status === 403);
+	check("an admin cannot sign out a customer", (await call("POST", `/api/sessions/${revId}/revoke`, { token: admin.token, body: { all: true } })).status === 403);
+	check("the super admin cannot sign out a customer", (await call("POST", `/api/sessions/${revId}/revoke`, { token: superToken, body: { all: true } })).status === 403);
+	const badBody = [{}, { all: true, others: true }, { deviceKey: "" }, { all: true, extra: 1 }];
+	check("the revoke request must name exactly one scope", (await Promise.all(badBody.map((body) => call("POST", `/api/sessions/${revId}/revoke`, { token: p1.data.token, body })))).every((r) => r.status >= 400 && r.status < 500));
+	const cut = await call("POST", `/api/sessions/${revId}/revoke`, { token: p1.data.token, body: { deviceKey: "Chrome|Windows|desktop" } });
+	check("signing out a device ends all of its sessions", cut.status === 200 && cut.data.revoked === 2, JSON.stringify(cut.data));
+	check("the revoked sessions stop working at once, the others keep working", (await ok(c1.data.token)) === 401 && (await ok(c2.data.token)) === 401 && (await ok(p1.data.token)) === 200 && (await ok(f1.data.token)) === 200);
+	check("a revoked session says why", (await call("GET", `/api/users/${revId}`, { token: c1.data.token })).data?.message === "Session ended");
+	const others = await call("POST", `/api/sessions/${revId}/revoke`, { token: p1.data.token, body: { others: true } });
+	check("'sign out other devices' ends the rest (registration session included) and spares this one", others.data.revoked === 2 && (await ok(f1.data.token)) === 401 && (await ok(p1.data.token)) === 200);
+	check("signing out removes you from the active list", (await call("POST", "/api/auth/logout", { token: p1.data.token })).status === 200 && (await ok(p1.data.token)) === 401);
+	check("signing out twice is harmless", (await call("POST", "/api/auth/logout", { token: p1.data.token })).status === 200 && (await call("POST", "/api/auth/logout", {})).status === 200);
+	const c3 = await signIn("rev@x.com", UA.chromeWin, "203.0.113.62");
+	check("a new sign-in after being signed out works", (await ok(c3.data.token)) === 200);
+	const resetNow = await call("POST", "/api/auth/reset-password", { body: { token: jwt.sign({ sub: revId, purpose: "reset-password" }, SECRET, { expiresIn: "10m" }), password: "brandnew123" } });
+	check("a password reset ends every live session", resetNow.status === 200 && (await ok(c3.data.token)) === 401);
+
+	const adminB = await signIn("admin@bancopt.com", UA.chromeWin, "203.0.113.70", "AdminPass123!");
+	const before = await call("GET", `/api/sessions/${seededId}`, { token: superToken });
+	check("the super admin sees an administrator's live sessions", before.data.activeSessions >= 3 && before.data.devices.some((d) => d.activeSessions > 0));
+	check("an administrator cannot sign out another administrator", (await call("POST", `/api/sessions/${seededId}/revoke`, { token: admin.token, body: { all: true } })).status === 403);
+	const force = await call("POST", `/api/sessions/${seededId}/revoke`, { token: superToken, body: { all: true } });
+	check("the super admin can sign an administrator out everywhere", force.status === 200 && force.data.revoked >= 3, JSON.stringify(force.data));
+	check("the administrator's tokens die immediately", (await call("GET", "/api/admin/stats", { token: adminB.data.token })).status === 401 && (await call("GET", "/api/admin/stats", { token: seededAdmin.data.token })).status === 401);
+	const afterLogins = await call("GET", `/api/super/admins/${seededId}/logins?limit=10&action=logout`, { token: superToken });
+	check("forced sign-outs are in the history with the reason", afterLogins.data.events?.length >= 3 && afterLogins.data.events.every((e) => e.action === "logout" && e.reason === "Signed out by the super admin"), JSON.stringify(afterLogins.data).slice(0, 160));
+	const again = await signIn("admin@bancopt.com", UA.chromeWin, "203.0.113.71", "AdminPass123!");
+	check("the administrator can sign in again afterwards", (await call("GET", "/api/admin/stats", { token: again.data.token })).status === 200);
+	}
 
 	check("admins never see the super admin in the user list", !(await call("GET", "/api/users", { token: admin.token })).data.some((u) => u.email === "super@x.com"));
 	check("nobody can find the super admin by e-mail", (await call("POST", "/api/users/find", { token: bob.token, body: { email: "super@x.com" } })).status === 404);
