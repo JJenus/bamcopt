@@ -17,6 +17,9 @@ async function fixture(existing = false) {
 	const db = new Sequelize({ dialect: 'sqlite', storage, logging: false });
 	const qi = db.getQueryInterface();
 	for (const name of ['users', 'funding_accounts', 'transactions']) await qi.createTable(name, { id: { type: DataTypes.UUID, primaryKey: true } });
+	await qi.createTable('app_settings', { id: { type: DataTypes.UUID, primaryKey: true } });
+	await db.query("INSERT INTO users (id) VALUES ('00000000-0000-4000-8000-000000000001')");
+	await db.query("INSERT INTO app_settings (id) VALUES ('00000000-0000-4000-8000-000000000002')");
 	await qi.createTable('notifications', { id: { type: DataTypes.UUID, primaryKey: true }, user_id: DataTypes.UUID, status: DataTypes.STRING, created_at: DataTypes.DATE });
 	await qi.createTable('security_logs', { id: { type: DataTypes.UUID, primaryKey: true }, user_id: DataTypes.STRING, action: DataTypes.STRING, ip: DataTypes.STRING, device_info: DataTypes.STRING, reason: DataTypes.STRING, created_at: DataTypes.DATE, updated_at: DataTypes.DATE });
 	if (existing) await qi.createTable('deposit_requests', {
@@ -33,17 +36,20 @@ test('official CLI applies all pending migrations, tracks SequelizeMeta and safe
 	const f = await fixture();
 	try {
 		const status = run(f.storage, ['db:migrate:status']); assert.equal(status.status, 0, status.stderr + status.stdout);
-		assert.match(status.stdout, /down.*notification/); assert.match(status.stdout, /down.*deposit/); assert.match(status.stdout, /down.*security-log-location/); assert.match(status.stdout, /down.*audit-logs/); assert.match(status.stdout, /down.*user-sessions/);
+		assert.match(status.stdout, /down.*notification/); assert.match(status.stdout, /down.*deposit/); assert.match(status.stdout, /down.*security-log-location/); assert.match(status.stdout, /down.*audit-logs/); assert.match(status.stdout, /down.*user-sessions/); assert.match(status.stdout, /down.*transfer-code-policy/);
 		const first = run(f.storage, ['db:migrate']); assert.equal(first.status, 0, first.stderr + first.stdout);
 		assert.ok((await f.qi.describeTable('notifications')).entity_type);
 		assert.ok((await f.qi.describeTable('deposit_requests')).transaction_id);
 		assert.ok((await f.qi.describeTable('security_logs')).location);
 		assert.ok((await f.qi.describeTable('audit_logs')).actor_id);
 		assert.ok((await f.qi.describeTable('user_sessions')).revoked_at);
+		assert.ok((await f.qi.describeTable('users')).codes_verified_at);
+		const [[userRow]] = await f.db.query('SELECT transfer_codes_policy AS p FROM users'); assert.equal(userRow.p, 'default', 'existing users follow the system setting');
+		const [[settingsRow]] = await f.db.query('SELECT transfer_codes_policy AS p FROM app_settings'); assert.equal(settingsRow.p, 'always', 'the system keeps asking on every transfer until an admin changes it');
 		assert.ok((await f.qi.showIndex('security_logs')).some(i => i.name === 'security_logs_user_action_created_idx'));
-		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 5);
+		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 6);
 		const second = run(f.storage, ['db:migrate']); assert.equal(second.status, 0, second.stderr + second.stdout);
-		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 5);
+		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 6);
 	} finally { await f.cleanup(); }
 });
 

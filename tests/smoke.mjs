@@ -728,6 +728,122 @@ async function main() {
 		check("restoring lets them sign in again", on.status === 200 && (await signIn("admin@bancopt.com", UA.chromeWin, "203.0.113.93", "AdminPass123!")).status === 200);
 	}
 
+
+	// ---- transfer codes policy: off / always / remember, per user and system-wide
+	{
+		const settingsRow = (await call("GET", "/api/app-settings", { token: alice.token })).data;
+		const setSystem = (policy) => call("PUT", `/api/app-settings/${settingsRow.id}`, { token: admin.token, body: { defaultLanguage: "en", defaultBaseCurrency: "USD", transferCodesPolicy: policy } });
+		const setUser = (u, policy) => call("PUT", `/api/users/${u.id}`, { token: admin.token, body: { transferCodesPolicy: policy } });
+		const policyOf = async (u) => (await call("GET", "/api/transactions/code-policy", { token: u.token })).data;
+		const withoutCodes = (u, to) => call("POST", "/api/transactions", { token: u.token, body: { ...sendBody(to, 1), _noCodes: true } });
+		const withCodes = (u, to) => call("POST", "/api/transactions", { token: u.token, body: sendBody(to, 1) });
+		const resetUser = (u) => call("POST", `/api/users/${u.id}/reset-codes`, { token: admin.token });
+		const resetAll = () => call("POST", "/api/app-settings/reset-codes", { token: admin.token });
+
+		const pia = await mk("pia"), quinn = await mk("quinn");
+		await loadCodes(pia, quinn);
+		await topUp("pia@x.com", 100); await topUp("quinn@x.com", 100);
+
+		const first = await policyOf(pia);
+		check("the default is the original behaviour: codes on every transfer", first.policy === "always" && first.required === true && first.remembered === false, JSON.stringify(first));
+		check("without codes a transfer is refused", (await withoutCodes(pia, quinn)).status === 422);
+
+		check("the system can be set to remember", (await setSystem("remember")).data.transferCodesPolicy === "remember");
+		const rem0 = await policyOf(pia);
+		check("remember: asked until they pass once", rem0.policy === "remember" && rem0.required === true && (await withoutCodes(pia, quinn)).status === 422);
+		const wrongCodes = { cot: "0000", imf: "0000", tax: "0000" };
+		check("wrong codes are refused and not remembered", (await call("POST", "/api/transactions", { token: pia.token, body: sendBody(quinn, 1, { codes: wrongCodes }) })).status === 422 && (await policyOf(pia)).remembered === false);
+		check("right codes: the transfer works", (await withCodes(pia, quinn)).status === 200);
+		const rem1 = await policyOf(pia);
+		check("and the next transfer is no longer asked", rem1.remembered === true && rem1.required === false && (await withoutCodes(pia, quinn)).status === 200);
+		check("the flag is per user: others are still asked", (await policyOf(quinn)).required === true && (await withoutCodes(quinn, pia)).status === 422);
+
+		const afterReset = await resetUser(pia);
+		check("an admin resets one user: they are asked again", afterReset.status === 200 && afterReset.data.reset === true && (await policyOf(pia)).required === true && (await withoutCodes(pia, quinn)).status === 422);
+		check("resetting a user who was not remembered is harmless", (await resetUser(pia)).data.reset === false);
+		check("only an admin can reset", (await call("POST", `/api/users/${pia.id}/reset-codes`, { token: pia.token })).status === 403 && (await call("POST", `/api/users/${pia.id}/reset-codes`, { token: superToken })).status === 403);
+		check("an admin cannot reach the super admin this way", (await call("POST", `/api/users/${superId}/reset-codes`, { token: admin.token })).status === 404);
+
+		// a refused transfer still remembers the codes that were right
+		await withCodes(pia, quinn);
+		check("remember: a transfer rejected for other reasons still remembers the right codes", (await call("POST", "/api/transactions", { token: quinn.token, body: sendBody(pia, 99999) })).status >= 400 && (await policyOf(quinn)).remembered === true);
+
+		// per-user override
+		check("a user can be set to never be asked", (await setUser(pia, "off")).status === 200 && (await policyOf(pia)).policy === "off");
+		await resetUser(pia);
+		check("off wins over the system setting, and nothing needs remembering", (await policyOf(pia)).required === false && (await withoutCodes(pia, quinn)).status === 200);
+		check("a user can be set to always be asked, even when remembered", (await setUser(quinn, "always")).status === 200 && (await policyOf(quinn)).required === true && (await withoutCodes(quinn, pia)).status === 422);
+		check("always stays always after a good transfer", (await withCodes(quinn, pia)).status === 200 && (await policyOf(quinn)).required === true);
+		check("'default' follows the system again", (await setUser(quinn, "default")).status === 200 && (await policyOf(quinn)).policy === "remember");
+		check("an unknown policy is refused", (await setUser(quinn, "sometimes")).status === 422 && (await setSystem("sometimes")).status === 422);
+		check("policy names are case-insensitive", (await setUser(quinn, "REMEMBER")).data.transferCodesPolicy === "remember" && (await setUser(quinn, "Default")).status === 200);
+		await call("PUT", `/api/users/${quinn.id}`, { token: quinn.token, body: { transferCodesPolicy: "off" } });
+		check("a customer cannot change their own policy", (await policyOf(quinn)).policy === "remember");
+		const customerView = (await call("GET", `/api/users/${quinn.id}`, { token: quinn.token })).data, adminView = (await call("GET", `/api/users/${quinn.id}`, { token: admin.token })).data;
+		check("the policy and the remembered flag are admin-only data", !("transferCodesPolicy" in customerView) && !("codesVerifiedAt" in customerView) && adminView.transferCodesPolicy === "default" && "codesVerifiedAt" in adminView);
+
+		// new codes mean proving them again
+		await withCodes(quinn, pia);
+		check("quinn passed the codes and is remembered", (await policyOf(quinn)).remembered === true);
+		await call("PUT", `/api/users/${quinn.id}`, { token: admin.token, body: { cot: "4321" } });
+		const own = CODES.get(quinn.token);
+		check("replacing a user's codes forgets what they remembered", (await policyOf(quinn)).remembered === false && (await withoutCodes(quinn, pia)).status === 422);
+		CODES.set(quinn.token, { ...own, cot: "4321" });
+		check("saving the same codes again does not reset anything", (await withCodes(quinn, pia)).status === 200 && (await call("PUT", `/api/users/${quinn.id}`, { token: admin.token, body: { cot: "4321" } })).status === 200 && (await policyOf(quinn)).remembered === true);
+
+		// system-wide reset
+		check("only an admin can reset everyone", (await call("POST", "/api/app-settings/reset-codes", { token: pia.token })).status === 403 && (await call("POST", "/api/app-settings/reset-codes", { token: superToken })).status === 403);
+		const all = await resetAll();
+		check("resetting everyone clears every remembered flag", all.status === 200 && all.data.reset >= 1 && (await policyOf(quinn)).required === true);
+		check("a second reset has nothing to clear", (await resetAll()).data.reset === 0);
+
+		// system off
+		await setUser(pia, "default");
+		check("the system can switch the codes off for everyone", (await setSystem("off")).status === 200 && (await policyOf(pia)).required === false && (await policyOf(quinn)).required === false && (await withoutCodes(quinn, pia)).status === 200);
+		check("verify-code still checks a code if someone asks", (await call("POST", "/api/transactions/verify-code", { token: quinn.token, body: { step: "cot", code: "0000" } })).status === 422);
+		check("a user set to always is still asked while the system is off", (await setUser(quinn, "always")).status === 200 && (await withoutCodes(quinn, pia)).status === 422);
+
+		// the trail
+		const settingsTrail = (await call("GET", `/api/super/admins/${admin.id}/actions?area=settings&limit=50`, { token: superToken })).data.actions;
+		const userTrail = (await call("GET", `/api/super/admins/${admin.id}/actions?area=user&limit=100`, { token: superToken })).data.actions;
+		check("the policy changes and resets are in the admin trail", settingsTrail.some((a) => a.action === "settings.codes.reset-all" && /Reset remembered transfer codes for everyone/.test(a.summary)) && settingsTrail.some((a) => /transfer codes: remember/.test(a.summary)) && userTrail.some((a) => a.action === "user.codes.reset") && userTrail.some((a) => a.meta?.transferCodesPolicy === "off"), JSON.stringify(settingsTrail.map((a) => a.action)));
+
+		// leave the system as it was found
+		await setUser(pia, "default"); await setUser(quinn, "default"); await setSystem("always"); await resetAll();
+		check("back to the original behaviour", (await policyOf(pia)).policy === "always" && (await policyOf(pia)).required === true);
+	}
+
+	// ---- system defaults: currency and language come from fixed lists
+	{
+		const row = (await call("GET", "/api/app-settings", { token: alice.token })).data;
+		const save = (body) => call("PUT", `/api/app-settings/${row.id}`, { token: admin.token, body });
+		const sql = async (statement, params = []) => {
+			if (PG_URL) { const c = new pg.Client({ connectionString: PG_URL }); await c.connect(); let i = 0; await c.query(statement.replace(/\?/g, () => `$${++i}`), params); await c.end(); }
+			else await new Promise((resolve, reject) => { const db = new sqlite3.Database(DB); db.run(statement, params, (e) => (e ? reject(e) : db.close(() => resolve()))); });
+		};
+		check("USD, EUR, JPY, GBP and CNY are accepted", (await Promise.all(["USD", "EUR", "JPY", "GBP", "CNY"].map((c) => save({ defaultLanguage: "en", defaultBaseCurrency: c })))).every((r) => r.status === 200));
+		const gbp = await save({ defaultLanguage: "en", defaultBaseCurrency: "gbp", currencySymbol: "NOPE" });
+		check("a currency can be typed in any case and its symbol is set by the server", gbp.status === 200 && gbp.data.defaultBaseCurrency === "GBP" && gbp.data.currencySymbol === "£", JSON.stringify(gbp.data));
+		check("a currency outside the top five is refused", (await save({ defaultLanguage: "en", defaultBaseCurrency: "BTC" })).status === 422 && (await save({ defaultLanguage: "en", defaultBaseCurrency: "NGN" })).status === 422);
+		check("a refused save changes nothing", (await call("GET", "/api/app-settings", { token: alice.token })).data.defaultBaseCurrency === "GBP");
+		const fr = await save({ defaultLanguage: "FR", defaultBaseCurrency: "USD" });
+		check("languages come from the list too", fr.status === 200 && fr.data.defaultLanguage === "fr" && (await save({ defaultLanguage: "xx", defaultBaseCurrency: "USD" })).status === 422);
+		check("anyone can still read the defaults, only an admin can change them", (await call("PUT", `/api/app-settings/${row.id}`, { token: alice.token, body: { defaultLanguage: "en", defaultBaseCurrency: "USD" } })).status === 403);
+
+		// a value saved before the lists existed is kept, never an obstacle to saving something else
+		await sql("UPDATE app_settings SET default_base_currency = ?, currency_symbol = ?, default_language = ?", ["NGN", "₦", "yo"]);
+		const kept = await save({ defaultLanguage: "yo", defaultBaseCurrency: "NGN", transferCodesPolicy: "always" });
+		check("an existing value outside the lists survives saving other settings", kept.status === 200 && kept.data.defaultBaseCurrency === "NGN" && kept.data.currencySymbol === "₦" && kept.data.defaultLanguage === "yo", JSON.stringify(kept.data));
+		check("but nothing new outside the lists can be chosen", (await save({ defaultLanguage: "yo", defaultBaseCurrency: "XOF" })).status === 422);
+		const settingsRows = async () => {
+			if (PG_URL) { const c = new pg.Client({ connectionString: PG_URL }); await c.connect(); const r = await c.query("SELECT count(*)::int AS n FROM app_settings"); await c.end(); return r.rows[0].n; }
+			return new Promise((resolve, reject) => { const db = new sqlite3.Database(DB); db.get("SELECT count(*) AS n FROM app_settings", (e, r) => (e ? reject(e) : db.close(() => resolve(r.n)))); });
+		};
+		check("concurrent transfers never create extra settings rows (there is exactly one)", (await settingsRows()) === 1);
+		const back = await save({ defaultLanguage: "en", defaultBaseCurrency: "USD" });
+		check("and choosing from the lists replaces it", back.status === 200 && back.data.defaultBaseCurrency === "USD" && back.data.currencySymbol === "$");
+	}
+
 	check("admins never see the super admin in the user list", !(await call("GET", "/api/users", { token: admin.token })).data.some((u) => u.email === "super@x.com"));
 	check("nobody can find the super admin by e-mail", (await call("POST", "/api/users/find", { token: bob.token, body: { email: "super@x.com" } })).status === 404);
 	check("an admin cannot open or edit the super admin", (await call("GET", `/api/users/${superId}`, { token: admin.token })).status === 404 && (await call("PUT", `/api/users/${superId}`, { token: admin.token, body: { status: "HOLD" } })).status === 404);
