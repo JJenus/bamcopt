@@ -7,7 +7,7 @@
 import crypto from "node:crypto";
 import { Op, Transaction as DbTx } from "sequelize";
 import {
-	Account, AccountLevel, AccountStatus, Beneficiary, Currency, DepositRequest, FundingAccount, NotificationType, Transaction, TransactionStatus, TransactionType, User,
+	Account, AccountLevel, AccountStatus, Beneficiary, Currency, DepositRequest, FundingAccount, NotificationType, ReferralMember, ReferralProgram, ReferralRedemption, Transaction, TransactionStatus, TransactionType, User,
 } from "../models";
 import { sequelize } from "../utils/db";
 import { badRequest, conflict, forbidden, notFound, unprocessable } from "../utils/errors";
@@ -15,6 +15,8 @@ import { fromMinor, positiveMinor, toMinor } from "../utils/money";
 import { checkAllCodes, codeRequirement, type Codes } from "./codes";
 import { getUser, getUserByEmail } from "./users";
 import { notifySafe } from "./notifications";
+import { awardDepositReferral, ensureReferralProgram } from './referrals';
+import { referralMinor } from '../../utils/referrals';
 
 const newTransactionId = () => {
 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -151,6 +153,39 @@ export const transfer = async (input: TransferInput) => {
 	}
 };
 
+/** Reward-point redemption: wallet debit, balance credit and durable receipt are inseparable. */
+export const redeemReferralPoints = async (userId: string, input: { points: number; requestKey: string; programVersion: number }) => {
+	await ensureReferralProgram();
+	return sequelize.transaction(async t => {
+		const account = (await lockAccounts([userId], t)).get(userId);
+		const program = await ReferralProgram.findByPk('default', { transaction: t, lock: t.LOCK.UPDATE });
+		const wallet = await ReferralMember.findByPk(userId, { transaction: t, lock: t.LOCK.UPDATE });
+		const previous = await ReferralRedemption.findOne({ where: { userId, requestKey: input.requestKey }, transaction: t });
+		if (previous) {
+			if (previous.points !== input.points) throw conflict('This redemption key already belongs to a different points amount');
+			return previous;
+		}
+		const user = await User.findByPk(userId, { transaction: t });
+		if (!user || user.userType !== 'user' || user.status.toUpperCase() !== 'ACTIVE' || !account || account.status !== AccountStatus.ACTIVE) throw forbidden('An active customer account is required');
+		if (!program?.enabled) throw unprocessable('Referral rewards and withdrawals are currently paused');
+		if (program.version !== input.programVersion) throw conflict('Referral conversion rules changed. Refresh and review your withdrawal again.');
+		if (!wallet || wallet.points < input.points) throw unprocessable('Insufficient referral points');
+		const currency = /^[a-z]{3}$/i.test(account.currencyId || '') ? account.currencyId : (await Currency.findByPk(account.currencyId, { transaction: t }))?.get('code');
+		if (String(currency).toUpperCase() !== program.currency) throw unprocessable('Your account currency must match the referral reward currency; no conversion is performed');
+		const minor = referralMinor(input.points, program.pointsPerUnit);
+		if (minor === null) throw unprocessable('Choose a points amount that converts to whole cents without rounding');
+		const next = toMinor(account.amount) + minor;
+		if (!Number.isSafeInteger(next)) throw unprocessable('Balance exceeds safe precision');
+		const { max } = await limitsFor(account, t);
+		if (max > 0 && next > max) throw unprocessable('This withdrawal exceeds your maximum account balance');
+		const [claimed] = await ReferralMember.update({ points: wallet.points - input.points }, { where: { userId, points: wallet.points }, transaction: t });
+		if (claimed !== 1) throw conflict('Your points changed. Refresh before trying again.');
+		await account.update({ amount: fromMinor(next) }, { transaction: t });
+		const tx = await Transaction.create({ senderId: userId, receiverId: userId, transactionId: newTransactionId(), amount: fromMinor(minor), type: TransactionType.CREDIT, status: TransactionStatus.COMPLETED, notes: `Referral reward withdrawal: ${input.points} points at ${program.pointsPerUnit} points per ${program.currency}` }, { transaction: t });
+		return ReferralRedemption.create({ userId, requestKey: input.requestKey, points: input.points, amount: fromMinor(minor), currency: program.currency, pointsPerUnit: program.pointsPerUnit, programVersion: program.version, transactionId: tx.id }, { transaction: t });
+	});
+};
+
 /** Admin credits a user's account by e-mail. */
 /** `fundingAccountId`: the admin funding account that received the money; its balance goes up in the same DB transaction. */
 export const topUp = async (email: string, amount: number, fundingAccountId?: string) => {
@@ -185,6 +220,7 @@ export const topUp = async (email: string, amount: number, fundingAccountId?: st
 
 /** A request decision and all credited balances/ledger links commit as a single operation. */
 export const decideDepositRequest = async (id: string, reviewerId: string, input: { action: 'approve' | 'reject'; note: string }) => {
+	await ensureReferralProgram();
 	const result = await sequelize.transaction(async t => {
 		const request = await DepositRequest.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
 		if (!request) throw notFound('Deposit request not found');
@@ -207,6 +243,7 @@ export const decideDepositRequest = async (id: string, reviewerId: string, input
 			await account.update({ amount: fromMinor(next) }, { transaction: t });
 			const tx = await Transaction.create({ senderId: request.userId, receiverId: request.userId, transactionId: newTransactionId(), amount: fromMinor(minor), type: TransactionType.CREDIT, status: TransactionStatus.COMPLETED, notes: `Deposit request ${request.id}${request.reference ? ` (${request.reference})` : ''}: ${input.note}` }, { transaction: t });
 			await request.update({ transactionId: tx.id }, { transaction: t });
+			await awardDepositReferral(request, t);
 		}
 		await request.reload({ transaction: t });
 		return { request, changed: true };

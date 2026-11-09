@@ -5,6 +5,7 @@
 		{ label: 'Overview', to: '/app', icon: 'ki-element-11' },
 		{ label: 'Transfer', to: '/app/transfer', icon: 'ki-send' },
 		{ label: 'Activity', to: '/app/transactions', icon: 'ki-arrows-loop' },
+		{ label: 'Referrals', to: '/app/referrals', icon: 'ki-profile-user' },
 		{ label: 'Settings', to: '/app/settings', icon: 'ki-setting-2' },
 	];
 	const active = (path: string) => path === '/app/settings' ? ['/app/settings', '/app/profile', '/app/account-info'].some(prefix => route.path.startsWith(prefix)) : isNavActive(path, route.path);

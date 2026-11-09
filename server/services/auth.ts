@@ -13,6 +13,7 @@ import { getAppSettings } from "./catalog";
 import { notifySafe } from "./notifications";
 import { createSession, revokeSessions } from "./user-sessions";
 import { isSuspended, SUSPENDED_MESSAGE } from "../utils/access";
+import { attachReferral } from './referrals';
 import { createUser, getUser, normalizeEmail, withAccount } from "./users";
 
 export type RequestInfo = { ip: string; device: string };
@@ -60,12 +61,13 @@ const session = async (user: User, info?: RequestInfo) => ({
 	token: signSession(user, await createSession(user.id, info)),
 });
 
-export const register = async (input: Parameters<typeof createUser>[0], info?: RequestInfo) => {
+export const register = async (input: Parameters<typeof createUser>[0] & { referralCode?: string }, info?: RequestInfo) => {
 	const settings = await getAppSettings();
 	// user + account are created together or not at all
 	const user = await sequelize.transaction(async (t) => {
 		const created = await createUser(input, t);
 		await createAccount(created.id, settings.defaultBaseCurrency, t);
+		await attachReferral(created, input.referralCode, t);
 		return created;
 	});
 

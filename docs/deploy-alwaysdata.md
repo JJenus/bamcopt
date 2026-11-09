@@ -58,6 +58,31 @@ Public runtime values (visible to browsers; never put secrets here): `NUXT_PUBLI
 
 `DB_*` variables are used instead of `DATABASE_URL` so passwords with characters such as `@` need no URL encoding.
 
-## Rollback
+## Referral program activation
+
+After migrations, open `/admin/referrals`. Set points per qualifying referral, the number of points
+equal to **1.00** of the chosen reward currency, then review and confirm activation. Example:
+150 points per referral, 100 points = 1.00 USD. Customers use `/app/referrals`; invitation links open
+`/sign-up?ref=<code>`. Configure `NUXT_PUBLIC_SITE_URL` to the real public origin before sharing links.
+
+- Signup attribution cannot be reassigned. Only the first approved **deposit request** qualifies;
+  rejected requests and manual top-ups do not. Approval and the points award share one transaction.
+- Review suspected duplicate identities before approving that first deposit. Unique account/email
+  rules do not establish that two different emails belong to different people. Admins can reject
+  pending referrals with a reason; this release does not automate identity verification or claw back
+  already withdrawn rewards.
+- New conversion rates apply to unspent points; past withdrawals retain their rate/currency. Customer
+  confirmation includes a rules version, so changed rules require a fresh review. Currency is locked
+  after the first award. Withdrawals require matching account currency, an active user/account, exact
+  whole-cent conversion and room under the account balance cap. There is no FX or external payout.
+- Disabling pauses both earning and withdrawals. A first deposit approved while disabled makes that
+  referral ineligible permanently; enabling later does not backfill it. Previously earned points remain.
+- A withdrawal debits points and credits the account with a linked ledger transaction atomically.
+  Same-key retries recover the original receipt, including after a lost response/reload. Reconcile
+  histories before creating another request if the browser’s recovery storage was cleared.
+- Referral rules/rejections are transactionally audited. Reward funding is an operator obligation:
+  withdrawing points creates a customer credit, not a debit against an external funding account.
+
+## Rollback procedure
 `ssh <user>@<host>`, then `cd ~/bamcopt && ln -sfn releases/<older-sha> current.new && mv -T current.new current`
 and stop the app process (alwaysdata restarts it). The last 5 releases are kept.

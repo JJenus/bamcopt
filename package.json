@@ -16,6 +16,7 @@
     "postinstall": "nuxt prepare",
     "test": "node tests/smoke.mjs",
     "test:codes": "node tests/codes-browser.cjs",
+    "test:referrals-browser": "node tests/referrals-browser.cjs",
     "test:super": "node tests/super-browser.cjs",
     "test:signin": "node tests/signin-browser.cjs",
     "test:signin-otp-off": "OTP_ON=false node tests/signin-browser.cjs",

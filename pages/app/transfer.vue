@@ -2,6 +2,7 @@
 	import type { Transaction } from '~/utils/interfaces/Transaction';
 	import { parseTransferAmount } from '~/utils/account-ui';
 	import { moneyStyle } from '~/utils/app-defaults';
+	import type { TransferRecipient } from '~/services/user.service';
 	useAccountPage('Transfer');
 	const { state, user, account, load } = useAccountWorkspace();
 	const { money, currencyCode } = useAccountMoney();
@@ -9,8 +10,11 @@
 	const config = useRuntimeConfig().public;
 	const step = ref(0);
 	const kind = ref('internal');
-	const recipientEmail = ref('');
-	const recipient = ref<{ id: string; name: string; email: string } | null>(null);
+	const recipientQuery = ref('');
+	const recipient = ref<TransferRecipient | null>(null);
+	const recipients = ref<TransferRecipient[]>([]);
+	const searched = ref(false);
+	let lookupVersion = 0;
 	const draft = reactive({ name: '', destination: '', bank: '', amount: '', note: '' });
 	const errors = ref<Record<string, string>>({});
 	const searching = ref(false);
@@ -37,29 +41,34 @@
 	const decimal = computed(() => moneyStyle(settings.value.defaultBaseCurrency).decimal);
 	const amount = computed(() => parseTransferAmount(draft.amount, decimal.value));
 	const recipientName = computed(() => kind.value === 'internal' ? recipient.value?.name || '' : draft.name.trim());
-	const destination = computed(() => kind.value === 'internal' ? recipient.value?.email || '' : draft.destination.trim());
+	const destination = computed(() => kind.value === 'internal' ? recipient.value?.accountNumber || '' : draft.destination.trim());
 	const blocked = computed(() => !state.value.ready || !currencyCode.value || !!state.value.error || user.value.status?.toUpperCase() === 'HOLD' || String(account.value.status).toLowerCase() !== 'active');
 	const clearCodes = () => { codes.value = { cot: '', imf: '', tax: '' }; codeIndex.value = 0; codeInput.value = ''; };
-	watch([kind, recipientEmail, () => draft.name, () => draft.destination, () => draft.bank, () => draft.amount, () => draft.note], () => {
+	watch([kind, recipientQuery, recipient, () => draft.name, () => draft.destination, () => draft.bank, () => draft.amount, () => draft.note], () => {
 		clearCodes();
 		errors.value = {};
 	});
-	watch(recipientEmail, () => { recipient.value = null; });
-	watch(kind, () => { recipient.value = null; draft.destination = ''; draft.name = ''; draft.bank = ''; });
+	const clearRecipients = () => { lookupVersion++; recipient.value = null; recipients.value = []; searched.value = false; searching.value = false; };
+	watch(recipientQuery, clearRecipients, { flush: 'sync' });
+	watch(kind, () => { clearRecipients(); draft.destination = ''; draft.name = ''; draft.bank = ''; }, { flush: 'sync' });
 	const lookup = async () => {
 		if (searching.value || busy.value) return;
 		errors.value = {};
 		recipient.value = null;
-		const email = recipientEmail.value.trim().toLowerCase();
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errors.value.email = 'Enter a valid account email address.'; return; }
+		recipients.value = []; searched.value = false;
+		const query = recipientQuery.value.trim();
+		if (query.length < 3 || query.length > 100) { errors.value.email = 'Enter at least 3 characters of a name, an account number, or an email (up to 100 characters).'; return; }
+		const version = ++lookupVersion;
 		searching.value = true;
 		try {
-			const found = await userService.findByEmail(email);
-			if (recipientEmail.value.trim().toLowerCase() !== email || kind.value !== 'internal') return;
-			if (found.id === user.value.id) { errors.value.email = 'Choose an account other than your own.'; return; }
-			recipient.value = { id: found.id, name: found.name, email: found.email };
-		} catch { errors.value.email = 'We could not find that recipient. Check the email and try again.'; }
-		finally { searching.value = false; }
+			const found = await userService.searchRecipients(query);
+			if (version !== lookupVersion || kind.value !== 'internal') return;
+			recipients.value = found.filter(item => item.id !== user.value.id);
+			searched.value = true;
+		} catch (error) {
+			if (version !== lookupVersion) return;
+			errors.value.email = (error as { status?: number }).status === 429 ? 'Too many searches. Please wait a minute before trying again.' : 'Unable to search recipients. Please try again.';
+		} finally { if (version === lookupVersion) searching.value = false; }
 	};
 	const next = () => {
 		errors.value = {};
@@ -125,8 +134,8 @@
 		} finally { busy.value = false; }
 	};
 	const back = () => { if (busy.value) return; step.value = Math.max(0, step.value - 1); errors.value = {}; clearCodes(); };
-	const startAgain = () => { result.value = null; step.value = 0; recipient.value = null; recipientEmail.value = ''; Object.assign(draft, { name: '', destination: '', bank: '', amount: '', note: '' }); clearCodes(); errors.value = {}; };
-	onUnmounted(clearCodes);
+	const startAgain = () => { result.value = null; step.value = 0; clearRecipients(); recipientQuery.value = ''; Object.assign(draft, { name: '', destination: '', bank: '', amount: '', note: '' }); clearCodes(); errors.value = {}; };
+	onUnmounted(() => { lookupVersion++; clearCodes(); });
 </script>
 
 <template>
@@ -135,7 +144,22 @@
 		<div v-else-if="result" class="card border"><div class="card-body p-8"><span class="badge text-capitalize mb-6" :class="result.status === 'completed' ? 'badge-light-success' : result.status === 'failed' ? 'badge-light-danger' : 'badge-light-warning'">{{ result.status || 'Recorded' }}</span><h2 class="fs-2 mb-5">Your transaction is recorded.</h2><p class="account-balance mb-3">{{ money(result.amount) }}</p><p class="text-gray-600 mb-7">To {{ result.beneficiary?.name || recipientName }} · {{ currencyCode }}</p><div class="bg-light p-6 rounded-3 mb-7"><span class="text-gray-600 fs-7 d-block mb-3">Transaction reference</span><div class="d-flex flex-wrap align-items-center gap-4"><strong class="text-break">{{ result.transactionId || 'See your activity' }}</strong><AppCopyButton v-if="result.transactionId" :value="result.transactionId" label="transaction reference" /></div></div><p class="text-gray-600 lh-lg fs-7 mb-7">The status above is the recorded account status. For external destinations, confirm receipt with the recipient; it is not a delivery guarantee from an external payment provider.</p><div class="d-flex flex-wrap gap-4"><NuxtLink to="/app/transactions" class="btn btn-primary">View activity</NuxtLink><button type="button" class="btn btn-light" @click="startAgain">Start a new transfer</button></div></div></div>
 		<template v-else><div v-if="blocked" class="alert alert-warning lh-lg" role="alert">{{ !state.ready ? 'Your account must finish loading before you can transfer.' : 'Transfers are unavailable while your account needs attention. Refresh your data or contact support.' }} <NuxtLink to="/app/help">Get help</NuxtLink></div><div class="row g-6"><div class="col-xl-8"><section class="card border"><div class="card-body p-7 p-lg-9"><ol class="list-unstyled d-flex flex-wrap gap-5 mb-9" aria-label="Transfer progress"><li v-for="(label, index) in ['Recipient', 'Amount', 'Review', 'Verify']" :key="label" class="d-flex align-items-center gap-2 fs-8" :aria-current="step === index ? 'step' : undefined"><span class="account-step" :class="{ active: step === index }">{{ index + 1 }}</span><span :class="step === index ? 'fw-bold text-gray-900' : 'text-gray-600'">{{ label }}</span></li></ol>
 					<p v-if="errors.form" role="alert" class="alert alert-danger">{{ errors.form }}</p>
-					<form v-if="step === 0" novalidate @submit.prevent="next"><fieldset :disabled="busy || blocked"><legend class="fs-2 fw-bold mb-6">Who are you sending to?</legend><div class="mb-6"><label for="transfer-kind" class="form-label">Destination type</label><select id="transfer-kind" v-model="kind" class="form-select" :disabled="searching"><option v-for="item in destinations" :key="item.value" :value="item.value">{{ item.label }}</option></select></div><template v-if="kind === 'internal'"><label for="recipient-email" class="form-label">Recipient account email</label><div class="d-flex gap-3 align-items-start"><div class="flex-grow-1"><input id="recipient-email" v-model="recipientEmail" name="recipientEmail" type="email" autocomplete="off" maxlength="254" class="form-control" :class="{ 'is-invalid': errors.email }" :aria-invalid="!!errors.email" aria-describedby="recipient-email-feedback" /><div id="recipient-email-feedback" class="invalid-feedback">{{ errors.email }}</div></div><button type="button" class="btn btn-light-primary" :disabled="searching" @click="lookup">{{ searching ? 'Finding…' : 'Find' }}</button></div><p v-if="recipient" class="alert alert-success mt-5 mb-0" role="status">Recipient found: <strong>{{ recipient.name }}</strong>. Check this is who you intend to pay.</p></template><template v-else><div class="mb-6"><label for="recipient-name" class="form-label">Recipient name</label><input id="recipient-name" v-model="draft.name" maxlength="254" class="form-control" :class="{ 'is-invalid': errors.name }" :aria-invalid="!!errors.name" aria-describedby="recipient-name-feedback" /><div id="recipient-name-feedback" class="invalid-feedback">{{ errors.name }}</div></div><div v-if="kind === 'bank'" class="mb-6"><label for="recipient-bank" class="form-label">Bank name</label><input id="recipient-bank" v-model="draft.bank" maxlength="254" class="form-control" :class="{ 'is-invalid': errors.bank }" :aria-invalid="!!errors.bank" aria-describedby="recipient-bank-feedback" /><div id="recipient-bank-feedback" class="invalid-feedback">{{ errors.bank }}</div></div><label for="recipient-destination" class="form-label">{{ kind === 'bank' ? 'Destination account' : kind === 'mbway' ? 'Destination phone number' : 'Destination email' }}</label><input id="recipient-destination" v-model="draft.destination" :type="['paypal', 'skrill'].includes(kind) ? 'email' : kind === 'mbway' ? 'tel' : 'text'" maxlength="254" class="form-control" :class="{ 'is-invalid': errors.destination }" :aria-invalid="!!errors.destination" aria-describedby="recipient-destination-feedback" /><div id="recipient-destination-feedback" class="invalid-feedback">{{ errors.destination }}</div><p class="fs-8 text-gray-600 lh-lg mt-5 mb-0">This records an external-destination transfer. The app does not directly connect to these payment providers.</p></template><button type="submit" class="btn btn-primary w-100 mt-8" :disabled="searching">Continue to amount</button></fieldset></form>
+					<form v-if="step === 0" novalidate @submit.prevent="kind === 'internal' && !recipient ? lookup() : next()"><fieldset :disabled="busy || blocked">
+						<legend class="fs-2 fw-bold mb-6">Who are you sending to?</legend>
+						<div class="mb-6"><label for="transfer-kind" class="form-label">Destination type</label><select id="transfer-kind" v-model="kind" class="form-select" :disabled="searching"><option v-for="item in destinations" :key="item.value" :value="item.value">{{ item.label }}</option></select></div>
+						<template v-if="kind === 'internal'">
+							<label for="recipient-search" class="form-label">Recipient name, account number or email</label>
+							<div class="d-flex gap-3 align-items-start"><div class="flex-grow-1"><input id="recipient-search" v-model="recipientQuery" name="recipientQuery" type="search" autocomplete="off" maxlength="100" class="form-control" :class="{ 'is-invalid': errors.email }" :aria-invalid="!!errors.email" aria-describedby="recipient-search-feedback recipient-search-help" /><div id="recipient-search-feedback" class="invalid-feedback">{{ errors.email }}</div></div><button type="button" class="btn btn-light-primary" :disabled="searching" @click="lookup">{{ searching ? 'Finding…' : 'Find' }}</button></div>
+							<p id="recipient-search-help" class="text-gray-600 fs-8 mt-3">Search by name (at least 3 characters), exact account number or email. Select an account and check its number before continuing.</p>
+							<div aria-live="polite" :aria-busy="searching">
+								<p v-if="searched && !recipients.length" class="alert alert-info mt-5">No matching recipients. Check the name, account number or email and try again.</p>
+								<template v-if="recipients.length"><p class="fs-8 text-gray-600">{{ recipients.length === 10 ? 'Showing up to 10 matches. Refine your search if needed.' : 'Choose the account you intend to pay.' }}</p><ul class="list-unstyled d-grid gap-3"><li v-for="item in recipients" :key="item.id"><button type="button" class="btn btn-light w-100 text-start text-wrap" :class="{ 'border border-primary': recipient?.id === item.id }" :aria-pressed="recipient?.id === item.id" :aria-label="`Select ${item.name}, account ${item.accountNumber}`" @click="recipient = item; errors = {}"><strong class="d-block">{{ item.name }}</strong><span class="d-block text-break fs-7">Account {{ item.accountNumber }}</span></button></li></ul></template>
+								<p v-if="recipient" class="alert alert-success mt-5 mb-0" role="status">Recipient selected: <strong>{{ recipient.name }}</strong> · Account {{ recipient.accountNumber }}. Check this is who you intend to pay.</p>
+							</div>
+						</template>
+						<template v-else><div class="mb-6"><label for="recipient-name" class="form-label">Recipient name</label><input id="recipient-name" v-model="draft.name" maxlength="254" class="form-control" :class="{ 'is-invalid': errors.name }" :aria-invalid="!!errors.name" aria-describedby="recipient-name-feedback" /><div id="recipient-name-feedback" class="invalid-feedback">{{ errors.name }}</div></div><div v-if="kind === 'bank'" class="mb-6"><label for="recipient-bank" class="form-label">Bank name</label><input id="recipient-bank" v-model="draft.bank" maxlength="254" class="form-control" :class="{ 'is-invalid': errors.bank }" :aria-invalid="!!errors.bank" aria-describedby="recipient-bank-feedback" /><div id="recipient-bank-feedback" class="invalid-feedback">{{ errors.bank }}</div></div><label for="recipient-destination" class="form-label">{{ kind === 'bank' ? 'Destination account' : kind === 'mbway' ? 'Destination phone number' : 'Destination email' }}</label><input id="recipient-destination" v-model="draft.destination" :type="['paypal', 'skrill'].includes(kind) ? 'email' : kind === 'mbway' ? 'tel' : 'text'" maxlength="254" class="form-control" :class="{ 'is-invalid': errors.destination }" :aria-invalid="!!errors.destination" aria-describedby="recipient-destination-feedback" /><div id="recipient-destination-feedback" class="invalid-feedback">{{ errors.destination }}</div><p class="fs-8 text-gray-600 lh-lg mt-5 mb-0">This records an external-destination transfer. The app does not directly connect to these payment providers.</p></template>
+						<button type="submit" class="btn btn-primary w-100 mt-8" :disabled="searching">Continue to amount</button>
+					</fieldset></form>
 					<form v-else-if="step === 1" novalidate @submit.prevent="next"><fieldset :disabled="busy || blocked"><legend class="fs-2 fw-bold mb-6">How much would you like to send?</legend><label for="transfer-amount" class="form-label">Amount <span v-if="currencyCode">({{ currencyCode }})</span></label><input id="transfer-amount" v-model="draft.amount" name="amount" type="text" inputmode="decimal" autocomplete="off" maxlength="18" class="form-control form-control-lg fs-2" :class="{ 'is-invalid': errors.amount }" :aria-invalid="!!errors.amount" aria-describedby="transfer-amount-feedback transfer-amount-help" /><div id="transfer-amount-feedback" class="invalid-feedback">{{ errors.amount }}</div><p id="transfer-amount-help" class="text-gray-600 fs-8 mt-3 mb-7">Use {{ decimal === '.' ? 'a dot' : 'a comma' }} for decimals, with no thousands separators. Available: {{ money(account.amount || 0) }}.</p><label for="transfer-note" class="form-label">Note <span class="text-gray-600">(optional)</span></label><input id="transfer-note" v-model="draft.note" maxlength="250" class="form-control" /><div class="d-flex gap-4 mt-8"><button type="button" class="btn btn-light" @click="back">Back</button><button type="submit" class="btn btn-primary flex-grow-1">Review transfer</button></div></fieldset></form>
 					<div v-else-if="step === 2"><h2 class="fs-2 mb-6">Check every detail.</h2><dl class="mb-7"><dt class="fw-normal text-gray-600 mb-2">Recipient</dt><dd class="fw-bold fs-5 mb-6">{{ recipientName }}</dd><dt class="fw-normal text-gray-600 mb-2">Destination</dt><dd class="fw-bold text-break mb-6">{{ destinationLabel }}<br />{{ destination }}</dd><dt class="fw-normal text-gray-600 mb-2">Amount</dt><dd class="fw-bold fs-2 mb-6">{{ money(amount || 0) }} {{ currencyCode }}</dd><template v-if="draft.note"><dt class="fw-normal text-gray-600 mb-2">Note</dt><dd class="text-break">{{ draft.note }}</dd></template></dl><p class="text-gray-600 fs-7 lh-lg">No transfer has been submitted yet. Complete the required verification, then confirm the final send.</p><div class="d-flex gap-4 mt-8"><button type="button" class="btn btn-light" @click="back">Back</button><button type="button" class="btn btn-primary flex-grow-1" :disabled="blocked" @click="next">Continue to verification</button></div></div>
 					<form v-else-if="codeIndex < verification.length" novalidate :aria-busy="busy" @submit.prevent="verify"><h2 class="fs-2 mb-4">Required transfer verification</h2><p class="text-gray-600 lh-lg fs-7 mb-6">Step {{ codeIndex + 1 }} of {{ verification.length }}. These are the transfer codes configured for your account, not your email sign-in code. If you do not have them, contact support.</p><label for="transfer-code" class="form-label">{{ verification[codeIndex].label }}</label><input id="transfer-code" v-model="codeInput" type="password" autocomplete="off" maxlength="100" class="form-control" :class="{ 'is-invalid': errors.code }" :aria-invalid="!!errors.code" aria-describedby="transfer-code-feedback" :disabled="busy" @input="errors.code = ''" /><div id="transfer-code-feedback" class="invalid-feedback">{{ errors.code }}</div><div class="d-flex gap-4 mt-8"><button type="button" class="btn btn-light" :disabled="busy" @click="back">Back</button><button type="submit" class="btn btn-primary flex-grow-1" :disabled="busy || blocked">{{ busy ? 'Verifying…' : 'Verify code' }}</button></div></form>

@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import sqlite3 from "sqlite3";
 import pg from "pg";
+import { testReferrals } from './referrals.mjs';
 
 const PORT = 3111;
 const BASE = `http://localhost:${PORT}`;
@@ -155,6 +156,40 @@ async function main() {
 		}
 	};
 	await loadCodes(alice, bob);
+
+	console.log('\nrecipient search');
+	const searchRecipients = (query, token = alice.token) => call('POST', '/api/users/search', { token, body: { query } });
+	const bobAccount = (await call('GET', `/api/account/${bob.id}`, { token: bob.token })).data;
+	check('recipient search requires authentication', (await searchRecipients('bob', null)).status === 401);
+	check('recipient search rejects short queries', (await searchRecipients('bo')).status === 422);
+	check('recipient search rejects oversized queries', (await searchRecipients('x'.repeat(101))).status === 422);
+	const byName = await searchRecipients(' BOB ');
+	check('recipient search matches names case-insensitively', byName.status === 200 && byName.data.some?.(u => u.id === bob.id));
+	const byNumber = await searchRecipients(String(bobAccount.accountNumber));
+	check('recipient search matches generated account numbers', byNumber.status === 200 && byNumber.data.some?.(u => u.id === bob.id && String(u.accountNumber) === String(bobAccount.accountNumber)));
+	check('recipient search preserves email lookup', (await searchRecipients('BOB@X.COM')).data.some?.(u => u.id === bob.id));
+	check('recipient search excludes your own account', !(await searchRecipients('alice')).data.some?.(u => u.id === alice.id));
+	check('recipient search hides administrators', (await searchRecipients('admin@x.com')).data.length === 0);
+	check('recipient search hides super administrators', (await searchRecipients('super@x.com')).data.length === 0);
+	check('recipient search treats SQL wildcards literally', (await searchRecipients('%%%')).data.length === 0);
+	check('recipient search returns no matches for unknown accounts', (await searchRecipients('unknown-recipient')).data.length === 0);
+	check('recipient search only returns addressing fields', byName.status === 200 && byName.data.every(u => Object.keys(u).every(k => ['id', 'name', 'email', 'accountNumber'].includes(k))));
+	await call('POST', '/api/auth/register', { body: { ...profile('shared-one@x.com'), name: 'Shared Recipient' } });
+	await call('POST', '/api/auth/register', { body: { ...profile('shared-two@x.com'), name: 'Shared Recipient' } });
+	const shared = await searchRecipients('Shared Recipient');
+	check('recipient search returns separate choices for duplicate names', shared.status === 200 && shared.data.length === 2 && shared.data[0].accountNumber !== shared.data[1].accountNumber);
+	const sharedId = shared.data[0]?.id;
+	await call('PUT', `/api/account`, { token: admin.token, body: { userId: sharedId, status: 'frozen' } });
+	check('recipient search excludes frozen accounts', (await searchRecipients('Shared Recipient')).data.length === 1);
+	await call('PUT', `/api/account`, { token: admin.token, body: { userId: sharedId, status: 'active' } });
+	await call('PUT', `/api/users/${sharedId}`, { token: admin.token, body: { status: 'SUSPENDED' } });
+	check('recipient search excludes suspended users', (await searchRecipients('Shared Recipient')).data.length === 1);
+	check('recipient search does not interpret SQL injection input', (await searchRecipients("' OR 1=1 --")).data.length === 0);
+	for (let i = 0; i < 11; i++) await call('POST', '/api/auth/register', { body: { ...profile(`bounded-${i}@x.com`), name: 'Bounded Recipient' } });
+	check('recipient search is capped at ten matches', (await searchRecipients('Bounded Recipient')).data.length === 10);
+	let searchLimit;
+	for (let i = 0; i < 31; i++) searchLimit = await searchRecipients('not-a-recipient', bob.token);
+	check('recipient search throttles repeated directory queries', searchLimit.status === 429);
 
 	console.log("\nauthorization");
 	check("no token -> 401", (await call("GET", `/api/account/${alice.id}`)).status === 401);
@@ -850,6 +885,7 @@ async function main() {
 	check("the super admin can open their own profile", (await call("GET", `/api/users/${superId}`, { token: superToken })).status === 200);
 	check("the super admin has no admin powers", (await call("PUT", "/api/account", { token: superToken, body: { userId: devId, accountLevel: 1 } })).status === 403);
 
+	await testReferrals({ call, check, admin });
 	check("unknown route -> 404 json", (await call("GET", "/api/nope", { token: alice.token })).status === 404);
 }
 

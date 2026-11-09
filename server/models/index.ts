@@ -257,4 +257,49 @@ DepositRequest.init({
 	{ fields: ['user_id', 'created_at'] }, { fields: ['status', 'created_at'] },
 ] });
 
+export class ReferralProgram extends Model {
+	declare id: string; declare enabled: boolean; declare rewardPoints: number; declare pointsPerUnit: number;
+	declare currency: string; declare version: number;
+}
+ReferralProgram.init({
+	id: { type: DataTypes.STRING(20), primaryKey: true }, enabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+	rewardPoints: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+	pointsPerUnit: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 100 },
+	currency: { type: DataTypes.STRING(3), allowNull: false, defaultValue: 'USD' },
+	version: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+}, { sequelize, modelName: 'ReferralProgram' });
+
+export class ReferralMember extends Model {
+	declare userId: string; declare code: string; declare points: number;
+}
+ReferralMember.init({
+	userId: { type: DataTypes.UUID, primaryKey: true, references: { model: 'users', key: 'id' } },
+	code: { type: DataTypes.STRING(16), allowNull: false, unique: true },
+	points: { type: DataTypes.BIGINT, allowNull: false, defaultValue: 0, get(this: Model) { return Number(this.getDataValue('points')); } },
+}, { sequelize, modelName: 'ReferralMember' });
+
+export class Referral extends Model {
+	declare id: string; declare referredId: string; declare referrerId: string; declare status: string;
+	declare points: number; declare currency: string | null; declare depositId: string | null; declare reason: string;
+}
+Referral.init({
+	id, referredId: { type: DataTypes.UUID, allowNull: false, unique: true, references: { model: 'users', key: 'id' } },
+	referrerId: { type: DataTypes.UUID, allowNull: false, references: { model: 'users', key: 'id' } },
+	status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'pending' },
+	points: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 }, currency: DataTypes.STRING(3),
+	depositId: { type: DataTypes.UUID, unique: true, references: { model: 'deposit_requests', key: 'id' } },
+	reason: { type: DataTypes.STRING(500), allowNull: false, defaultValue: '' }, qualifiedAt: DataTypes.DATE,
+}, { sequelize, modelName: 'Referral', indexes: [{ fields: ['referrer_id', 'created_at'] }, { fields: ['status', 'created_at'] }] });
+
+export class ReferralRedemption extends Model {
+	declare id: string; declare userId: string; declare requestKey: string; declare points: number;
+	declare amount: number; declare currency: string; declare pointsPerUnit: number; declare programVersion: number; declare transactionId: string;
+}
+ReferralRedemption.init({
+	id, userId: { type: DataTypes.UUID, allowNull: false, references: { model: 'users', key: 'id' } }, requestKey: { type: DataTypes.UUID, allowNull: false },
+	points: { type: DataTypes.INTEGER, allowNull: false }, amount: money('amount'), currency: { type: DataTypes.STRING(3), allowNull: false },
+	pointsPerUnit: { type: DataTypes.INTEGER, allowNull: false }, programVersion: { type: DataTypes.INTEGER, allowNull: false },
+	transactionId: { type: DataTypes.UUID, allowNull: false, unique: true, references: { model: 'transactions', key: 'id' } },
+}, { sequelize, modelName: 'ReferralRedemption', indexes: [{ unique: true, fields: ['user_id', 'request_key'] }, { fields: ['user_id', 'created_at'] }] });
+
 export { sequelize };

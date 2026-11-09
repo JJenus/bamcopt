@@ -1,5 +1,14 @@
 # Database (PostgreSQL)
 
+## Referral rewards rollout
+
+Run `pnpm db:migrate` before deploying referral rewards to an existing database. The additive
+`20261110000000-create-referrals.js` migration creates program settings, unique invitation codes/point
+wallets, signup attribution and idempotent withdrawal receipts. Existing balances are not rewritten.
+The program starts **disabled**, with no reward configured. Do not drop these tables to roll back;
+disable the program and retain its financial history. Test PostgreSQL locking and backup recovery in
+staging before enabling real rewards. No production migration was run by this implementation task.
+
 ## Apply migrations with the Sequelize CLI
 
 Use the installed, official `sequelize-cli` (v6), not individual SQL commands:

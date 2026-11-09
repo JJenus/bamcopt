@@ -7,6 +7,7 @@ const password = z.string().min(5, "password too short");
 export const LoginBody = z.object({ email: z.string().email(), password: z.string().min(1) });
 export const OtpBody = z.object({ challenge: z.string().min(10), code: z.string().regex(/^\d{6}$/, "Invalid code") });
 export const EmailBody = z.object({ email: z.string().email() });
+export const RecipientSearchBody = z.object({ query: z.string().trim().min(3).max(100) }).strict();
 export const TokenBody = z.object({ token: z.string().min(10) });
 export const ResetBody = z.object({ token: z.string().min(10), password });
 
@@ -15,6 +16,7 @@ export const RegisterBody = z.object({
 	name: z.string().min(1), email: z.string().email(), password,
 	phone: z.string(), address: z.string(), city: z.string(), country: z.string(),
 	dob: z.any().optional(), imgUrl: z.string().optional(), idUrl: z.string().optional(),
+	referralCode: z.string().trim().toUpperCase().regex(/^[A-F0-9]{16}$/).optional(),
 });
 
 // whitelisting happens in services/users.ts (self vs admin)
@@ -101,3 +103,11 @@ export const AdminStatusBody = z.object({ status: z.enum(["ACTIVE", "SUSPENDED"]
 
 /** What an administrator may set as a user's status (any casing, stored upper-case). */
 export const UserStatusValue = z.string().trim().transform((value) => value.toUpperCase()).pipe(z.enum(["ACTIVE", "HOLD", "SUSPENDED"]));
+
+export const ReferralProgramBody = z.object({
+	enabled: z.boolean(), rewardPoints: z.number().int().min(1).max(1_000_000),
+	pointsPerUnit: z.number().int().min(1).max(1_000_000), currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/),
+}).strict();
+export const ReferralRedemptionBody = z.object({ points: z.number().int().min(1).max(1_000_000_000), requestKey: uuid, programVersion: z.number().int().min(1) }).strict();
+export const ReferralListQuery = z.object({ limit: z.coerce.number().int().min(1).max(50).default(20), offset: z.coerce.number().int().min(0).default(0) });
+export const ReferralRejectBody = z.object({ reason: z.string().trim().min(3).max(500) }).strict();

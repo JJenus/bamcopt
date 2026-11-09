@@ -7,6 +7,7 @@
 		{ title: 'Account & limits', text: 'Your account information, level, and limits', icon: 'ki-wallet', to: '/app/account-info' },
 		{ title: 'Security', text: 'Recent sign-ins and account safety', icon: 'ki-shield-tick', to: '/app/settings/security' },
 		{ title: 'Notifications', text: 'View account updates and unread messages', icon: 'ki-notification-bing', to: '/app/notifications' },
+		{ title: 'Referrals & points', text: 'Invite friends and withdraw earned points to your balance', icon: 'ki-profile-user', to: '/app/referrals' },
 		{ title: 'Help & support', text: 'Answers and configured support channels', icon: 'ki-message-text-2', to: '/app/help' },
 	];
 </script>

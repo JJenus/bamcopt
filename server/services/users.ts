@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
-import { Op, Transaction as DbTx } from "sequelize";
+import { Op, QueryTypes, Transaction as DbTx } from "sequelize";
 import { Account, User } from "../models";
+import { sequelize } from "../utils/db";
 import { conflict, notFound } from "../utils/errors";
 
 export const normalizeEmail = (email: string) => email.trim().toLowerCase();
@@ -69,6 +70,22 @@ export const listWithAccounts = async () => {
 export const publicProfile = (u: User) => ({ id: u.id, name: u.name, imgUrl: u.imgUrl });
 /** Recipient lookup for transfers. */
 export const lookupProfile = (u: User) => ({ ...publicProfile(u), email: u.email });
+
+/** Bounded recipient directory: only addressing fields, never balances, codes or administrator identities. */
+export const searchRecipients = (query: string, callerId: string) => {
+	const normalized = query.trim().toLowerCase();
+	// Explicit ESCAPE works on PostgreSQL and SQLite; %, _ and ! are literal name characters.
+	const name = `%${normalized.replace(/[!%_]/g, '!$&')}%`;
+	return sequelize.query<{ id: string; name: string; email: string; accountNumber: string }>(`
+		SELECT u.id, u.name, u.email, CAST(a.account_number AS TEXT) AS "accountNumber"
+		FROM users u JOIN accounts a ON a.user_id = u.id
+		WHERE u.deleted_at IS NULL AND a.deleted_at IS NULL
+		  AND u.user_type = 'user' AND UPPER(u.status) != 'SUSPENDED'
+		  AND a.status = 'active' AND u.id != :callerId
+		  AND (LOWER(u.name) LIKE :name ESCAPE '!' OR LOWER(u.email) = :query OR CAST(a.account_number AS TEXT) = :query)
+		ORDER BY LOWER(u.name), u.id, a.account_number LIMIT 10
+	`, { replacements: { query: normalized, name, callerId }, type: QueryTypes.SELECT });
+};
 
 export const updateUser = async (id: string, data: Record<string, unknown>, admin: boolean) => {
 	const user = await getUser(id);

@@ -12,6 +12,7 @@ export const adminNavs = ref([
 	{ name: "Dashboard", dir: "/admin", icon: "ki-duotone ki-element-equal", paths: ["path1", "path2", "path3", "path4"] },
 	{ name: "Users", dir: "/admin/users", icon: "ki-duotone ki-profile-user", paths: ["path1", "path2", "path3", "path4"] },
 	{ name: "Funding", dir: "/admin/funding", icon: "ki-solid ki-bank", paths: [] },
+	{ name: "Referrals", dir: "/admin/referrals", icon: "ki-outline ki-profile-user", paths: [] },
 	{ name: "Settings", dir: "/admin/settings", icon: "ki-outline ki-gear", paths: [] },
 ]);
 

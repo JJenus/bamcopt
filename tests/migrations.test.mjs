@@ -47,9 +47,12 @@ test('official CLI applies all pending migrations, tracks SequelizeMeta and safe
 		const [[userRow]] = await f.db.query('SELECT transfer_codes_policy AS p FROM users'); assert.equal(userRow.p, 'default', 'existing users follow the system setting');
 		const [[settingsRow]] = await f.db.query('SELECT transfer_codes_policy AS p FROM app_settings'); assert.equal(settingsRow.p, 'always', 'the system keeps asking on every transfer until an admin changes it');
 		assert.ok((await f.qi.showIndex('security_logs')).some(i => i.name === 'security_logs_user_action_created_idx'));
-		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 6);
+		assert.ok((await f.qi.describeTable('referral_redemptions')).transaction_id);
+		const [[program]] = await f.db.query("SELECT enabled,reward_points FROM referral_programs WHERE id='default'"); assert.equal(Number(program.enabled), 0); assert.equal(program.reward_points, 0);
+		await assert.rejects(f.db.query("INSERT INTO referral_members (user_id,code,points,created_at,updated_at) VALUES ('00000000-0000-4000-8000-000000000001','0123456789ABCDEF',-1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)"));
+		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 7);
 		const second = run(f.storage, ['db:migrate']); assert.equal(second.status, 0, second.stderr + second.stdout);
-		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 6);
+		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 7);
 	} finally { await f.cleanup(); }
 });
 
