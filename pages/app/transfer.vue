@@ -1,6 +1,7 @@
 <script setup lang="ts">
 	import type { Transaction } from '~/utils/interfaces/Transaction';
 	import { parseTransferAmount } from '~/utils/account-ui';
+	import { moneyStyle } from '~/utils/app-defaults';
 	useAccountPage('Transfer');
 	const { state, user, account, load } = useAccountWorkspace();
 	const { money, currencyCode } = useAccountMoney();
@@ -19,15 +20,21 @@
 	const codeInput = ref('');
 	const codeIndex = ref(0);
 	const codes = ref({ cot: '', imf: '', tax: '' });
-	const verification = [
+	const allVerification = [
 		{ key: 'cot', label: 'Exchange code' }, { key: 'imf', label: 'IMF code' }, { key: 'tax', label: 'Tax code' },
 	] as const;
+	// Does this account have to enter the codes? Ask until the server says otherwise (off, or already remembered);
+	// the server decides again on the transfer itself, so this only decides whether the code steps are shown.
+	const codeRequired = ref(true);
+	const refreshPolicy = async () => { try { codeRequired.value = (await transactionService.codePolicy()).required; } catch { codeRequired.value = true; } };
+	const verification = computed(() => codeRequired.value ? allVerification : []);
+	onMounted(refreshPolicy);
 	const destinations = computed(() => [
 		{ value: 'internal', label: `${config.APP} account` }, { value: 'bank', label: 'Bank account' },
 		{ value: 'paypal', label: 'PayPal' }, { value: 'skrill', label: 'Skrill' }, { value: 'mbway', label: 'MB Way' },
 	]);
 	const destinationLabel = computed(() => destinations.value.find(item => item.value === kind.value)?.label || '');
-	const decimal = computed(() => settings.value.defaultBaseCurrency === 'USD' ? '.' : ',');
+	const decimal = computed(() => moneyStyle(settings.value.defaultBaseCurrency).decimal);
 	const amount = computed(() => parseTransferAmount(draft.amount, decimal.value));
 	const recipientName = computed(() => kind.value === 'internal' ? recipient.value?.name || '' : draft.name.trim());
 	const destination = computed(() => kind.value === 'internal' ? recipient.value?.email || '' : draft.destination.trim());
@@ -70,13 +77,14 @@
 		}
 		if (Object.keys(errors.value).length) return;
 		step.value = Math.min(3, step.value + 1);
+		if (step.value === 3) refreshPolicy();
 	};
 	const verify = async () => {
-		if (busy.value || codeIndex.value >= verification.length) return;
+		if (busy.value || codeIndex.value >= verification.value.length) return;
 		errors.value = {};
 		if (!codeInput.value.trim()) { errors.value.code = 'Enter the required verification code.'; return; }
 		busy.value = true;
-		const current = verification[codeIndex.value];
+		const current = verification.value[codeIndex.value];
 		try {
 			await transactionService.verifyCode(current.key, codeInput.value.trim());
 			codes.value[current.key] = codeInput.value.trim();
@@ -91,16 +99,17 @@
 		if (blocked.value) { errors.value.form = 'Your account is not ready to transfer. Refresh your account or contact support.'; return; }
 		if (amount.value === null || amount.value > Number(account.value.amount || 0)) { errors.value.form = 'Review your amount and balance before sending.'; step.value = 1; clearCodes(); return; }
 		if (!recipientName.value || !destination.value || (kind.value === 'internal' && !recipient.value)) { errors.value.form = 'Review your recipient details before sending.'; step.value = 0; clearCodes(); return; }
-		if (verification.some(item => !codes.value[item.key])) return;
+		if (verification.value.some(item => !codes.value[item.key])) return;
 		busy.value = true;
 		try {
 			result.value = await transactionService.send({
 				amount: amount.value, type: kind.value === 'internal' ? 'send' : 'debit',
 				notes: draft.note.trim() || undefined,
 				beneficiary: { name: recipientName.value, destinationAccount: destination.value, bank: kind.value === 'bank' ? draft.bank.trim() : kind.value === 'internal' ? String(config.APP) : destinationLabel.value, ...(kind.value === 'internal' ? { userId: recipient.value!.id } : {}) },
-				codes: { ...codes.value },
+				...(codeRequired.value ? { codes: { ...codes.value } } : {}),
 			});
 			clearCodes();
+			refreshPolicy(); // passing the codes may now be remembered
 			successAlert('Your transaction record is ready. Review its status below.');
 			await load();
 		} catch (error) {
@@ -130,7 +139,7 @@
 					<form v-else-if="step === 1" novalidate @submit.prevent="next"><fieldset :disabled="busy || blocked"><legend class="fs-2 fw-bold mb-6">How much would you like to send?</legend><label for="transfer-amount" class="form-label">Amount <span v-if="currencyCode">({{ currencyCode }})</span></label><input id="transfer-amount" v-model="draft.amount" name="amount" type="text" inputmode="decimal" autocomplete="off" maxlength="18" class="form-control form-control-lg fs-2" :class="{ 'is-invalid': errors.amount }" :aria-invalid="!!errors.amount" aria-describedby="transfer-amount-feedback transfer-amount-help" /><div id="transfer-amount-feedback" class="invalid-feedback">{{ errors.amount }}</div><p id="transfer-amount-help" class="text-gray-600 fs-8 mt-3 mb-7">Use {{ decimal === '.' ? 'a dot' : 'a comma' }} for decimals, with no thousands separators. Available: {{ money(account.amount || 0) }}.</p><label for="transfer-note" class="form-label">Note <span class="text-gray-600">(optional)</span></label><input id="transfer-note" v-model="draft.note" maxlength="250" class="form-control" /><div class="d-flex gap-4 mt-8"><button type="button" class="btn btn-light" @click="back">Back</button><button type="submit" class="btn btn-primary flex-grow-1">Review transfer</button></div></fieldset></form>
 					<div v-else-if="step === 2"><h2 class="fs-2 mb-6">Check every detail.</h2><dl class="mb-7"><dt class="fw-normal text-gray-600 mb-2">Recipient</dt><dd class="fw-bold fs-5 mb-6">{{ recipientName }}</dd><dt class="fw-normal text-gray-600 mb-2">Destination</dt><dd class="fw-bold text-break mb-6">{{ destinationLabel }}<br />{{ destination }}</dd><dt class="fw-normal text-gray-600 mb-2">Amount</dt><dd class="fw-bold fs-2 mb-6">{{ money(amount || 0) }} {{ currencyCode }}</dd><template v-if="draft.note"><dt class="fw-normal text-gray-600 mb-2">Note</dt><dd class="text-break">{{ draft.note }}</dd></template></dl><p class="text-gray-600 fs-7 lh-lg">No transfer has been submitted yet. Complete the required verification, then confirm the final send.</p><div class="d-flex gap-4 mt-8"><button type="button" class="btn btn-light" @click="back">Back</button><button type="button" class="btn btn-primary flex-grow-1" :disabled="blocked" @click="next">Continue to verification</button></div></div>
 					<form v-else-if="codeIndex < verification.length" novalidate :aria-busy="busy" @submit.prevent="verify"><h2 class="fs-2 mb-4">Required transfer verification</h2><p class="text-gray-600 lh-lg fs-7 mb-6">Step {{ codeIndex + 1 }} of {{ verification.length }}. These are the transfer codes configured for your account, not your email sign-in code. If you do not have them, contact support.</p><label for="transfer-code" class="form-label">{{ verification[codeIndex].label }}</label><input id="transfer-code" v-model="codeInput" type="password" autocomplete="off" maxlength="100" class="form-control" :class="{ 'is-invalid': errors.code }" :aria-invalid="!!errors.code" aria-describedby="transfer-code-feedback" :disabled="busy" @input="errors.code = ''" /><div id="transfer-code-feedback" class="invalid-feedback">{{ errors.code }}</div><div class="d-flex gap-4 mt-8"><button type="button" class="btn btn-light" :disabled="busy" @click="back">Back</button><button type="submit" class="btn btn-primary flex-grow-1" :disabled="busy || blocked">{{ busy ? 'Verifying…' : 'Verify code' }}</button></div></form>
-					<div v-else><h2 class="fs-2 mb-5">Ready for your final confirmation.</h2><p class="text-gray-700 lh-lg mb-7">Send <strong>{{ money(amount || 0) }}</strong> to <strong>{{ recipientName }}</strong>? Submitting will attempt the transfer using the details you reviewed.</p><div class="d-flex gap-4"><button type="button" class="btn btn-light" :disabled="busy" @click="back">Back</button><button type="button" class="btn btn-primary flex-grow-1" :disabled="busy || blocked" @click="send">{{ busy ? 'Submitting transfer…' : `Send ${money(amount || 0)}` }}</button></div><p v-if="busy" class="text-gray-600 fs-8 mt-5 mb-0" role="status">Please stay on this page while your transfer is submitted.</p></div>
+					<div v-else><h2 class="fs-2 mb-5">Ready for your final confirmation.</h2><p v-if="!codeRequired" class="text-gray-600 fs-8 mb-4">No transfer codes are needed for your account on this transfer.</p><p class="text-gray-700 lh-lg mb-7">Send <strong>{{ money(amount || 0) }}</strong> to <strong>{{ recipientName }}</strong>? Submitting will attempt the transfer using the details you reviewed.</p><div class="d-flex gap-4"><button type="button" class="btn btn-light" :disabled="busy" @click="back">Back</button><button type="button" class="btn btn-primary flex-grow-1" :disabled="busy || blocked" @click="send">{{ busy ? 'Submitting transfer…' : `Send ${money(amount || 0)}` }}</button></div><p v-if="busy" class="text-gray-600 fs-8 mt-5 mb-0" role="status">Please stay on this page while your transfer is submitted.</p></div>
 				</div></section></div><div class="col-xl-4"><aside class="card border"><div class="card-body p-7"><i class="ki-outline ki-shield-tick fs-3x text-primary d-block mb-6" aria-hidden="true"></i><h2 class="fs-3 mb-4">A moment to check.</h2><ul class="text-gray-600 lh-lg fs-7 ps-5 mb-6"><li>Confirm the recipient through a trusted channel.</li><li>Check the account details and amount.</li><li>Do not repeat a transfer with an unclear outcome.</li><li>Never share your password or sign-in code.</li></ul><NuxtLink to="/app/help" class="fw-semibold">Help with transfers <span aria-hidden="true">↗</span></NuxtLink></div></aside></div></div></template>
 	</div>
 </template>

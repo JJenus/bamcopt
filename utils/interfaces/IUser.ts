@@ -1,5 +1,6 @@
 import type { Account } from "./Account";
 import { UserAccountStatus } from "./UserAccountStatus";
+import type { UserCodePolicy } from "~/utils/app-defaults";
 
 export interface IUser {
 	id: string;
@@ -21,5 +22,8 @@ export interface IUser {
 	cot: any;
 	imf: any;
 	tax: any;
+	/** admin view only: how this user is asked for the transfer codes, and when they last passed them (the remembered flag) */
+	transferCodesPolicy?: UserCodePolicy;
+	codesVerifiedAt?: string | null;
 };
 

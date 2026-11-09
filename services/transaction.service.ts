@@ -9,7 +9,9 @@ export const transactionService = {
 	/** Checks ONE of the transfer codes on the server. Moves no money. */
 	verifyCode: (step: "cot" | "imf" | "tax", code: string) =>
 		apiRequest<{ ok: boolean }>("/transactions/verify-code", { method: "POST", body: { step, code } }),
-	/** The server takes the sender from the session and re-checks all three codes (`codes`). */
+	/** Will my next transfer ask for the codes? The server decides again on the transfer itself. */
+	codePolicy: () => apiRequest<{ required: boolean; policy: "off" | "always" | "remember"; remembered: boolean }>("/transactions/code-policy"),
+	/** The server takes the sender from the session and re-checks all three codes (`codes`) when they are required. */
 	send: (tx: Record<string, unknown>) => apiRequest<Transaction>("/transactions", { method: "POST", body: tx }),
 	/** Admin: change status / notes. */
 	update: (tx: Pick<Transaction, "id" | "status" | "notes">) => apiRequest<Transaction>("/transactions", { method: "PUT", body: tx }),

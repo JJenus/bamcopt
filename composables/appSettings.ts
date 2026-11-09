@@ -1,6 +1,7 @@
 import type { AccountLevel } from "~/utils/interfaces/AccountLevel";
 import type { AppSettings } from "~/utils/interfaces/AppSettings";
 import currency from "currency.js";
+import { moneyStyle } from "~/utils/app-defaults";
 
 export const useAppSettings = () => {
 	const init: AppSettings = {
@@ -42,17 +43,12 @@ export const useAppSettings = () => {
 	};
 
 	const formatMoney = (amount?: string | number, addSymbol?: boolean) => {
-		let decimalSep = ".";
-		let thousandSep = ",";
-		let pattern = `!#`;
+		const style = moneyStyle(settings.value.defaultBaseCurrency);
+		const decimalSep = style.decimal;
+		const thousandSep = style.group;
+		const pattern = style.symbolAfter ? `#!` : `!#`;
 
 		const actual = currency(amount || 0).value;
-
-		if (settings.value.defaultBaseCurrency !== "USD") {
-			decimalSep = ",";
-			thousandSep = ".";
-			pattern = `#!`;
-		}
 
 		const cash = currency(actual, {
 			symbol: addSymbol ? settings.value.currencySymbol : "",

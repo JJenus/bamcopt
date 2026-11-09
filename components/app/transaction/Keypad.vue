@@ -1,4 +1,5 @@
 <script setup lang="ts">
+	import { moneyStyle } from '~/utils/app-defaults';
 	import Cleave from "cleave.js";
 
 	const settings = useAppSettings().settings;
@@ -86,13 +87,9 @@
 	};
 
 	onMounted(() => {
-		let decimalSep = ".";
-		let thousandSep = ",";
-
-		if (settings.value.defaultBaseCurrency !== "USD") {
-			decimalSep = ",";
-			thousandSep = ".";
-		}
+		const style = moneyStyle(settings.value.defaultBaseCurrency);
+		const decimalSep = style.decimal;
+		const thousandSep = style.group;
 		// console.log("Trying luck they say")
 		cleave.value = new Cleave(moneyInput.value, {
 			numeral: true,
