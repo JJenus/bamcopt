@@ -41,6 +41,18 @@ export async function testReferrals({ call, check, admin }) {
 	const redeem = body => call('POST', '/api/referrals/redeem', { token: owner.token, body });
 	check('negative or fractional point redemptions are rejected', (await redeem({ points: -1, requestKey: crypto.randomUUID(), programVersion: earned.program.version })).status === 422 && (await redeem({ points: 1.5, requestKey: crypto.randomUUID(), programVersion: earned.program.version })).status === 422);
 	check('redemption cannot exceed available points', (await redeem({ points: 101, requestKey: crypto.randomUUID(), programVersion: earned.program.version })).status === 422);
+	check('invalid withdrawal minimums are rejected', (await save({ ...config, minWithdrawalPoints: 0 })).status === 422 && (await save({ ...config, minWithdrawalAmount: 0.001 })).status === 422);
+	await save({ ...config, minWithdrawalPoints: 101, minWithdrawalAmount: 0.01 });
+	await save(config);
+	check('older settings clients cannot silently reset existing minimums', (await dashboard()).data.program.minWithdrawalPoints === 101);
+	let minimumVersion = (await dashboard()).data.program.version;
+	check('minimum withdrawal points are enforced on the server', (await redeem({ points: 100, requestKey: crypto.randomUUID(), programVersion: minimumVersion })).status === 422);
+	await save({ ...config, minWithdrawalPoints: 1, minWithdrawalAmount: 1.01 });
+	minimumVersion = (await dashboard()).data.program.version;
+	check('minimum withdrawal funds are enforced independently', (await redeem({ points: 100, requestKey: crypto.randomUUID(), programVersion: minimumVersion })).status === 422);
+	check('minimum refusals move neither points nor money', (await dashboard()).data.points === 100 && (await dashboard()).data.redemptions.total === 0);
+	await save({ ...config, minWithdrawalPoints: 1, minWithdrawalAmount: 0.01 });
+	earned.program = (await dashboard()).data.program;
 	await call('PUT', '/api/account', { token: admin.token, body: { userId: owner.userId, status: 'frozen' } });
 	check('frozen accounts cannot turn points into balance', (await redeem({ points: 100, requestKey: crypto.randomUUID(), programVersion: earned.program.version })).status === 403);
 	await call('PUT', '/api/account', { token: admin.token, body: { userId: owner.userId, status: 'active', currencyId: 'EUR' } });

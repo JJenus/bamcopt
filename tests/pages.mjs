@@ -39,7 +39,7 @@ try {
     ["admin: deposit requests", "/admin/deposits", admin, "Deposit requests"],
     ["user: deposit request history", "/app/add-funds/requests", user, "Deposit requests"],
     ["user: referral rewards", "/app/referrals", user, "Invite friends. Earn points."],
-    ["admin: referral oversight", "/admin/referrals", admin, "Referral program"],
+    ["admin: referral oversight", "/admin/settings/referrals", admin, "Referral program"],
     ["admin: balance adjustment review", "/admin/top-up", admin, "Adjust user balance"],
     ["admin: transaction details", "/admin/transaction/00000000-0000-4000-8000-000000000000", admin, "Transaction details"],
     ["admin: defaults", "/admin/settings/defaults", admin, "App defaults"],
@@ -51,6 +51,8 @@ try {
     check(`${name} renders (200)`, r.status === 200 && r.html.includes(must) && !bad(r.html), `status=${r.status} loc=${r.loc} has=${r.html.includes(must)} bad=${bad(r.html)}`);
   }
   const adminDash = await page("/admin", admin);
+	const oldReferral = await page('/admin/referrals', admin);
+	check('old referral URL redirects to Settings', oldReferral.status === 301 && oldReferral.loc === '/admin/settings/referrals');
   check("admin dashboard has the bell", adminDash.status === 200 && adminDash.html.includes('aria-label="Notifications'), `status=${adminDash.status} loc=${adminDash.loc}`);
   check("old drawer is gone", !(await page("/app", user)).html.includes("kt_activities_toggle"));
   console.log(`\n${results.filter(Boolean).length}/${results.length} ok`);

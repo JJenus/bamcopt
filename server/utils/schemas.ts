@@ -107,6 +107,8 @@ export const UserStatusValue = z.string().trim().transform((value) => value.toUp
 export const ReferralProgramBody = z.object({
 	enabled: z.boolean(), rewardPoints: z.number().int().min(1).max(1_000_000),
 	pointsPerUnit: z.number().int().min(1).max(1_000_000), currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/),
+	minWithdrawalPoints: z.number().int().min(1).max(1_000_000_000).optional(),
+	minWithdrawalAmount: z.number().min(0.01).max(1_000_000_000).refine(value => Math.abs(value * 100 - Math.round(value * 100)) <= 1e-6, 'Use at most two decimal places').optional(),
 }).strict();
 export const ReferralRedemptionBody = z.object({ points: z.number().int().min(1).max(1_000_000_000), requestKey: uuid, programVersion: z.number().int().min(1) }).strict();
 export const ReferralListQuery = z.object({ limit: z.coerce.number().int().min(1).max(50).default(20), offset: z.coerce.number().int().min(0).default(0) });

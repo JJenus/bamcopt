@@ -49,10 +49,12 @@ test('official CLI applies all pending migrations, tracks SequelizeMeta and safe
 		assert.ok((await f.qi.showIndex('security_logs')).some(i => i.name === 'security_logs_user_action_created_idx'));
 		assert.ok((await f.qi.describeTable('referral_redemptions')).transaction_id);
 		const [[program]] = await f.db.query("SELECT enabled,reward_points FROM referral_programs WHERE id='default'"); assert.equal(Number(program.enabled), 0); assert.equal(program.reward_points, 0);
+		const [[minimums]] = await f.db.query("SELECT min_withdrawal_points,min_withdrawal_amount FROM referral_programs WHERE id='default'"); assert.equal(minimums.min_withdrawal_points, 1); assert.equal(Number(minimums.min_withdrawal_amount), 0.01);
+		await assert.rejects(f.db.query("UPDATE referral_programs SET min_withdrawal_points=0 WHERE id='default'"));
 		await assert.rejects(f.db.query("INSERT INTO referral_members (user_id,code,points,created_at,updated_at) VALUES ('00000000-0000-4000-8000-000000000001','0123456789ABCDEF',-1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)"));
-		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 7);
+		const [history] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(history.length, 8);
 		const second = run(f.storage, ['db:migrate']); assert.equal(second.status, 0, second.stderr + second.stdout);
-		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 7);
+		const [same] = await f.db.query('SELECT name FROM "SequelizeMeta"'); assert.equal(same.length, 8);
 	} finally { await f.cleanup(); }
 });
 

@@ -41,10 +41,15 @@ const api = async (method, path, body, token) => {
 			return page;
 		};
 		const adminPage = await pageFor(admin), customerPage = await pageFor(owner), guest = await pageFor();
-		await adminPage.goto(`${BASE}/admin/referrals`, { waitUntil: 'networkidle' });
+		await adminPage.goto(`${BASE}/admin/settings`, { waitUntil: 'networkidle' });
+		assert.equal(await adminPage.locator('.account-sidebar nav a[href="/admin/referrals"]').count(), 0, 'referrals are not a top-level nav item');
+		await adminPage.getByRole('link', { name: /Referral program/ }).click();
+		await adminPage.waitForURL(url => url.pathname === '/admin/settings/referrals');
+		assert.equal((await adminPage.locator('.account-sidebar nav a[aria-current="page"]').innerText()).trim(), 'Settings');
 		await adminPage.locator('#referrals-enabled').waitFor();
 		assert.equal(await adminPage.isChecked('#referrals-enabled'), false);
 		await adminPage.check('#referrals-enabled'); await adminPage.fill('#referrals-award', '150'); await adminPage.fill('#referrals-rate', '100');
+		await adminPage.fill('#referrals-min-points', '100'); await adminPage.fill('#referrals-min-amount', '1.00');
 		await adminPage.getByRole('button', { name: 'Review reward rules', exact: true }).click();
 		await adminPage.getByRole('button', { name: 'Confirm reward rules', exact: true }).click();
 		await adminPage.getByRole('status').filter({ hasText: 'Referral program settings saved.' }).waitFor();
@@ -52,8 +57,11 @@ const api = async (method, path, body, token) => {
 		await customerPage.goto(`${BASE}/app/referrals`, { waitUntil: 'networkidle' });
 		await customerPage.locator('#referral-link').waitFor();
 		const invitation = await customerPage.inputValue('#referral-link');
+		assert.equal(new URL(invitation).origin, BASE, 'invitation uses the actual environment origin, not production');
 		const code = new URL(invitation).searchParams.get('ref'); assert.match(code, /^[A-F0-9]{16}$/);
 		await guest.goto(`${BASE}/sign-up?ref=${code}`, { waitUntil: 'networkidle' });
+		assert.equal(await guest.locator('link[rel=canonical]').getAttribute('href'), `${BASE}/sign-up`, 'canonical URLs use this environment');
+		assert.equal(new URL(await guest.locator('meta[property="og:image"]').getAttribute('content')).origin, BASE, 'local metadata images use this environment');
 		assert.equal(await guest.inputValue('#signup-referral'), code);
 		const friendProfile = profile('Referred QA', 'friend@referral.test');
 		for (const field of ['name', 'email', 'phone', 'address', 'city', 'country', 'password']) await guest.fill(`#signup-${field}`, friendProfile[field]);
@@ -71,6 +79,10 @@ const api = async (method, path, body, token) => {
 		await customerPage.reload({ waitUntil: 'networkidle' });
 		await customerPage.waitForFunction(() => document.querySelector('[data-testid=referral-points]')?.textContent.trim() === '150');
 		const initial = await api('GET', `/account/${owner.userId}`, null, owner.token);
+		await customerPage.fill('#withdraw-points', '99');
+		await customerPage.getByRole('button', { name: 'Review withdrawal', exact: true }).click();
+		await customerPage.getByRole('alert').filter({ hasText: /minimum/i }).waitFor();
+		assert.equal(await customerPage.getByRole('button', { name: 'Confirm withdrawal', exact: true }).count(), 0);
 		await customerPage.fill('#withdraw-points', '100');
 		await customerPage.getByRole('button', { name: 'Review withdrawal', exact: true }).click();
 		assert.equal((await api('GET', `/account/${owner.userId}`, null, owner.token)).amount, initial.amount, 'review moves no money');
@@ -86,6 +98,8 @@ const api = async (method, path, body, token) => {
 		console.log('ok: first approved deposit awards points; lost withdrawal response recovers after reload without double credit');
 		await adminPage.reload({ waitUntil: 'networkidle' });
 		await adminPage.getByRole('heading', { name: 'Withdrawal audit (1)', exact: true }).waitFor();
+		assert.equal(await adminPage.inputValue('#referrals-min-points'), '100');
+		assert.equal(Number(await adminPage.inputValue('#referrals-min-amount')), 1);
 		for (const [name, page] of [['customer', customerPage], ['admin', adminPage]]) {
 			await page.setViewportSize({ width: 390, height: 844 });
 			assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${name}: no mobile horizontal page overflow`);

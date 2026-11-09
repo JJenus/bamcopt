@@ -3,7 +3,7 @@
 	import '~/assets/css/admin.css';
 	const config = useRuntimeConfig().public;
 	const route = useRoute();
-	const links = [{ to: '/admin', label: 'Overview', icon: 'ki-element-11' }, { to: '/admin/users', label: 'Users', icon: 'ki-people' }, { to: '/admin/funding', label: 'Funding', icon: 'ki-bank' }, { to: '/admin/deposits', label: 'Deposits', icon: 'ki-wallet' }, { to: '/admin/referrals', label: 'Referrals', icon: 'ki-profile-user' }, { to: '/admin/notifications', label: 'Notifications', icon: 'ki-notification-bing' }, { to: '/admin/settings', label: 'Settings', icon: 'ki-setting-2' }];
+	const links = [{ to: '/admin', label: 'Overview', icon: 'ki-element-11' }, { to: '/admin/users', label: 'Users', icon: 'ki-people' }, { to: '/admin/funding', label: 'Funding', icon: 'ki-bank' }, { to: '/admin/deposits', label: 'Deposits', icon: 'ki-wallet' }, { to: '/admin/notifications', label: 'Notifications', icon: 'ki-notification-bing' }, { to: '/admin/settings', label: 'Settings', icon: 'ki-setting-2' }];
 	const active = (to: string) => to === '/admin' ? route.path === to : route.path.startsWith(to);
 </script>
 

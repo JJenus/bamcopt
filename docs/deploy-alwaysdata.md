@@ -51,19 +51,23 @@ Create an environment named `production`, then:
 | `SECURITY_LOG_RETENTION_DAYS`, `SESSION_RETENTION_DAYS`, `AUDIT_RETENTION_DAYS` | days to keep sign-in history (365), ended sessions (30) and the administrator action trail (0 = forever). A daily job prunes; `/super` has a "Clean up now" button |
 | `TRUST_PROXY_HOPS` | `1` (default). Reverse proxies in front of the app; the client IP is the entry they appended to `X-Forwarded-For` |
 | `GEOIP` / `GEOIP_URL` | `GEOIP=off` stops the background IP-to-city lookup (the IP is then sent to no third party). Default provider `https://ipwho.is/{ip}` |
-| `APP_URL` | public site URL, used in e-mail links |
+| `APP_URL` | this environment’s public http(s) origin for all email links/assets. Required when sending mail in production; `NUXT_PUBLIC_SITE_URL` is an optional fallback. Never derive token-bearing email destinations from untrusted Host headers |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | mail; e-mails are skipped when `SMTP_PASS` is empty |
 
-Public runtime values (visible to browsers; never put secrets here): `NUXT_PUBLIC_APP`, `NUXT_PUBLIC_SUPPORT_EMAIL`, `NUXT_PUBLIC_MOBILE`, `NUXT_PUBLIC_SUPPORT_HOURS`, `NUXT_PUBLIC_SITE_URL`, `NUXT_PUBLIC_LOGO_URL`, `NUXT_PUBLIC_LEGAL_ENTITY`, `NUXT_PUBLIC_BUSINESS_ADDRESS`, `NUXT_PUBLIC_LEGAL_UPDATED`. Confirm the real operator, contact details and policy date before launch. Use an absolute http(s) origin for the site URL and a local or trusted image URL for the logo. See `.env.example` for examples. Public branding does not configure SMTP or the separate email-link `APP_URL`.
+Public runtime values (visible to browsers; never put secrets here): `NUXT_PUBLIC_APP`, `NUXT_PUBLIC_SUPPORT_EMAIL`, `NUXT_PUBLIC_MOBILE`, `NUXT_PUBLIC_SUPPORT_HOURS`, `NUXT_PUBLIC_SITE_URL`, `NUXT_PUBLIC_LOGO_URL`, `NUXT_PUBLIC_LEGAL_ENTITY`, `NUXT_PUBLIC_BUSINESS_ADDRESS`, `NUXT_PUBLIC_LEGAL_UPDATED`. Confirm the real operator, contact details and policy date before launch. Use an absolute http(s) origin for an optional email-site fallback and a local or trusted image URL for the logo. See `.env.example` for examples. Branding does not configure SMTP credentials; `APP_URL` is the preferred outgoing-email origin.
 
 `DB_*` variables are used instead of `DATABASE_URL` so passwords with characters such as `@` need no URL encoding.
 
 ## Referral program activation
 
-After migrations, open `/admin/referrals`. Set points per qualifying referral, the number of points
+After migrations, open **Settings → Referral program** (`/admin/settings/referrals`). Set points per qualifying referral, the number of points
 equal to **1.00** of the chosen reward currency, then review and confirm activation. Example:
 150 points per referral, 100 points = 1.00 USD. Customers use `/app/referrals`; invitation links open
-`/sign-up?ref=<code>`. Configure `NUXT_PUBLIC_SITE_URL` to the real public origin before sharing links.
+`/sign-up?ref=<code>` on the current request/browser origin, including its protocol and port. Canonical
+and local metadata-image URLs follow that same origin. There is no hardcoded production-domain fallback.
+Set `APP_URL` (or fallback `NUXT_PUBLIC_SITE_URL`) separately for outgoing emails in each environment.
+Without those settings, development email links use `http://localhost:<PORT>` (3000 by default);
+production email delivery is skipped with a configuration error rather than sending tokens to a guessed host.
 
 - Signup attribution cannot be reassigned. Only the first approved **deposit request** qualifies;
   rejected requests and manual top-ups do not. Approval and the points award share one transaction.
@@ -74,7 +78,9 @@ equal to **1.00** of the chosen reward currency, then review and confirm activat
 - New conversion rates apply to unspent points; past withdrawals retain their rate/currency. Customer
   confirmation includes a rules version, so changed rules require a fresh review. Currency is locked
   after the first award. Withdrawals require matching account currency, an active user/account, exact
-  whole-cent conversion and room under the account balance cap. There is no FX or external payout.
+  whole-cent conversion and room under the account balance cap. Admins configure a minimum number
+  of points and minimum funds amount; **both** must be met. Defaults are 1 point and 0.01 currency
+  units. Changing minimums also requires customers to review the new rules. There is no FX or external payout.
 - Disabling pauses both earning and withdrawals. A first deposit approved while disabled makes that
   referral ineligible permanently; enabling later does not backfill it. Previously earned points remain.
 - A withdrawal debits points and credits the account with a linked ledger transaction atomically.
@@ -84,5 +90,9 @@ equal to **1.00** of the chosen reward currency, then review and confirm activat
   withdrawing points creates a customer credit, not a debit against an external funding account.
 
 ## Rollback procedure
+
+Run `pnpm db:migrate` for `20261110000100-referral-withdrawal-minimums.js` before deploying these
+controls to an existing referral database. Do not roll back to code that ignores configured minimums
+while rewards are enabled; disable rewards first. This migration preserves existing points/receipts.
 `ssh <user>@<host>`, then `cd ~/bamcopt && ln -sfn releases/<older-sha> current.new && mv -T current.new current`
 and stop the app process (alwaysdata restarts it). The last 5 releases are kept.

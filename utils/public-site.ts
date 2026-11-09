@@ -13,7 +13,7 @@ export function siteOrigin(value: string) {
 		const url = new URL(value);
 		if (['https:', 'http:'].includes(url.protocol)) return url.origin;
 	} catch {}
-	return 'https://www.bancopt.com';
+	return 'http://localhost:3000';
 }
 
 export function canonicalUrl(origin: string, path: string) {

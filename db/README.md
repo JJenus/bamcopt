@@ -9,6 +9,11 @@ The program starts **disabled**, with no reward configured. Do not drop these ta
 disable the program and retain its financial history. Test PostgreSQL locking and backup recovery in
 staging before enabling real rewards. No production migration was run by this implementation task.
 
+The subsequent `20261110000100-referral-withdrawal-minimums.js` migration adds minimum points and
+minimum funds per withdrawal (defaults: 1 point and 0.01 currency units). Both limits apply, without
+rounding up a conversion. Configure them at `/admin/settings/referrals`; old `/admin/referrals` links
+redirect there. Disable rewards before rolling back to code that does not enforce these minimums.
+
 ## Apply migrations with the Sequelize CLI
 
 Use the installed, official `sequelize-cli` (v6), not individual SQL commands:

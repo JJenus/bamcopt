@@ -17,6 +17,7 @@ export default defineNuxtConfig({
 	routeRules: {
 		"/about-us": { redirect: { to: "/resources/about-us", statusCode: 301 } },
 		"/contact-us": { redirect: { to: "/resources/contact-us", statusCode: 301 } },
+		"/admin/referrals": { redirect: { to: "/admin/settings/referrals", statusCode: 301 } },
 	},
 	image: {
 		format: ["webp", "avif", "jpeg", "jpg", "png", "gif"],
@@ -39,7 +40,7 @@ export default defineNuxtConfig({
 			MOBILE: "+49 (178) 793 1942",
 			SUPPORT_EMAIL: "support@bancopt.com",
 			SUPPORT_HOURS: "Contact us by email for account and product enquiries.",
-			SITE_URL: "https://www.bancopt.com",
+			SITE_URL: "",
 			LOGO_URL: "/assets/media/logos/logo-ban.png",
 			LEGAL_ENTITY: "Bancopt",
 			BUSINESS_ADDRESS: "",

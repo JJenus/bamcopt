@@ -3,7 +3,7 @@
 	import { referralMinor } from '~/utils/referrals';
 	useAccountPage('Referrals');
 	const auth = useAuth();
-	const config = useRuntimeConfig().public;
+	const origin = useSiteOrigin();
 	const { load: refreshAccount } = useAccountWorkspace();
 	const data = ref<ReferralDashboard | null>(null);
 	const loading = ref(true), busy = ref(false), uncertain = ref(false);
@@ -13,7 +13,7 @@
 	const receipt = ref<ReferralReceipt | null>(null);
 	// Capture the owner at mount so an old response cannot clear a different login's recovery record.
 	const storageKey = `referral-withdrawal:${auth.userData.value?.userId || ''}`;
-	const link = computed(() => data.value?.code ? `${String(config.SITE_URL).replace(/\/$/, '')}/sign-up?ref=${data.value.code}` : '');
+	const link = computed(() => data.value?.code ? `${origin}/sign-up?ref=${data.value.code}` : '');
 	const amountMinor = computed(() => /^\d+$/.test(points.value) && data.value ? referralMinor(Number(points.value), data.value.program.pointsPerUnit) : null);
 	const pages = computed(() => Math.max(1, Math.ceil(Math.max(data.value?.referrals.total || 0, data.value?.redemptions.total || 0) / 20)));
 	const load = async () => {
@@ -33,6 +33,7 @@
 	const prepare = () => {
 		actionError.value = ''; receipt.value = null;
 		if (!data.value?.program.enabled || amountMinor.value === null || Number(points.value) > (data.value.points || 0)) { actionError.value = 'Choose available whole points that convert to an exact amount of at least 0.01.'; return; }
+		if (Number(points.value) < data.value.program.minWithdrawalPoints || amountMinor.value < Math.round(data.value.program.minWithdrawalAmount * 100)) { actionError.value = `Minimum withdrawal: ${data.value.program.minWithdrawalPoints} points and ${Number(data.value.program.minWithdrawalAmount).toFixed(2)} ${data.value.program.currency}.`; return; }
 		review.value = { points: Number(points.value), requestKey: crypto.randomUUID(), programVersion: data.value.program.version };
 	};
 	const withdraw = async () => {
@@ -71,7 +72,7 @@
 				</div></div></section>
 				<section class="col-lg-5"><div class="card border h-100"><div class="card-body p-7">
 					<h2 class="fs-6 text-gray-600 mb-3">Available points</h2><strong class="account-balance d-block mb-5" data-testid="referral-points">{{ data.points || 0 }}</strong>
-					<p class="text-gray-600 fs-7">Current rate: {{ data.program.pointsPerUnit }} points = 1.00 {{ data.program.currency }}. Rates may change before you withdraw. No currency conversion is performed.</p>
+					<p class="text-gray-600 fs-7">Current rate: {{ data.program.pointsPerUnit }} points = 1.00 {{ data.program.currency }}. Rates may change before you withdraw. No currency conversion is performed.</p><p class="text-gray-600 fs-7">Minimum withdrawal: {{ data.program.minWithdrawalPoints }} points and {{ Number(data.program.minWithdrawalAmount).toFixed(2) }} {{ data.program.currency }}. Both minimums apply.</p>
 					<form @submit.prevent="prepare"><label for="withdraw-points" class="form-label">Points to withdraw to balance</label><input id="withdraw-points" v-model="points" type="text" inputmode="numeric" pattern="[0-9]+" maxlength="10" class="form-control" :disabled="busy || uncertain || !data.program.enabled" /><p class="form-text">{{ amountMinor === null ? 'Choose points that convert to whole cents, with no rounding.' : `You will receive ${(amountMinor / 100).toFixed(2)} ${data.program.currency}.` }}</p><button type="submit" class="btn btn-primary w-100" :disabled="busy || uncertain || !data.program.enabled">Review withdrawal</button></form>
 					<div v-if="review" class="border rounded-3 p-5 mt-5" aria-live="polite"><p>{{ uncertain ? 'Recover your pending withdrawal. The same request cannot credit twice.' : `Withdraw ${review.points} points into your account balance?` }}</p><div class="d-flex gap-3"><button type="button" class="btn btn-primary" :disabled="busy" @click="withdraw">{{ busy ? 'Checking…' : uncertain ? 'Check withdrawal' : 'Confirm withdrawal' }}</button><button v-if="!uncertain" type="button" class="btn btn-light" :disabled="busy" @click="review = null">Cancel</button></div></div>
 				</div></div></section>

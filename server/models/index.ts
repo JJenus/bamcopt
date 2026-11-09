@@ -260,6 +260,7 @@ DepositRequest.init({
 export class ReferralProgram extends Model {
 	declare id: string; declare enabled: boolean; declare rewardPoints: number; declare pointsPerUnit: number;
 	declare currency: string; declare version: number;
+	declare minWithdrawalPoints: number; declare minWithdrawalAmount: number;
 }
 ReferralProgram.init({
 	id: { type: DataTypes.STRING(20), primaryKey: true }, enabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
@@ -267,6 +268,8 @@ ReferralProgram.init({
 	pointsPerUnit: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 100 },
 	currency: { type: DataTypes.STRING(3), allowNull: false, defaultValue: 'USD' },
 	version: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+	minWithdrawalPoints: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+	minWithdrawalAmount: { ...money('minWithdrawalAmount'), defaultValue: 0.01 },
 }, { sequelize, modelName: 'ReferralProgram' });
 
 export class ReferralMember extends Model {

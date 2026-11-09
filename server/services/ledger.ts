@@ -174,6 +174,8 @@ export const redeemReferralPoints = async (userId: string, input: { points: numb
 		if (String(currency).toUpperCase() !== program.currency) throw unprocessable('Your account currency must match the referral reward currency; no conversion is performed');
 		const minor = referralMinor(input.points, program.pointsPerUnit);
 		if (minor === null) throw unprocessable('Choose a points amount that converts to whole cents without rounding');
+		if (input.points < program.minWithdrawalPoints) throw unprocessable(`The minimum withdrawal is ${program.minWithdrawalPoints} points`);
+		if (minor < toMinor(program.minWithdrawalAmount)) throw unprocessable(`The minimum withdrawal is ${Number(program.minWithdrawalAmount).toFixed(2)} ${program.currency}`);
 		const next = toMinor(account.amount) + minor;
 		if (!Number.isSafeInteger(next)) throw unprocessable('Balance exceeds safe precision');
 		const { max } = await limitsFor(account, t);

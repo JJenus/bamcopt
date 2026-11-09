@@ -1,3 +1,5 @@
+import { applicationOrigin } from '../../utils/environment-urls';
+
 /** Central place for configuration. Getters are lazy so `nitro build` never needs the secrets. */
 const need = (key: string): string => {
 	const value = process.env[key];
@@ -10,7 +12,7 @@ export const env = {
 		return need("JWT_SECRET");
 	},
 	get appUrl() {
-		return (process.env.APP_URL || "https://www.bancopt.com").replace(/\/$/, "");
+		return applicationOrigin(process.env.APP_URL || process.env.NUXT_PUBLIC_SITE_URL || '', process.env.NODE_ENV === 'production', process.env.PORT || process.env.NUXT_PORT || '3000');
 	},
 	/** Login OTP (2nd step by e-mail). On by default; OTP_ON=false|0|off|no signs in with the password alone. */
 	get otpOn() {

@@ -44,7 +44,7 @@ export const awardDepositReferral = async (deposit: DepositRequest, t: DbTx) => 
 	await referral.update({ status: 'awarded', points: program.rewardPoints, currency: program.currency, depositId: deposit.id, qualifiedAt: new Date(), reason: 'First approved deposit' }, { transaction: t });
 };
 
-export const updateReferralProgram = async (input: { enabled: boolean; rewardPoints: number; pointsPerUnit: number; currency: string }, actor: Actor) => {
+export const updateReferralProgram = async (input: { enabled: boolean; rewardPoints: number; pointsPerUnit: number; currency: string; minWithdrawalPoints?: number; minWithdrawalAmount?: number }, actor: Actor) => {
 	await ensureReferralProgram();
 	return sequelize.transaction(async t => {
 		const program = (await ReferralProgram.findByPk('default', { transaction: t, lock: t.LOCK.UPDATE }))!;

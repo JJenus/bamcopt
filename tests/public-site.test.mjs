@@ -18,7 +18,7 @@ test('missing or unsafe contact values never become actionable links', () => {
 
 test('canonical URLs accept only http(s), strip queries and avoid duplicate slashes', () => {
 	assert.equal(siteOrigin('https://example.org/base/'), 'https://example.org');
-	assert.equal(siteOrigin('javascript:alert(1)'), 'https://www.bancopt.com');
+	assert.equal(siteOrigin('javascript:alert(1)'), 'http://localhost:3000');
 	assert.equal(canonicalUrl('https://example.org/', '/banking?tracking=yes'), 'https://example.org/banking');
 });
 
