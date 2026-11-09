@@ -2,7 +2,9 @@
 
 Workflow: `.github/workflows/deploy.yml`. On every push to `main` it runs `lint:api`, the smoke and migration tests and
 `pnpm build`, runs `pnpm db:migrate` against the production database, then uploads the build over SSH to `~/<APP_DIR>/releases/<sha>`, switches the `current` symlink and
-restarts the app. Pull requests only run the test/build job.
+requests an app restart when API credentials are configured (otherwise a manual restart is required). Pull requests only run the test/build job. On an empty database, the migration step is skipped for the first-start bootstrap described below.
+
+This is an operational runbook, not an unfinished feature plan. Setup and production execution have not been verified by the documentation audit. See [update-plan.md](update-plan.md) for remaining implementation gaps.
 
 ## 1. SSH key
 Generate a key pair dedicated to deploys (`ssh-keygen -t ed25519 -C bamcopt-github-deploy`).
@@ -35,6 +37,7 @@ Create an environment named `production`, then:
 |---|---|
 | `NODE_ENV` | `production` |
 | `JWT_SECRET` | long random string |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | set explicit private values; the current seed has unsafe defaults and can overwrite an existing admin's password/role/status at startup. Review provisioning before production; see the remaining-work register |
 | `DB_HOST` | PostgreSQL host from the alwaysdata Databases page |
 | `DB_PORT` | `5432` |
 | `DB_NAME` | database name (alwaysdata prefixes it with the account name) |
@@ -50,6 +53,8 @@ Create an environment named `production`, then:
 | `GEOIP` / `GEOIP_URL` | `GEOIP=off` stops the background IP-to-city lookup (the IP is then sent to no third party). Default provider `https://ipwho.is/{ip}` |
 | `APP_URL` | public site URL, used in e-mail links |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | mail; e-mails are skipped when `SMTP_PASS` is empty |
+
+Public runtime values (visible to browsers; never put secrets here): `NUXT_PUBLIC_APP`, `NUXT_PUBLIC_SUPPORT_EMAIL`, `NUXT_PUBLIC_MOBILE`, `NUXT_PUBLIC_SUPPORT_HOURS`, `NUXT_PUBLIC_SITE_URL`, `NUXT_PUBLIC_LOGO_URL`, `NUXT_PUBLIC_LEGAL_ENTITY`, `NUXT_PUBLIC_BUSINESS_ADDRESS`, `NUXT_PUBLIC_LEGAL_UPDATED`. Confirm the real operator, contact details and policy date before launch. Use an absolute http(s) origin for the site URL and a local or trusted image URL for the logo. See `.env.example` for examples. Public branding does not configure SMTP or the separate email-link `APP_URL`.
 
 `DB_*` variables are used instead of `DATABASE_URL` so passwords with characters such as `@` need no URL encoding.
 

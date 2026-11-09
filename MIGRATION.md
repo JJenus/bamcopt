@@ -4,7 +4,7 @@ Scope: move the backend to Nitro, fix lapses (especially balances / crediting). 
 Same `/api/...` paths and request/response shapes, so the frontend keeps working.
 
 ## Approach
-> **Funding follow-up (2026-11-05):** signed funding `adjustment` payloads are no longer accepted. Use `balanceChange: { direction: "credit" | "debit", amount: positiveNumber }`. New administrator customer corrections use `POST /api/account/adjustments`; explicit reversals use `POST /api/transactions/:id/reverse` with `action: "reverse"` and a reason. Existing positive top-ups remain available, with funding/customer currency matching enforced. This follow-up needs no schema migration; see `docs/funding-operations.md`.
+> **Funding follow-up (2026-11-05):** signed funding `adjustment` payloads are no longer accepted. Use `balanceChange: { direction: "credit" | "debit", amount: positiveNumber }`. New administrator customer corrections use `POST /api/account/adjustments`; explicit reversals use `POST /api/transactions/:id/reverse` with `action: "reverse"` and a reason. Existing positive top-ups remain available, with funding/customer currency matching enforced. This follow-up needs no schema migration; remaining limitations are tracked in `docs/update-plan.md`.
 
 - The API now lives in this Nuxt app: `server/api/**` (Nitro, same process as the UI, same origin, no CORS). The old `bancopt-api` repo is retired.
 - Keep Sequelize + PostgreSQL (no ORM swap). Routers/controllers collapse into thin route files; logic lives in `server/services`.

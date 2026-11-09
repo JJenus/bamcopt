@@ -1,23 +1,48 @@
-# Update plan (fullstack-nuxt)
+# Remaining implementation work
 
-Goal: small, finished, user-visible improvements. No new libraries, no rewrites.
+Audited against local HEAD `7e7b44f` on 2026-11-09, including the transfer-code policy/defaults changes added during the audit. This is a source-code review, not a fresh runtime test or production verification.
 
-## Findings
-| Area | Gap |
-|---|---|
-| Add funds (user) | Modal is a fake card form; `save()` does nothing |
-| Admin funding | No funding accounts / balances anywhere |
-| Admin dashboard | Empty page |
-| Stats | `/transactions/aggregates` returns cents, UI shows them as dollars (100x); no counts/pending/month |
-| Mobile nav | 5 unlabeled icons incl. "Account Info"; Settings tabs use local state, not routes |
-| Settings | No hub; profile, limits, notifications, security are scattered |
-| Broken | `/app/scan` uses a component that does not exist; `<NuxLink>` typos (dead menu links) |
+Completed public/customer/admin redesigns, funding corrections/reversals, verified deposit requests, transfer-code policy/defaults, and the super-admin plan have been removed from `docs/`. Their remaining limitations are recorded below. Deployment instructions remain in [deploy-alwaysdata.md](deploy-alwaysdata.md); database instructions remain in [../db/README.md](../db/README.md).
 
-## Steps (one commit each)
-1. **Funding accounts (API)** - `FundingAccount` model (label, type, bank, account name/number, currency, instructions, balance, active); `GET/POST /api/funding-accounts`, `PUT /api/funding-accounts/:id` (admin; balance changes via signed `adjustment`); admin top-up can credit a funding account in the same DB transaction. Users only see active accounts, never balances.
-2. **Stats (API)** - fix aggregates units, add counts/pending/this-month; `GET /api/admin/stats`.
-3. **Funding (UI)** - user "Add funds" shows funding account details (copy buttons); admin `/admin/funding` list, add/edit, adjust balance, totals; top-up modal picks a funding account.
-4. **Nav + settings hubs** - mobile bottom nav with labels (Home, Transfer, Activity, Settings; admin: Dashboard, Users, Funding, Settings); `/app/settings` and `/admin/settings` become link hubs to their own pages (profile, account & limits, notifications, security / defaults, tiers, funding); route-driven tabs; remove dead scan page; fix `NuxLink`.
-5. **Stats (UI)** - user dashboard stat cards + transactions page cards; admin dashboard cards, recent transactions/users.
+**Status:** `PARTIAL` = a working feature has unfinished parts; `NOT IMPLEMENTED` = no end-to-end capability; `VERIFY` = operational evidence or a business decision is required, not necessarily more code. These are findings, not authorization to build every possible feature.
 
-Deploy note: new table is created by `DB_SYNC=true` (creates missing tables only, never alters).
+## Features not completely implemented
+
+| Feature | Status | Current evidence and remaining work |
+|---|---|---|
+| External payment execution | **NOT IMPLEMENTED** | `server/services/ledger.ts` records external-destination transfers as completed after local ledger changes. No provider execution/settlement connector exists. Define delivery semantics, integrate a real provider if offered, and reconcile settlement/failure states before claiming external delivery. |
+| Cross-request financial idempotency | **PARTIAL** | `server/services/deposits.ts` deduplicates submission keys and terminal decisions; reversals refund once. Transfers, top-ups, customer corrections and funding adjustments lack general operation keys. Add persisted request/result deduplication and safe recovery across tabs/devices. UI in-flight guards are insufficient. |
+| Deposit reconciliation | **PARTIAL** | Deposit approval atomically credits the saved request, but different requests/manual credits can describe the same external payment. Verify bank receipts and prior credits manually until durable external-payment identity/reconciliation exists. No bank webhook or proof-upload workflow is implemented. |
+| Full transaction history/search | **PARTIAL** | `server/services/ledger.ts:listUserTransactions()` defaults to 20 rows. `server/api/transactions/[id].get.ts` passes no pagination options; `services/transaction.service.ts` loads that window, and `pages/app/transactions.vue` filters/pages it locally. Wire validated server pagination/search and totals through the service/UI; admin customer activity is also only recent activity, not a full export. |
+| Currency truth | **PARTIAL** | Funding associations enforce matching denominations and nonzero funding balances cannot be relabeled. However, `composables/useAccountMoney.ts` formats using global base currency; transaction records lack a dependable immutable currency snapshot. Define account/transaction currency contracts, historical display and validation before claiming multi-currency/FX support. No conversion is implemented. |
+| Session security and revocation guarantees | **PARTIAL** | Stored sessions, logout/reset revocation, role checks and suspension are implemented. `server/services/user-sessions.ts` permits session creation/check failures to fail open; tokens without `sid` are not individually revocable. `server/utils/access.ts` also fails open on database errors. Both caches are process-local (five seconds). Define fail-closed behavior, legacy-token retirement and multi-instance invalidation. `composables/authStates.ts` still stores auth in a JS-readable cookie; HttpOnly migration remains unfinished. |
+| Device identification/history | **PARTIAL** | `server/utils/device.ts` and `server/services/sessions.ts` group by browser/OS/type, merging identical browsers on different machines. Summaries use the latest 1,000 successful sign-ins; new-device detection in `server/services/auth.ts` checks 500 previous sign-ins. Use durable device identity and complete aggregation if stronger identity/history guarantees are required. IP location is approximate and provider-dependent. |
+| Durable administrator audit | **PARTIAL** | Mutating admin endpoints now call `recordAdminAction()` and `/super` exposes the trail, including funding operations. `server/services/audit.ts` writes after the operation and swallows failures: business mutations can succeed without an audit row. Make required audit writes atomic/durable and define tamper protection. Two-person approval is not implemented. |
+| Authentication abuse protection | **PARTIAL** | OTP/code attempt controls exist but use process-local state (`server/utils/auth.ts`, `server/services/codes.ts`). Define shared rate limits, restart-resistant controls and password-login/reset/registration abuse protection before scaling. Forced super-admin OTP exists but depends on mail configuration and policy; validate production delivery. |
+| Secure upload lifecycle | **PARTIAL** | `services/upload.service.ts` uses an unsigned Cloudinary preset; avatar checks in the browser are not server enforcement. Add authenticated signatures, server-enforced type/size/access policy and orphan cleanup. Audit access to previously uploaded identity documents; do not reuse this endpoint for them. |
+| Account upgrade/KYC | **NOT IMPLEMENTED** | `components/app/UpgradeAccount.vue` sends administrator notifications only. No persisted case, document pipeline, review decision or approval lifecycle exists. Define the process and secure storage before collecting identity documents. |
+| Versioned policy consent | **PARTIAL** | Registration checks policy agreement in the public form, but `server/services/auth.ts` does not persist policy version/time evidence. Add server-validated consent records if required by the approved policy. |
+| Application translations | **PARTIAL** | System defaults now offer validated language choices (`utils/app-defaults.ts` and the admin settings UI), but the selection is only stored; the app is not translated. Add locale-aware content, formatting and fallback behavior before advertising localized experiences. |
+| Safe administrator bootstrap | **PARTIAL** | `server/utils/seed.ts` still has default admin credentials, runs outside development, and can reset an existing admin's password/role/status from configured/default values. Replace with explicit secure provisioning and a reviewed credential lifecycle; do not document or reuse default passwords. Rotate exposed credentials, including any retained in git history. |
+| Repeatable quality gates | **PARTIAL** | CI exists in `.github/workflows/deploy.yml`: API-boundary checks, smoke tests with OTP on/off, migration tests and build. `package.json` has no general lint/typecheck script; browser/SSR scripts are not all CI gates. Add appropriate gates and committed visual/accessibility/performance coverage where required. Existing test counts in deleted delivery reports were historical, not current coverage guarantees. |
+
+## Product and operational work still requiring confirmation
+
+| Area | Status | What remains |
+|---|---|---|
+| PostgreSQL/release verification | **VERIFY** | Automated financial/migration fixtures use SQLite. Verify PostgreSQL migration adoption, constraints, row locks, concurrent approvals/reversals and backup recovery in an isolated staging environment. Check actual production migration history; this audit did not connect to production. |
+| Deployment setup | **VERIFY** | The deployment pipeline is implemented, not missing. Confirm production secrets, runtime env, first-start bootstrap, pinned SSH host key, restart credentials and `HEALTH_URL`. Restart and live-build checks are optional when unconfigured. See the deployment runbook. |
+| Retention/observability | **VERIFY** | `server/plugins/retention.ts` runs after boot and daily; `/super` can prune manually. Agree retention periods, monitor pruning failures and decide whether process-local scheduling suffices for the deployment. Audit retention defaults to forever; it is not missing. |
+| Public receipt privacy | **PARTIAL / VERIFY** | `/api/transactions/find/:id` is intentionally unauthenticated. `findReceipt()` removes internal IDs but otherwise returns transaction/beneficiary fields. Define a minimal public field allowlist and abuse/access controls; treat references as confidential pending review. |
+| Legal/business readiness | **VERIFY** | Approve operator/address, jurisdictions, licensing disclosures, eligibility, destinations/currencies, fees, limits, processing semantics, complaints channels and privacy/retention terms. Baseline legal pages are not jurisdiction-specific approval. Confirm public contact details and provider disclosures/consent. |
+| Support/newsletter/investment | **NOT IMPLEMENTED / DECISION** | Support/contact uses email/phone links, not ticket delivery/tracking. No newsletter service, external news/CMS feed or investment execution exists (`pages/investment.vue` is enquiry content). Keep these honestly informational unless a real product requirement is approved. |
+| Email branding and transfer-code policy | **VERIFY** | Transactional templates retain their own branding/`APP_URL`. Align with approved public configuration. Review the purpose/support process for app-configured COT/exchange, IMF and tax codes; they are not evidence of regulatory clearance. |
+
+## Verification boundaries
+
+- Suspension is implemented at password/OTP sign-in and authenticated requests, revokes sessions, and supports super-admin suspend/restore. Do not reopen the obsolete “implement SUSPENDED” task.
+- New-device alerts, super-admin OTP policy, audit views, stored/revocable sessions and retention/pruning exist. The narrower limitations above remain.
+- Transfer-code policies (`off`, `always`, `remember`), per-user overrides, remembered-code resets and validated currency/language dropdowns are implemented. Policy/default controls do not implement translations or currency conversion.
+- Before retrying an uncertain financial operation, reconcile recorded balances/transactions. One request's idempotency does not prove an external payment was received only once.
+- Customer corrections require reasons. Administrative debits affect outgoing aggregation/daily-limit accounting, do not debit funding balances, and reversals do not implicitly adjust funding balances.
+- Run migrations through the official Sequelize CLI (`pnpm db:migrate`), not individual reference SQL files. Keep `DB_SYNC=false` after initial bootstrap; financial records must not be dropped for rollback.
