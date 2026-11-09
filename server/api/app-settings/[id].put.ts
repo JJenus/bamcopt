@@ -9,6 +9,6 @@ export default defineEventHandler(async (event) => {
 	const id = await uuidParam(event);
 	const body = await parseBody(event, S.AppSettingsBody);
 	const updated = await updateAppSettings(id, body);
-	await recordAdminAction(event, auth, { action: "settings.app.update", targetType: "app-settings", targetId: id, summary: `Changed app defaults (language ${body.defaultLanguage}, base currency ${body.defaultBaseCurrency})`, meta: pick(body, ["defaultLanguage", "defaultBaseCurrency", "currencySymbol"]) });
+	await recordAdminAction(event, auth, { action: "settings.app.update", targetType: "app-settings", targetId: id, summary: `Changed app defaults (language ${updated.defaultLanguage}, base currency ${updated.defaultBaseCurrency}${body.transferCodesPolicy ? `, transfer codes: ${updated.transferCodesPolicy}` : ""})`, meta: { defaultLanguage: updated.defaultLanguage, defaultBaseCurrency: updated.defaultBaseCurrency, ...pick(body, ["transferCodesPolicy"]) } });
 	return updated;
 });

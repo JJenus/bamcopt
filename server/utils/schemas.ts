@@ -23,12 +23,14 @@ export const UserUpdateBody = z.object({
 	address: z.string().optional(), city: z.string().optional(), country: z.string().optional(), dob: z.any().optional(),
 	verified: z.boolean().optional(), emailVerified: z.boolean().optional(), status: z.string().optional(),
 	cot: z.any().optional(), imf: z.any().optional(), tax: z.any().optional(),
+	transferCodesPolicy: z.string().optional(),
 });
 
 export const CodeBody = z.object({ step: z.enum(["cot", "imf", "tax"]), code: z.string().min(1) });
 export const TransferBody = z.object({
 	amount: z.number(),
-	codes: z.object({ cot: z.string(), imf: z.string(), tax: z.string() }),
+	// optional: not asked for when the sender's policy is off, or they have already passed (remember). The server decides.
+	codes: z.object({ cot: z.string(), imf: z.string(), tax: z.string() }).optional(),
 	type: z.nativeEnum(TransactionType),
 	notes: z.string().optional(),
 	beneficiary: z.object({
@@ -82,6 +84,7 @@ export const SecurityLogBody = z.object({
 });
 export const AppSettingsBody = z.object({
 	defaultLanguage: z.string().min(2), defaultBaseCurrency: z.string().min(3), currencySymbol: z.string().optional(),
+	transferCodesPolicy: z.string().optional(),
 });
 export const CurrencyBody = z.object({ id: uuid.optional(), country: z.string().min(2), symbol: z.string().min(3), code: z.string().length(3) });
 export const AccountLevelBody = z.object({

@@ -29,6 +29,7 @@ export class User extends Model {
 	declare city: string; declare country: string; declare dob: Date; declare verified: boolean;
 	declare emailVerified: boolean; declare status: string; declare userType: string;
 	declare cot: string; declare imf: string; declare tax: string;
+	declare transferCodesPolicy: string; declare codesVerifiedAt: Date | null;
 	declare createdAt: Date; declare updatedAt: Date;
 	/** Everything except the password hash. Only admin endpoints may use this. */
 	toAdminJSON() {
@@ -37,7 +38,7 @@ export class User extends Model {
 	}
 	/** Default JSON: no password hash and no transfer codes (cot / imf / tax). */
 	override toJSON() {
-		const { cot, imf, tax, ...rest } = this.toAdminJSON();
+		const { cot, imf, tax, transferCodesPolicy, codesVerifiedAt, ...rest } = this.toAdminJSON();
 		return rest;
 	}
 }
@@ -54,6 +55,9 @@ User.init(
 		emailVerified: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
 		userType: { type: DataTypes.STRING, defaultValue: "user" },
 		cot: DataTypes.STRING, imf: DataTypes.STRING, tax: DataTypes.STRING,
+		// "default" follows the system setting; otherwise off | always | remember. codesVerifiedAt is the "remembered" flag.
+		transferCodesPolicy: { type: DataTypes.STRING, allowNull: false, defaultValue: "default" },
+		codesVerifiedAt: { type: DataTypes.DATE, allowNull: true },
 	},
 	{ sequelize, paranoid: true, modelName: "User" }
 );
@@ -184,9 +188,10 @@ UserSession.init(
 
 export class AppSetting extends Model {
 	declare id: string; declare defaultLanguage: string; declare defaultBaseCurrency: string; declare currencySymbol: string;
+	declare transferCodesPolicy: string;
 }
 AppSetting.init(
-	{ id, defaultLanguage: DataTypes.STRING, defaultBaseCurrency: DataTypes.STRING, currencySymbol: DataTypes.STRING },
+	{ id, defaultLanguage: DataTypes.STRING, defaultBaseCurrency: DataTypes.STRING, currencySymbol: DataTypes.STRING, transferCodesPolicy: { type: DataTypes.STRING, allowNull: false, defaultValue: "always" } },
 	{ sequelize, modelName: "AppSetting" }
 );
 

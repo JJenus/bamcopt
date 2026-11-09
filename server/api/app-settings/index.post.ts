@@ -8,6 +8,6 @@ export default defineEventHandler(async (event) => {
 	const auth = requireAdmin(event);
 	const body = await parseBody(event, S.AppSettingsBody);
 	const created: any = await createAppSettings(body);
-	await recordAdminAction(event, auth, { action: "settings.app.create", targetType: "app-settings", targetId: created?.id, summary: `Created app defaults (language ${body.defaultLanguage}, base currency ${body.defaultBaseCurrency})`, meta: pick(body, ["defaultLanguage", "defaultBaseCurrency", "currencySymbol"]) });
+	await recordAdminAction(event, auth, { action: "settings.app.create", targetType: "app-settings", targetId: created?.id, summary: `Created app defaults (language ${created.defaultLanguage}, base currency ${created.defaultBaseCurrency})`, meta: pick(body, ["defaultLanguage", "defaultBaseCurrency", "transferCodesPolicy"]) });
 	return created;
 });

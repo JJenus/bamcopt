@@ -10,7 +10,7 @@ const code = () => crypto.randomInt(1000, 10000);
 /** Fields a user may change on their own profile. */
 const SELF_FIELDS = ["name", "phone", "imgUrl", "idUrl", "address", "city", "country", "dob"];
 /** Admins may additionally change these. */
-const ADMIN_FIELDS = [...SELF_FIELDS, "verified", "emailVerified", "status", "cot", "imf", "tax"];
+const ADMIN_FIELDS = [...SELF_FIELDS, "verified", "emailVerified", "status", "cot", "imf", "tax", "transferCodesPolicy"];
 
 /** For endpoints that act on someone else: the super admin does not exist for anyone but themself. */
 export const getUserFor = async (id: string, callerId: string) => {
@@ -73,7 +73,10 @@ export const lookupProfile = (u: User) => ({ ...publicProfile(u), email: u.email
 export const updateUser = async (id: string, data: Record<string, unknown>, admin: boolean) => {
 	const user = await getUser(id);
 	const allowed = admin ? ADMIN_FIELDS : SELF_FIELDS;
-	await user.update(Object.fromEntries(Object.entries(data).filter(([k, v]) => allowed.includes(k) && v !== undefined)));
+	const patch: Record<string, unknown> = Object.fromEntries(Object.entries(data).filter(([k, v]) => allowed.includes(k) && v !== undefined));
+	// new codes mean the user has to prove they know them again
+	if (admin && (["cot", "imf", "tax"] as const).some((k) => patch[k] !== undefined && String(patch[k]) !== String(user[k]))) patch.codesVerifiedAt = null;
+	await user.update(patch);
 	return user;
 };
 

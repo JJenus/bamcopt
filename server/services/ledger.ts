@@ -12,7 +12,7 @@ import {
 import { sequelize } from "../utils/db";
 import { badRequest, conflict, forbidden, notFound, unprocessable } from "../utils/errors";
 import { fromMinor, positiveMinor, toMinor } from "../utils/money";
-import { checkAllCodes, type Codes } from "./codes";
+import { checkAllCodes, codeRequirement, type Codes } from "./codes";
 import { getUser, getUserByEmail } from "./users";
 import { notifySafe } from "./notifications";
 
@@ -65,7 +65,8 @@ export type TransferInput = {
 	senderId: string;
 	type: TransactionType;
 	amount: number;
-	codes: Codes;
+	/** required unless the sender's policy says otherwise (off, or remembered) */
+	codes?: Codes;
 	notes?: string;
 	beneficiary: { userId?: string; name: string; destinationAccount: string; bank: string };
 };
@@ -82,7 +83,14 @@ export const transfer = async (input: TransferInput) => {
 
 	const sender = await getUser(input.senderId);
 	if (sender.status.toUpperCase() === "HOLD") throw forbidden("Account on hold. Contact support.");
-	checkAllCodes(sender, input.codes); // before any money moves
+	// before any money moves: the codes, unless this sender is not asked for them (off, or remembered)
+	const requirement = await codeRequirement(sender);
+	if (requirement.required) {
+		if (!input.codes) throw unprocessable("Transfer verification codes are required");
+		checkAllCodes(sender, input.codes);
+		// passing once is what "remember" remembers, even if the transfer itself is refused for another reason
+		if (requirement.policy === "remember") await sender.update({ codesVerifiedAt: new Date() });
+	}
 
 	try {
 		const { tx, beneficiary } = await sequelize.transaction(async (t) => {
